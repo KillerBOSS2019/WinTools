@@ -1,6 +1,6 @@
 {
-  "sdk": 3,
-  "version": 100,
+  "sdk": 4,
+  "version": 200,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
   "configuration": {
@@ -13,6 +13,22 @@
       "id": "main",
       "name": "Windows-Tool",
 	    "imagepath": "%TP_PLUGIN_FOLDER%WinTools\\icon.png",
+      "connectors": [
+        {
+          "id": "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol",
+          "name": "APP Volume slider",
+          "format": "Control volume for {$KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol",
+              "type": "choice",
+              "label": "choice",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        }
+      ],
       "actions": [
         {
           "id": "KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute",

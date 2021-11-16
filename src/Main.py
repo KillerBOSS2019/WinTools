@@ -74,7 +74,7 @@ def AudioDeviceCmdlets(command, output=True):
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0]
     if output:
-        return json.loads(proc_stdout.decode('utf-8'))
+        return json.loads(proc_stdout.decode('utf-8', "ignore"))
 
 # Setup TouchPortal connection
 TPClient = TouchPortalAPI.Client('Windows-Tools')
@@ -100,6 +100,14 @@ def volumeChanger(process, action, value):
         AudioController(str(process)).increase_volume((int(value)*0.01))
     elif action == "Decrease":
         AudioController(str(process)).decrease_volume((int(value)*0.01))
+
+def setMasterVolume(Vol):
+    devices = AudioUtilities.GetSpeakers()
+    interface = devices.Activate(
+    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    volume = cast(interface, POINTER(IAudioEndpointVolume))
+    scalarVolume = int(Vol) / 100
+    volume.SetMasterVolumeLevelScalar(scalarVolume, None)
 
 def AdvancedMouseFunction(x, y, delay, look):
     if look == 0:
@@ -144,7 +152,7 @@ def updateStates():
     Timer = threading.Timer(0.4, updateStates)
     Timer.start()
     if running:
-        current_audio_source = []
+        current_audio_source = ["Master Volume"]
         can_audio_run = True
         try:
             pythoncom.CoInitialize()
@@ -163,11 +171,12 @@ def updateStates():
             #print(current_audio_source)
                 TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', current_audio_source)
                 TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', current_audio_source)
+                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", current_audio_source)
                 old_volume_list = current_audio_source
 
-                for eachprocess in current_audio_source:
+                for eachprocess in current_audio_source[1:-1]:
                     if eachprocess not in global_states:
-                        TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "None")
+                        TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "0")
                         global_states.append(eachprocess)
                         print(f'creating states for {eachprocess}')
 
@@ -189,6 +198,8 @@ def updateStates():
         if counter >= 34:
             counter = 0
             output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
+            
+
             for x in output:
                 if x['Type'] == "Playback" and x['Default'] == True:
                     TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
@@ -206,7 +217,7 @@ def updateStates():
 running = False
 updateStates()
 @TPClient.on('info')
-def onStart(client, data):
+def onStart(data):
     global running
     running = True
     print(data)
@@ -214,13 +225,17 @@ def onStart(client, data):
 
     
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
-def Actions(client, data):
+def Actions(data):
     print(data)
     if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute':
         if data['data'][0]['value'] is not '':
             muteAndUnMute(data['data'][0]['value'], data['data'][1]['value'])
     if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume':
         volumeChanger(data['data'][0]['value'], data['data'][1]['value'], data['data'][2]['value'])
+    
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.SetmasterVolume':
+        setMasterVolume(data['data'][0]['value'])
+
     if data['actionId'] == 'KillerBOSS.TP.Plugins.AdvanceMouse.HoldDownToggle':
         if data['data'][0]['value'] == 'Down':
             pyautogui.mouseDown(button=(data['data'][1]['value']).lower())
@@ -244,8 +259,9 @@ def Actions(client, data):
             updateXY = False
         else:
             updateXY = True
+    
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
-def heldingButton(client, data):
+def heldingButton(data):
     print(data)
     while True:
         if TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.AdvanceMouse.MouseClick'):
@@ -280,16 +296,30 @@ def updateDeviceOutput(options):
     elif options == "Input":
         TPClient.choiceUpdate('KillerBOSS.TP.Plugins.ChangeAudioOutput.Device', inputDevice)
         print('updating input', outPutDevice)
+
 @TPClient.on(TYPES.onListChange)
-def listChangeAction(client, data):
+def listChangeAction(data):
     print(data)
     if data['actionId'] == 'KillerBOSS.TP.Plugins.ChangeAudioOutput':
         try:
             updateDeviceOutput(data['value'])
         except KeyError:
             pass
+
+@TPClient.on(TYPES.onConnectorChange)
+def connectors(data):
+    print(data)
+    if data['connectorId'] == "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol":
+        if data['data'][0]['value'] == "Master Volume" :
+            setMasterVolume(data['value'])
+        else:
+            try:
+                volumeChanger(data['data'][0]['value'], "Set", data['value'])
+            except:
+                pass
+
 @TPClient.on('closePlugin')
-def Shutdown(client, data):
+def Shutdown(data):
     global running, Timer
     TPClient.disconnect()
     running = False
