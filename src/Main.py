@@ -12,7 +12,12 @@ import subprocess
 import json
 import sys
 import pythoncom
-
+# import extract_icon
+import ctypes
+import psutil
+import win32process
+import pygetwindow
+import os
 
 
 class AudioController(object):
@@ -74,7 +79,16 @@ def AudioDeviceCmdlets(command, output=True):
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0]
     if output:
-        return json.loads(proc_stdout.decode('utf-8', "ignore"))
+        proc_stdout = proc_stdout[proc_stdout.decode("utf-8", "ignore").index("["):-1]
+        return json.loads(proc_stdout) 
+
+def getActiveExecutablePath():
+    hWnd = ctypes.windll.user32.GetForegroundWindow()
+    if hWnd == 0:
+        return None # Note that this function doesn't use GetLastError().
+    else:
+        _, pid = win32process.GetWindowThreadProcessId(hWnd)
+        return psutil.Process(pid).exe()
 
 # Setup TouchPortal connection
 TPClient = TouchPortalAPI.Client('Windows-Tools')
@@ -108,6 +122,13 @@ def setMasterVolume(Vol):
     volume = cast(interface, POINTER(IAudioEndpointVolume))
     scalarVolume = int(Vol) / 100
     volume.SetMasterVolumeLevelScalar(scalarVolume, None)
+
+def getMasterVolume() -> int:
+    devices = AudioUtilities.GetSpeakers()
+    interface = devices.Activate(
+    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+    volume = cast(interface, POINTER(IAudioEndpointVolume))
+    return int(round(volume.GetMasterVolumeLevelScalar() * 100))
 
 def AdvancedMouseFunction(x, y, delay, look):
     if look == 0:
@@ -152,13 +173,12 @@ def updateStates():
     Timer = threading.Timer(0.4, updateStates)
     Timer.start()
     if running:
-        current_audio_source = ["Master Volume"]
+        current_audio_source = ["Master Volume", "Current app"]
         can_audio_run = True
         try:
             pythoncom.CoInitialize()
             sessions = AudioUtilities.GetAllSessions()
         except Exception as e:
-            print(e)
             can_audio_run = False
             pass
         if can_audio_run:
@@ -169,12 +189,12 @@ def updateStates():
                     pass
             if old_volume_list != current_audio_source:
             #print(current_audio_source)
-                TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', current_audio_source)
-                TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', current_audio_source)
+                TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', current_audio_source[2:])
+                TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', current_audio_source[2:])
                 TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", current_audio_source)
                 old_volume_list = current_audio_source
 
-                for eachprocess in current_audio_source[1:-1]:
+                for eachprocess in current_audio_source[2:]:
                     if eachprocess not in global_states:
                         TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "0")
                         global_states.append(eachprocess)
@@ -190,21 +210,60 @@ def updateStates():
                     
             for x in global_states:
                 try:
-                    TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}', str(int(AudioController(x).process_volume()*100)))
+                    appVolume = str(int(AudioController(x).process_volume()*100))
+                    TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}', appVolume)
+                    TPClient.send(
+                    {
+                        "type":"connectorUpdate",
+                        "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={x}",
+                        "value": appVolume
+                    }
+                )
                 except TypeError:
-                    pass
-
+                    pass 
         counter = counter + 1
+        if counter >= 5:
+            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
+            activeWindow = getActiveExecutablePath()
+            if activeWindow != None:
+                activeWindow = os.path.basename(getActiveExecutablePath())
+            TPClient.send(
+                    {
+                        "type":"connectorUpdate",
+                        "connectorId":"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Master Volume",
+                        "value": str(getMasterVolume())
+                    }
+                )
+            try:
+                TPClient.send(
+                    {
+                        "type":"connectorUpdate",
+                        "connectorId":"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
+                        "value": "0" if activeWindow == None else str(int(AudioController(activeWindow).process_volume()*100))
+                    }
+                )
+            except TypeError:
+                TPClient.send(
+                    {
+                        "type":"connectorUpdate",
+                        "connectorId":"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
+                        "value": "0"
+                    }
+                )
         if counter >= 34:
             counter = 0
             output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
-            
-
             for x in output:
                 if x['Type'] == "Playback" and x['Default'] == True:
                     TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
                 elif x['Type'] == "Recording" and x['Default'] == True:
                     TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
+        # try:
+        #     currentActiveWindowIco = extract_icon.extractIco(getActiveExecutablePath())
+        #     TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.CurrentProgramIco", currentActiveWindowIco)
+        # except:
+        #     pass
+        # print(currentActiveWindowIco)
 
         # Advanced Mouse
         if updateXY:
@@ -309,9 +368,14 @@ def listChangeAction(data):
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
     print(data)
+    import os
     if data['connectorId'] == "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol":
         if data['data'][0]['value'] == "Master Volume" :
             setMasterVolume(data['value'])
+        elif data['data'][0]['value'] == "Current app":
+            activeWindow = getActiveExecutablePath()
+            if activeWindow != "":
+                volumeChanger(os.path.basename(activeWindow), "Set", data['value'])
         else:
             try:
                 volumeChanger(data['data'][0]['value'], "Set", data['value'])
