@@ -1,6 +1,6 @@
 {
   "sdk": 4,
-  "version": 200,
+  "version": 300,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
   "configuration": {
@@ -307,6 +307,12 @@
           "id": "KillerBOSS.TP.Plugins.Sound.CurrentInputDevice",
           "type": "text",
           "desc": "Sound: Get Current Input Device",
+          "default": "None"
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.Application.currentFocusedAPP",
+          "type": "text",
+          "desc": "Application get current focused APP",
           "default": "None"
         }
       ]
