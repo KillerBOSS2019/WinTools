@@ -74,7 +74,7 @@ def get_windows():
     win32gui.EnumWindows(winEnumHandler, None)
     return results
 
-print(get_windows())
+#print(get_windows())
 
 
 def copy_im_to_clipboard(image):
@@ -365,36 +365,36 @@ def updateStates():
     Timer.start()
     if running:
         
-        #### I feel like this should loop every 30 seconds at minimum
-        ### Updating Monitor States
-        monitor_list = []
-        monitor_count = check_number_of_monitors()
-        if str(monitor_count_old) == str(monitor_count):
-            pass
-        elif str(monitor_count_old) is not str(monitor_count):
-            monitor_count_old = monitor_count
-            for monitor_number in range(monitor_count):
-                if monitor_number == 0:
-                    monitor_list.append(str(monitor_number))
-                else:
-                    monitor_list.append(str(monitor_number))
-            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
-
-        ### would like this to only check every 3-5 seconds for new windows
-        ### Getting Active Windows and updating choice state only when windows change.
-        global windows_active
-        windows_active = get_windows()
-          
-        if len(old_results) is not len(windows_active):
-            windows_active = get_windows()
-            print("Previous Count:", len(old_results), "New Count:", len(windows_active))
-            old_results = windows_active
-            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
-        else:
-            windows_active = get_windows()
-            old_results = windows_active
-        ##end of changes
+#        #### I feel like this should loop every 30 seconds at minimum
+#        ### Updating Monitor States
+#        monitor_list = []
+#        monitor_count = check_number_of_monitors()
+#        if str(monitor_count_old) == str(monitor_count):
+#            pass
+#        elif str(monitor_count_old) is not str(monitor_count):
+#            monitor_count_old = monitor_count
+#            for monitor_number in range(monitor_count):
+#                if monitor_number == 0:
+#                    monitor_list.append(str(monitor_number))
+#                else:
+#                    monitor_list.append(str(monitor_number))
+#            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
+#
+#        ### would like this to only check every 3-5 seconds for new windows
+#        ### Getting Active Windows and updating choice state only when windows change.
+#        global windows_active
+#        windows_active = get_windows()
+#          
+#        if len(old_results) is not len(windows_active):
+#            windows_active = get_windows()
+#            print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+#            old_results = windows_active
+#            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
+#            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
+#        else:
+#            windows_active = get_windows()
+#            old_results = windows_active
+#        ##end of changes
         
         current_audio_source = ["Master Volume", "Current app"]
         can_audio_run = True
@@ -481,6 +481,42 @@ def updateStates():
                     TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
                 elif x['Type'] == "Recording" and x['Default'] == True:
                     TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
+                    
+                    ###
+        
+            #### I feel like this should loop every 30 seconds at minimum
+            ### Updating Monitor States
+            monitor_list = []
+            monitor_count = check_number_of_monitors()
+            if str(monitor_count_old) == str(monitor_count):
+                pass
+            elif str(monitor_count_old) is not str(monitor_count):
+                monitor_count_old = monitor_count
+                for monitor_number in range(monitor_count):
+                    if monitor_number == 0:
+                        monitor_list.append(str(monitor_number))
+                    else:
+                        monitor_list.append(str(monitor_number))
+                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
+
+            ### would like this to only check every 3-5 seconds for new windows
+            ### Getting Active Windows and updating choice state only when windows change.
+            global windows_active
+            windows_active = get_windows()
+
+            if len(old_results) is not len(windows_active):
+                windows_active = get_windows()
+                print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+                old_results = windows_active
+                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
+            else:
+                windows_active = get_windows()
+                old_results = windows_active
+        ##end of changes
+        
+        
+        
         # try:
         #     currentActiveWindowIco = extract_icon.extractIco(getActiveExecutablePath())
         #     TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.CurrentProgramIco", currentActiveWindowIco)
