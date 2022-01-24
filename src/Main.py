@@ -1,5 +1,6 @@
 from typing import Type
 import TouchPortalAPI
+from numpy import clip
 import pycaw
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
@@ -19,6 +20,193 @@ import win32process
 import pygetwindow
 import os
 
+
+### Gitago Imports
+import mss
+import mss.tools
+from io import BytesIO
+from PIL import Image
+import win32clipboard
+import win32ui
+import win32gui
+import win32con  ### needed to show window without issues
+
+### 
+# Origin Launcher Window = OriginWebHelperService
+# Steam Launcher = Steam vguiPopupWindow
+# Epic Launcher = Epic Games Launcher
+# Discord = Discord Chrome_WidgetWin_1   ???   MIGHT NOT NEED THIS  shows other stuff before.
+
+def check_process(process_name, shortcut ="", focus=True):
+    exist = False
+    processes = []
+    win32gui.EnumWindows(lambda x, _: processes.append(x), None)
+    
+    for hwnd in processes:
+        window_name = win32gui.GetWindowText(hwnd)
+        class_name = win32gui.GetClassName(hwnd)
+        if process_name.lower() in window_name.lower():
+            exist = True
+            print(window_name, class_name, hwnd)
+            if focus:
+                print("attempting to focus window")
+                win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)  ##updated n working
+                win32gui.SetForegroundWindow(hwnd)
+               #### break so it doesnt keep on triggering random process'
+                break
+                #print(f"{window_name:20.20} {class_name:20.20}")
+    if not exist:
+        print("load via shortcut")
+        os.system('"' + shortcut + '"')
+    
+#check_process("Discord", shortcut=r"C:\Users\dbcoo\AppData\Local\Discord\Update.exe --processStart Discord.exe", focus=True)
+
+
+def get_windows():
+    results = []
+
+    def winEnumHandler(hwnd, ctx):
+        if win32gui.IsWindowVisible(hwnd):
+            if win32gui.GetWindowText(hwnd):
+                # print(win32gui.GetWindowText( hwnd ))
+                results.append(win32gui.GetWindowText(hwnd))
+
+    win32gui.EnumWindows(winEnumHandler, None)
+    return results
+
+print(get_windows())
+
+
+def copy_im_to_clipboard(image):
+    bio = BytesIO()
+    image.save(bio, 'BMP')
+    data = bio.getvalue()[14:] # removing some headers
+    bio.close()
+
+    send_to_clipboard(win32clipboard.CF_DIB, data)
+
+
+def send_to_clipboard(clip_type, data):
+    win32clipboard.OpenClipboard()
+    win32clipboard.EmptyClipboard()
+    win32clipboard.SetClipboardData(clip_type, data)
+    win32clipboard.CloseClipboard()
+
+## potentially not needed anymore
+def file_to_bytes(filepath):
+    ## Take image into bytes and onto clipboard
+    image = Image.open(filepath)
+    output = BytesIO()
+    image.convert("RGB").save(output, "BMP")
+    data = output.getvalue()[14:]
+    output.close()
+    
+    ### Sending to Clipboard
+    send_to_clipboard(win32clipboard.CF_DIB, data)
+    ### Deleting Temp File
+    os.remove(filepath)
+    print("Temp Image Deleted")
+
+
+def check_number_of_monitors():
+    with mss.mss() as sct:
+        monitor_count = (len(sct.monitors))
+        return monitor_count
+
+### Call back on_exist not being used            
+def on_exists(fname):
+    # type: (str) -> None
+    if os.path.isfile(fname):
+        newfile = fname + ".old"
+        print("{} -> {}".format(fname, newfile))
+        os.rename(fname, newfile)
+        
+
+###screenshot window without bringing it to foreground 
+def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
+    from ctypes import windll
+    hwnd = win32gui.FindWindow(None, window_title)
+    
+    ##  Change the line below depending on whether you want the whole window
+    ##  May be needed in future?
+    left, top, right, bot = win32gui.GetClientRect(hwnd)
+    #left, top, right, bot = win32gui.GetWindowRect(hwnd)
+    w = right - left
+    h = bot - top
+    
+    hwndDC = win32gui.GetWindowDC(hwnd)
+    mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+    saveDC = mfcDC.CreateCompatibleDC()
+    
+    saveBitMap = win32ui.CreateBitmap()
+    saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+    saveDC.SelectObject(saveBitMap)
+    
+    # Change the line below depending on whether you want the whole window
+    # or just the client area. 
+                          # 1, 2, 3 all give different results
+    result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
+    bmpinfo = saveBitMap.GetInfo()
+    bmpstr = saveBitMap.GetBitmapBits(True)
+    
+    im = Image.frombuffer(
+        'RGB',
+        (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+        bmpstr, 'raw', 'BGRX', 0, 1)
+    
+    win32gui.DeleteObject(saveBitMap.GetHandle())
+    saveDC.DeleteDC()
+    mfcDC.DeleteDC()
+    win32gui.ReleaseDC(hwnd, hwndDC)
+    
+    if result == 1:
+        #PrintWindow Succeeded
+        if clipboard == True:
+            copy_im_to_clipboard(im)
+            print("Copied to Clipboard")
+        elif clipboard == False:
+            im.save(save_location+".png")
+            print("Saved to Folder")
+            
+#screenshot_window(capture_type=3, window_title="Calculator", clipboard=False, save_location="testing2.png")
+
+def screenshot_monitor(monitor_number, filename="", clipboard = False):    
+    with mss.mss() as sct:
+        try:
+            mon = sct.monitors[monitor_number]  
+            # Capturing Entire Monitor
+            monitor = {
+                "top": mon["top"],
+                "left": mon["left"],
+                "width": mon["width"],
+                "height": mon["height"],
+                "mon": monitor_number,
+            }
+            
+            # Grab the Image
+            sct_img = sct.grab(monitor)     
+            
+            if clipboard == True:
+                if monitor_number==0:
+                    print("capturing all")  ## having to use temp file to capture all screens successfully?
+                    mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
+                    file_to_bytes("temp.png") ## Saved to Clipboard
+                    
+                 ##   Instead of making a temp file we get it direct from raw to clipboard
+                elif monitor_number != 0:
+                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    copy_im_to_clipboard(img)
+
+            if clipboard == False:
+                mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
+                print("Image saved -> "+ filename+ ".png" )
+
+        except IndexError:
+            print("This Monitor does not exist")
+
+#screenshot_monitor(3, "test_file", clipboard = True)
+
+#### END OF SCREEN CAPTURE STUFF ####
 
 class AudioController(object):
     def __init__(self, process_name):
@@ -75,6 +263,7 @@ class AudioController(object):
                 # 1.0 is the max value, raise by decibels
                 self.volume = min(1.0, self.volume+decibels)
                 interface.SetMasterVolume(self.volume, None)
+                
 def AudioDeviceCmdlets(command, output=True):
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0]
@@ -163,16 +352,50 @@ def AdvancedMouseFunction(x, y, delay, look):
             pyautogui.moveTo(x, y, delay, pyautogui.easeInElastic)
         except:
             pass
-
+        
+old_results = []
 old_volume_list = []
+monitor_count_old = 0
 global_states = []
 global Timer
 counter = 0
 def updateStates():
-    global old_volume_list, global_states, Timer, counter
+    global old_volume_list, global_states, Timer, counter, monitor_count_old, old_results
     Timer = threading.Timer(0.4, updateStates)
     Timer.start()
     if running:
+        
+        #### I feel like this should loop every 30 seconds at minimum
+        ### Updating Monitor States
+        monitor_list = []
+        monitor_count = check_number_of_monitors()
+        if str(monitor_count_old) == str(monitor_count):
+            pass
+        elif str(monitor_count_old) is not str(monitor_count):
+            monitor_count_old = monitor_count
+            for monitor_number in range(monitor_count):
+                if monitor_number == 0:
+                    monitor_list.append(str(monitor_number))
+                else:
+                    monitor_list.append(str(monitor_number))
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
+
+        ### would like this to only check every 3-5 seconds for new windows
+        ### Getting Active Windows and updating choice state only when windows change.
+        global windows_active
+        windows_active = get_windows()
+          
+        if len(old_results) is not len(windows_active):
+            windows_active = get_windows()
+            print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+            old_results = windows_active
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
+            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
+        else:
+            windows_active = get_windows()
+            old_results = windows_active
+        ##end of changes
+        
         current_audio_source = ["Master Volume", "Current app"]
         can_audio_run = True
         try:
@@ -318,6 +541,63 @@ def Actions(data):
             updateXY = False
         else:
             updateXY = True
+            
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.clipboard":
+        if data['data'][0]['value'] == "ALL DISPLAYS":
+            screenshot_monitor(monitor_number=0, clipboard=True)
+            screenshot_monitor(0, "test_file", clipboard = True)
+            print("FUCKIN EH")
+        else:
+            shortened = monitor_number=data['data'][0]['value'].replace("Display #", "")
+            screenshot_monitor(monitor_number=int(shortened),clipboard=True)
+            print("else...")
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.clipboard":
+        screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
+        
+        
+        ###using wildcard to clipboard
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.clipboard.wildcard":
+        for thing in windows_active:
+            if data['data'][0]['value'].lower() in thing.lower():
+                print("We found", thing)
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
+                break
+        
+               ###using wildcard to FILE
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
+        for thing in windows_active:
+            if data['data'][0]['value'].lower() in thing.lower():
+                print("We found", thing)
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
+                print(afile_name)    
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
+                break
+             
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":
+        afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value'])        
+        screenshot_monitor(monitor_number=int(data['data'][0]['value']), filename=afile_name, clipboard=False)
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file":
+        afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
+        print(afile_name)       
+        screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+        
+        
+            ###using wildcard to FILE
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.processcheck":
+        app_to_check = data['data'][0]['value'].lower()
+        focus = data['data'][1]['value']
+        focus_type = data['data'][2]['value']
+        shortcut_to_open = data['data'][3]['value']
+        if focus == "Focus":
+            focus_check = True
+        else:
+            focus_check = False
+        
+        check_process(app_to_check, shortcut_to_open, focus=focus_check)
+        
+        
     
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
