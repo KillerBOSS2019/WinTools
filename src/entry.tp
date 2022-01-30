@@ -322,29 +322,12 @@
           ]
       },
       {
-        "id": "KillerBOSS.TP.Plugins.screencapture.full.clipboard",
-        "name": "Display Capture to Clipboard",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Capture Display #{$KillerBOSS.TP.Plugins.screencapture.monitors$} to clipboard",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.monitors",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": []
-          }
-        ]
-      },
-      {
         "id": "KillerBOSS.TP.Plugins.screencapture.full.file",
-        "name": "Display Capture to File",
+        "name": "Capture: Display to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Display Capture Display #{$KillerBOSS.TP.Plugins.screencapture.monitors$} to folder ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
+        "format": "Capture Display #{$KillerBOSS.TP.Plugins.screencapture.monitors$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} and {$KillerBOSS.TP.Plugins.screencapture.filepath$} and {$KillerBOSS.TP.Plugins.screencapture.filename$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.monitors",
@@ -352,6 +335,16 @@
             "label": "choice",
             "default": "",
             "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.window_active_capture",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
           },
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.filepath",
@@ -361,17 +354,18 @@
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.filename",
             "type": "text",
-            "label": "text"
+            "label": "text",
+            "default": "meh"
           }
         ]
       },
       {
-        "id": "KillerBOSS.TP.Plugins.screencapture.window.clipboard",
-        "name": "Window Capture to Clipboard",
+        "id": "KillerBOSS.TP.Plugins.screencapture.window.file",
+        "name": "Capture: Window to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": " Capture Window to Clipboard ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} with capture-type {$KillerBOSS.TP.Plugins.screencapture.window_capture_type$} ",
+        "format": " Capture Window ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} - Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
@@ -384,91 +378,45 @@
             "id": "KillerBOSS.TP.Plugins.screencapture.window_capture_type",
             "type": "choice",
             "label": "choice",
-            "default": "",
+            "default": "3",
             "valueChoices": [
               "0",
               "1",
               "2",
               "3"
             ]
-          }
-        ]
-      },
-      {
-        "id": "KillerBOSS.TP.Plugins.screencapture.window.clipboard.wildcard",
-        "name": "Window Capture to Clipboard (WILDCARD)",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": " Capture Window to Clipboard by name ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} with capture-type {$KillerBOSS.TP.Plugins.screencapture.window_capture_type$} ",
-        "data": [
+          },
           {
-            "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
-            "type": "text",
-            "label": "text",
+            "id": "KillerBOSS.TP.Plugins.screencapture.filepath",
+            "type": "folder",
+            "label": "folder",
             "default": ""
           },
           {
-            "id": "KillerBOSS.TP.Plugins.screencapture.window_capture_type",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": [
-              "0",
-              "1",
-              "2",
-              "3"
-            ]
-          }
-        ]
-      },
-
-      {
-        "id": "KillerBOSS.TP.Plugins.screencapture.window.file",
-        "name": "Window Capture to File",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": " Capture Window to File by name ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} with capture-type {$KillerBOSS.TP.Plugins.screencapture.window_capture_type$} Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": []
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.window_capture_type",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": [
-              "0",
-              "1",
-              "2",
-              "3"
-            ]
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.filepath",
-            "type": "folder",
-            "label": "folder"
-          },
-          {
             "id": "KillerBOSS.TP.Plugins.screencapture.filename",
             "type": "text",
-            "label": "text"
+            "label": "text",
+            "default": ""
+          }, 
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.window_active_capture",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
           }
         ]
       },
       {
         "id": "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard",
-        "name": "Window Capture to File (WILDCARD)",
+        "name": "Capture: Window to File / Clipboard (*)",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": " Capture Window to Clipboard by name ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} with capture-type {$KillerBOSS.TP.Plugins.screencapture.window_capture_type$}  Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
+        "format": " Capture Window to Clipboard by name ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$}  Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
@@ -476,37 +424,82 @@
             "label": "text",
             "default": ""
           },
-              {
-                "id": "KillerBOSS.TP.Plugins.screencapture.window_capture_type",
-                "type": "choice",
-                "label": "choice",
-                "default": "",
-                "valueChoices": [
-                  "0",
-                  "1",
-                  "2",
-                  "3"
-                ]
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.screencapture.filepath",
-                "type": "folder",
-                "label": "folder"
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.screencapture.filename",
-                "type": "text",
-                "label": "text"
-              }
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.window_capture_type",
+            "type": "choice",
+            "label": "choice",
+            "default": "3",
+            "valueChoices": [
+              "0",
+              "1",
+              "2",
+              "3"
             ]
           },
-              {
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.filepath",
+            "type": "folder",
+            "label": "folder",
+            "default": ""
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.filename",
+            "type": "text",
+            "label": "text",
+            "default": ""
+              },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.window_active_capture",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
+          }
+            ]
+          },
+          {
+        "id": "KillerBOSS.TP.Plugins.window.current",
+        "name": "Capture: Current Active Window to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Capture current Active Window - Save to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} and if file -> {$KillerBOSS.TP.Plugins.screencapture.filepath2$} and {$KillerBOSS.TP.Plugins.screencapture.filename2$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.window_active_capture",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.filepath2",
+            "type": "folder",
+            "label": "folder",
+            "default": ""
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.filename2",
+            "type": "text",
+            "label": "text",
+            "default": "meh"
+          }
+        ]
+        },
+          
+          {
         "id": "KillerBOSS.TP.Plugins.screencapture.processcheck",
         "name": "Check if Proccess Running",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": " Check the process {$KillerBOSS.TP.Plugins.screencapture.process_name$} -> IF running {$KillerBOSS.TP.Plugins.screencapture.process_focus$} else if NOT running open shortcut->{$KillerBOSS.TP.Plugins.process_shortcut$} ",
+        "format": " Check the process {$KillerBOSS.TP.Plugins.screencapture.process_name$} -> IF running {$KillerBOSS.TP.Plugins.screencapture.process_focus$} {$KillerBOSS.TP.Plugins.screencapture.process_focus_type$} else if NOT running open shortcut->{$KillerBOSS.TP.Plugins.process_shortcut$} ",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.process_name",
@@ -514,37 +507,106 @@
             "label": "text",
             "default": ""
           },
-              {
-                "id": "KillerBOSS.TP.Plugins.screencapture.process_focus",
-                "type": "choice",
-                "label": "choice",
-                "default": "",
-                "valueChoices": [
-                  "Focus",
-                  "Do Not Focus"
-                ]
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.screencapture.process_focus_type",
-                "type": "choice",
-                "label": "choice",
-                "default": "",
-                "valueChoices": [
-                  "0",
-                  "1",
-                  "2"
-                ]
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.process_shortcut",
-                "type": "file",
-                "label": "file"
-              }
-]
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.process_focus",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Focus",
+              "Do Not Focus"
+            ]
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.screencapture.process_focus_type",
+            "type": "choice",
+            "label": "choice",
+            "default": "Restore",
+            "valueChoices": [
+              "Restore",
+              "Maximized",
+              "Minimized",
+              "Normal"
+            ]
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.process_shortcut",
+            "type": "file",
+            "label": "file",
+            "default":""
+          }
+    ]
+      },
+      
+      {
+        "id": "KillerBOSS.TP.Plugins.capture.clipboard",
+        "name": "Text / Value to Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Copy {$KillerBOSS.TP.Plugins.capture.clipboard.contents$} to clipboard",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.capture.clipboard.contents",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
+
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions",
+        "name": "Virtual Desktop: Next / Previous",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Go to {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} Virtual Desktop",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Next",
+              "Previous"
+            ]
+          }
+        ]
+      },
+
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window",
+        "name": "Virtual Desktop: Move Current Window to #",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Move Current Window to Virtual Desktop {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} Virtual Desktop, Pinned -> {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned",
+            "type": "choice",
+            "label": "choice",
+            "default": "False",
+            "valueChoices": [
+              "True",
+              "False"
+            ]
+          }
+        ]
       }
 
     ],
       "events": [],
+
       "states": [
         {
             "id": "KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X",
@@ -577,12 +639,89 @@
           "default": "None"
         },
         {
+          "id": "KillerBOSS.TP.Plugins.windows.network.received",
+          "type": "text",
+          "desc": "Network: Total Bytes Received",
+          "default": ""
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.windows.network.sent",
+          "type": "text",
+          "desc": "Network: Total Bytes Sent",
+          "default": ""
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.windows.disk.read",
+          "type": "text",
+          "desc": "Disk: Total Read",
+          "default": ""
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.windows.disk.write",
+          "type": "text",
+          "desc": "Disk: Total Write",
+          "default": ""
+        },
+        {
           "id": "KillerBOSS.TP.Plugins.Windows.activeCOUNT",
           "type": "text",
           "desc": "Active Window Count",
-          "default": "None"
+          "default": ""
+        }, 
+        {
+          "id": "KillerBOSS.TP.Plugins.Windows.livetime",
+          "type": "text",
+          "desc": "Computer Uptime",
+          "default": ""
         }
       ]
+    }
+  ],
+  "settings": [
+    {
+      "name": "Update Interval: Network",
+      "type": "number",
+      "default": "10",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Hard Drive",
+      "type": "number",
+      "default": "10",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Windows Up-Time",
+      "type": "number",
+      "default": "1",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Active Monitors",
+      "type": "number",
+      "default": "1",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Active Windows",
+      "type": "number",
+      "default": "5",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
     }
   ]
 }

@@ -30,6 +30,10 @@ import win32clipboard
 import win32ui
 import win32gui
 import win32con  ### needed to show window without issues
+import time
+import schedule
+import dateutil.relativedelta
+from datetime import datetime
 
 ### 
 # Origin Launcher Window = OriginWebHelperService
@@ -37,7 +41,353 @@ import win32con  ### needed to show window without issues
 # Epic Launcher = Epic Games Launcher
 # Discord = Discord Chrome_WidgetWin_1   ???   MIGHT NOT NEED THIS  shows other stuff before.
 
-def check_process(process_name, shortcut ="", focus=True):
+
+TPClient = TouchPortalAPI.Client('Windows-Tools')
+
+def run_continuously(interval=1):
+    """Continuously run, while executing pending jobs at each
+    elapsed time interval.
+    @return cease_continuous_run: threading. Event which can
+    be set to cease continuous run. Please note that it is
+    *intended behavior that run_continuously() does not run
+    missed jobs*. For example, if you've registered a job that
+    should run every minute and you set a continuous run
+    interval of one hour then your job won't be run 60 times
+    at each interval but only once.
+    """
+    cease_continuous_run = threading.Event()
+
+    class ScheduleThread(threading.Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
+
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
+
+
+def get_app_icon():
+    import win32api
+    active_path = getActiveExecutablePath()
+    print(active_path)
+ 
+    if active_path == "C:\Windows\System32\ApplicationFrameHost.exe" or None:
+       pass
+    else:
+       ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+       ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+       try:
+           large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
+           win32gui.DestroyIcon(small[0])
+
+           hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
+           hbmp = win32ui.CreateBitmap()
+           hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
+           hdc = hdc.CreateCompatibleDC()
+
+           hdc.SelectObject( hbmp )
+           hdc.DrawIcon( (0,0), large[0] )
+
+           hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\Desktop\bgs\newwwwicon.bmp')  
+           time.sleep(2)
+       except IndexError as err:
+            print(err)
+            time.sleep(5)
+            #continue
+
+### gotta get this to go to icon, then have to get it to nt update less its new...
+##   schedule.every(1).seconds.do(get_app_icon)
+
+from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
+def virtual_desktop(target_desktop=None, move=False, pinned=False):
+    #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
+
+    number_of_active_desktops = len(get_virtual_desktops())
+    print(f"There are {number_of_active_desktops} active desktops")
+
+    current_desktop = VirtualDesktop.current()
+    
+    if target_desktop == "Next":
+        if move:
+            target_desktop2 = current_desktop.number + 1
+            current_window = AppView.current()
+            target_desktop = VirtualDesktop(target_desktop2)
+            current_window.move(target_desktop) 
+            print(f"did it move to {target_desktop2} ?")
+            if pinned:
+                AppView.current().pin()
+        
+        elif not move:
+            target_desktop2 = current_desktop.number + 1
+            if target_desktop2 <= number_of_active_desktops:
+                VirtualDesktop(target_desktop2).go()
+            else:
+                print("too many")
+        
+    elif target_desktop == "Previous":
+        if move:
+            target_desktop2 = current_desktop.number - 1
+            current_window = AppView.current()
+            target_desktop = VirtualDesktop(target_desktop2)
+            current_window.move(target_desktop)
+            if pinned:
+                AppView.current().pin()
+        
+        elif not move:
+            target_desktop2 = current_desktop.number - 1
+            if target_desktop2 > 0:
+                VirtualDesktop(target_desktop2).go()
+            else:
+                pass
+            
+    elif target_desktop is not "Previous" or "Next":  ## else if 0, 1, 2 3, etc.. anything but next or previous
+        print("THE TARGETED DESKTOP IS", target_desktop)
+        if move:
+            target_desktop2 = int(target_desktop)
+            print("The Target desktop secondary thing is", target_desktop2)
+            current_window = AppView.current()
+            target_desktop = VirtualDesktop(int(target_desktop2))
+            current_window.move(target_desktop)
+         # current_window = AppView.current()
+         # target_desktop2 = VirtualDesktop(target_desktop)
+         # current_window.move(target_desktop)
+         # if pinned:
+         #     AppView.current().pin()
+            print(" hmmm")
+        
+      # elif not move:
+      #     target_desktop2 = current_desktop.number - 1
+      #     if target_desktop2 > 0:
+      #         VirtualDesktop(target_desktop2).go()
+      #     else:
+      #         pass
+      # 
+        
+    #print(f"Current desktop is number {current_desktop.number}")
+   ##if move:
+   ##    if target_desktop =="Next":
+   ##        target_desktop2 = current_desktop.number + 1
+   ##        if target_desktop2 <= number_of_active_desktops:
+   ##                current_window = AppView.current()
+   ##                target_desktop = VirtualDesktop(move_to)
+   ##                current_window.move(target_desktop)
+   ##                
+   ##    elif target_desktop == "Previous":
+   ##        target_desktop2 = current_desktop.number - 1
+   ##        if target_desktop2 > 0:
+   ##            current_window = AppView.current()
+   ##            target_desktop = VirtualDesktop(target_desktop2)
+   ##            current_window.move(target_desktop)       
+   ##            
+   ##    current_window = AppView.current()
+   ##    target_desktop = VirtualDesktop(move_to)
+   ##    current_window.move(target_desktop)
+   ##    print(f"Moved window {current_window.hwnd} to {target_desktop.number}")
+        
+    ### what does this do?
+    #print("Pinning the current window")
+    #AppView.current().pin()
+
+def vd_check():
+    vdlist=[]
+    virtual_desk_count = len(get_virtual_desktops())
+    vdlist.append("Next")
+    vdlist.append("Previous")
+    for i in range (virtual_desk_count):
+        vdlist.append(str(i))
+    print(vdlist)
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
+    print("choice updated?")
+
+
+
+def get_size(bytes, suffix="B"):
+    """
+    Scale bytes to its proper format
+    e.g:
+        1253656 => '1.20MB'
+        1253656678 => '1.17GB'
+    """
+    factor = 1024
+    for unit in ["", "K", "M", "G", "T", "P"]:
+        if bytes < factor:
+            return f"{bytes:.2f}{unit}{suffix}"
+        bytes /= factor
+        
+
+
+import subprocess 
+def getDriveName(driveletter):
+    return subprocess.check_output(["cmd","/c vol "+driveletter]).decode().split("\r\n")[0]
+
+
+def network_usage():
+    ### this gets ran by disk_usage
+    adict = {}
+    net_io = psutil.net_io_counters()
+    adict['sent'] = get_size(net_io.bytes_sent)
+    adict['received'] = get_size(net_io.bytes_recv)
+    return adict
+
+def disk_usage(drives=False):
+    # Disk Information
+    # get all disk partitions
+    try:
+        partitions = psutil.disk_partitions()
+
+        for partition in partitions:
+            the_partition = partition.device.split(":")
+            driveletter = (the_partition[0])       
+            if not drives:
+               #print(f"=== Device: {partition.device} ===")
+               #print("NOT DRIVES")
+                # print(f"  Mountpoint: {partition.mountpoint}")
+                #print(f"  File system type: {partition.fstype}")
+                the_partition = partition.device.split(":")
+                drive_name = getDriveName(the_partition[:1][0]+":")
+
+                drive_name_replaced = drive_name.replace(f"Volume in drive {the_partition[:1][0]} is", "")
+                if drive_name.endswith("has no label."):
+                    drive_name_replaced = partition.mountpoint
+                try:
+                    partition_usage = psutil.disk_usage(partition.mountpoint)
+                except PermissionError:
+                            # this can be catched due to the disk that
+                            # isn't ready
+                    continue
+                freespace = get_size(partition_usage.free).replace("GB","")
+                usedspace = get_size(partition_usage.used).replace("GB","")
+
+
+                TPClient.createStateMany([
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.letter_{driveletter}',
+                    "desc": f"{driveletter} Drive: Name",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.size_{driveletter}',
+                    "desc": f"{driveletter} Drive: Total Space",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.free_{driveletter}',
+                    "desc": f"{driveletter} Drive: Free Space",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "desc": f"{driveletter} Drive: Used",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "desc": f"{driveletter} Drive: Percentage",
+                    "value": ""
+                },
+                ])
+
+                percentage = 100 - partition_usage.percent
+                str_percent = str(percentage)
+                str_percent = str_percent[0:4]
+
+                TPClient.stateUpdateMany([
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.letter_{driveletter}',
+                    "value": drive_name_replaced
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.size_{driveletter}',
+                    "value": get_size(partition_usage.total)
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.free_{driveletter}',
+                    "value": freespace
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.used_{driveletter}',
+                    "value": usedspace
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "value": str_percent
+                },
+                ])
+    except:
+        pass           
+     
+     ### Total Read/Write since boot       
+    # get IO statistics since boot
+    disk_io = psutil.disk_io_counters()
+    print(f"Total read: {get_size(disk_io.read_bytes)}")
+    print(f"Total write: {get_size(disk_io.write_bytes)}")
+   
+    network = network_usage()
+    #print(network['sent'])
+    #print(network['received'])
+    print(f"Total Bytes Sent: {network['received']}")
+    print(f"Total Bytes Received: {network['sent']}")
+    TPClient.stateUpdateMany([
+    {
+        "id": f'KillerBOSS.TP.Plugins.windows.network.sent',
+        "value": network['sent']
+    },
+    {
+        "id": f'KillerBOSS.TP.Plugins.windows.network.received',
+        "value": network['received']
+    },
+    {
+        "id": f'KillerBOSS.TP.Plugins.windows.disk.read',
+        "value": get_size(disk_io.read_bytes)
+    },
+    {
+        "id": f'KillerBOSS.TP.Plugins.windows.disk.write',
+        "value": get_size(disk_io.write_bytes)
+    },
+    ])
+## we could let user limit the drives we get details from... but should we bother?
+#disk_usage(drives=["C"])
+
+
+### Find when PC was booted
+previous_time = ""
+def time_booted():
+    global previous_time
+    #import dateutil.relativedelta
+   #from datetime import datetime
+    boot_time_timestamp = psutil.boot_time()
+    bt = datetime.fromtimestamp(boot_time_timestamp)
+    #print(f"Boot Time: {bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}")
+    
+    ## how to get unix timestamp from datetime instead of time module?
+    current = time.time()
+    dt1 = datetime.fromtimestamp(boot_time_timestamp)
+    dt2 = datetime.fromtimestamp(current) 
+    rd = dateutil.relativedelta.relativedelta (dt2, dt1)
+    if rd.minutes <10:
+        rd.minutes = "0" + str(rd.minutes)
+    if rd.seconds <10:
+        rd.seconds = "0" + str(rd.seconds)
+    
+    if rd.seconds == previous_time:
+        pass
+    else:
+        previous_time = rd.seconds
+        print(f"PC LIVE TIME: {rd.hours}:{rd.minutes}:{rd.seconds}")  
+        pc_live_time = (f"{rd.hours}:{rd.minutes}:{rd.seconds}")
+        #TPClient.createState("KillerBOSS.TP.Plugins.Windows.livetime", "Windows Live Time", "")
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(pc_live_time))
+        return(f"{rd.hours}:{rd.minutes}:{rd.seconds}")
+
+
+
+
+
+
+def check_process(process_name, shortcut ="", focus=True, focus_type="Restore"):
     exist = False
     processes = []
     win32gui.EnumWindows(lambda x, _: processes.append(x), None)
@@ -48,33 +398,63 @@ def check_process(process_name, shortcut ="", focus=True):
         if process_name.lower() in window_name.lower():
             exist = True
             print(window_name, class_name, hwnd)
+            
+            
             if focus:
                 print("attempting to focus window")
-                win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)  ##updated n working
-                win32gui.SetForegroundWindow(hwnd)
+                #SW_SHOWMAXIMIZED,  SW_RESTORE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, Minimize 
+                #### How to SHOW but not bring to front? certain times windows wont capture cause they arent in some sort of focus...
+                if focus_type == "Normal":                 ### difference between SHOWNORMAL and NORMAL  ??  or SHOW_OPENWINDOW ?
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)  ##updated n working
+                    win32gui.SetForegroundWindow(hwnd)
+                if focus_type == "Maximized":
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMAXIMIZED)  ##updated n working
+                    win32gui.SetForegroundWindow(hwnd)
+                if focus_type == "Restore":
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)  ##updated n working
+                    win32gui.SetForegroundWindow(hwnd)
+                if focus_type == "Minimized":
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMINIMIZED)  ##updated n working
+                    win32gui.SetForegroundWindow(hwnd)
+                    
+                    
                #### break so it doesnt keep on triggering random process'
                 break
                 #print(f"{window_name:20.20} {class_name:20.20}")
     if not exist:
-        print("load via shortcut")
-        os.system('"' + shortcut + '"')
+        try:
+            print("load via shortcut")
+            os.system('"' + shortcut + '"')
+        except:
+            pass
     
 #check_process("Discord", shortcut=r"C:\Users\dbcoo\AppData\Local\Discord\Update.exe --processStart Discord.exe", focus=True)
 
 
 def get_windows():
     results = []
-
     def winEnumHandler(hwnd, ctx):
         if win32gui.IsWindowVisible(hwnd):
             if win32gui.GetWindowText(hwnd):
-                # print(win32gui.GetWindowText( hwnd ))
+    
                 results.append(win32gui.GetWindowText(hwnd))
-
+                
     win32gui.EnumWindows(winEnumHandler, None)
     return results
 
-#print(get_windows())
+old_results = []
+def get_windows_update():
+    global windows_active, old_results
+    windows_active = get_windows()
+    if len(old_results) is not len(windows_active):
+        # windows_active = get_windows()
+        print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+        old_results = windows_active
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
+    else:
+        windows_active = get_windows()
+        old_results = windows_active
 
 
 def copy_im_to_clipboard(image):
@@ -87,10 +467,16 @@ def copy_im_to_clipboard(image):
 
 
 def send_to_clipboard(clip_type, data):
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardData(clip_type, data)
-    win32clipboard.CloseClipboard()
+    if clip_type == "text":
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardText(data)
+        win32clipboard.CloseClipboard()
+    else:
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(clip_type, data)
+        win32clipboard.CloseClipboard()
 
 ## potentially not needed anymore
 def file_to_bytes(filepath):
@@ -108,66 +494,79 @@ def file_to_bytes(filepath):
     print("Temp Image Deleted")
 
 
+monitor_count_old = ""
 def check_number_of_monitors():
+    global monitor_count_old
     with mss.mss() as sct:
         monitor_count = (len(sct.monitors))
+        
+    monitor_list = []
+    if str(monitor_count_old) == str(monitor_count):
+        pass
+    elif str(monitor_count_old) is not str(monitor_count):
+        monitor_count_old = monitor_count
+        for monitor_number in range(monitor_count):
+            if monitor_number == 0:
+                monitor_list.append(str(monitor_number))
+            else:
+                monitor_list.append(str(monitor_number))
+                
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
+        ### would love to be able to capture the monitor name but cannot find the method.. need to use user32.dll ??  - https://discord.com/channels/@me/786771528381104178/934685222577004545
         return monitor_count
-
-### Call back on_exist not being used            
-def on_exists(fname):
-    # type: (str) -> None
-    if os.path.isfile(fname):
-        newfile = fname + ".old"
-        print("{} -> {}".format(fname, newfile))
-        os.rename(fname, newfile)
         
 
 ###screenshot window without bringing it to foreground 
 def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
     from ctypes import windll
     hwnd = win32gui.FindWindow(None, window_title)
-    
-    ##  Change the line below depending on whether you want the whole window
-    ##  May be needed in future?
-    left, top, right, bot = win32gui.GetClientRect(hwnd)
-    #left, top, right, bot = win32gui.GetWindowRect(hwnd)
-    w = right - left
-    h = bot - top
-    
-    hwndDC = win32gui.GetWindowDC(hwnd)
-    mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
-    saveDC = mfcDC.CreateCompatibleDC()
-    
-    saveBitMap = win32ui.CreateBitmap()
-    saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
-    saveDC.SelectObject(saveBitMap)
-    
-    # Change the line below depending on whether you want the whole window
-    # or just the client area. 
-                          # 1, 2, 3 all give different results
-    result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
-    bmpinfo = saveBitMap.GetInfo()
-    bmpstr = saveBitMap.GetBitmapBits(True)
-    
-    im = Image.frombuffer(
-        'RGB',
-        (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-        bmpstr, 'raw', 'BGRX', 0, 1)
-    
-    win32gui.DeleteObject(saveBitMap.GetHandle())
-    saveDC.DeleteDC()
-    mfcDC.DeleteDC()
-    win32gui.ReleaseDC(hwnd, hwndDC)
-    
-    if result == 1:
-        #PrintWindow Succeeded
-        if clipboard == True:
-            copy_im_to_clipboard(im)
-            print("Copied to Clipboard")
-        elif clipboard == False:
-            im.save(save_location+".png")
-            print("Saved to Folder")
-            
+    try:
+        left, top, right, bot = win32gui.GetClientRect(hwnd)
+        #left, top, right, bot = win32gui.GetWindowRect(hwnd)
+        w = right - left
+        h = bot - top
+        
+        hwndDC = win32gui.GetWindowDC(hwnd)
+        mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+        saveDC = mfcDC.CreateCompatibleDC()
+        
+        saveBitMap = win32ui.CreateBitmap()
+        saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+        saveDC.SelectObject(saveBitMap)
+        
+        # Change the line below depending on whether you want the whole window
+        # or just the client area. 
+                              # 1, 2, 3 all give different results   ( 3 seems to work for everything)
+        result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
+        bmpinfo = saveBitMap.GetInfo()
+        bmpstr = saveBitMap.GetBitmapBits(True)
+        
+        im = Image.frombuffer(
+            'RGB',
+            (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+            bmpstr, 'raw', 'BGRX', 0, 1)
+        
+        win32gui.DeleteObject(saveBitMap.GetHandle())
+        saveDC.DeleteDC()
+        mfcDC.DeleteDC()
+        win32gui.ReleaseDC(hwnd, hwndDC)
+        
+        if result == 1:
+            #PrintWindow Succeeded
+            if clipboard == True:
+                copy_im_to_clipboard(im)
+                print("Copied to Clipboard")
+            elif clipboard == False:
+                im.save(save_location+".png")
+                ### very bad and ugly compression
+               ### im.save(save_location+"_Compressed_.png", 
+               ###     "JPEG", 
+               ###     optimize = True, 
+               ###     quality = 10)
+                print("Saved to Folder")
+    except:
+        pass
+
 #screenshot_window(capture_type=3, window_title="Calculator", clipboard=False, save_location="testing2.png")
 
 def screenshot_monitor(monitor_number, filename="", clipboard = False):    
@@ -188,7 +587,7 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
             
             if clipboard == True:
                 if monitor_number==0:
-                    print("capturing all")  ## having to use temp file to capture all screens successfully?
+                    print("capturing all, using temp file")  ## having to use temp file to capture all screens successfully?
                     mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
                     file_to_bytes("temp.png") ## Saved to Clipboard
                     
@@ -205,6 +604,31 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
             print("This Monitor does not exist")
 
 #screenshot_monitor(3, "test_file", clipboard = True)
+
+
+
+### HOW TO SET THESE WITH
+
+
+#### Need a SETTING so user can set custom refresh increments, and or turn them off all together.
+### tried hard to get into settings but it gave me non stop issues.. i give up for now..
+
+## Computer Up-Time Check
+schedule.every(1).seconds.do(time_booted)
+## Gets Active windows and updates stuff if they are different
+schedule.every(30).seconds.do(get_windows_update)
+## Virtual Desktop Check
+schedule.every(5).minutes.do(vd_check)
+## Check Number of Monitors
+schedule.every(5).minutes.do(check_number_of_monitors)
+## Disk Usage Check
+schedule.every(55).seconds.do(disk_usage)
+
+
+
+# Start the background thread  this makes the schedules run
+stop_run_continuously = run_continuously()
+
 
 #### END OF SCREEN CAPTURE STUFF ####
 
@@ -278,6 +702,8 @@ def getActiveExecutablePath():
     else:
         _, pid = win32process.GetWindowThreadProcessId(hWnd)
         return psutil.Process(pid).exe()
+    
+    
 
 # Setup TouchPortal connection
 TPClient = TouchPortalAPI.Client('Windows-Tools')
@@ -352,50 +778,17 @@ def AdvancedMouseFunction(x, y, delay, look):
             pyautogui.moveTo(x, y, delay, pyautogui.easeInElastic)
         except:
             pass
-        
-old_results = []
+
 old_volume_list = []
 monitor_count_old = 0
 global_states = []
 global Timer
 counter = 0
 def updateStates():
-    global old_volume_list, global_states, Timer, counter, monitor_count_old, old_results
+    global old_volume_list, global_states, Timer, counter, monitor_count_old
     Timer = threading.Timer(0.4, updateStates)
     Timer.start()
     if running:
-        
-#        #### I feel like this should loop every 30 seconds at minimum
-#        ### Updating Monitor States
-#        monitor_list = []
-#        monitor_count = check_number_of_monitors()
-#        if str(monitor_count_old) == str(monitor_count):
-#            pass
-#        elif str(monitor_count_old) is not str(monitor_count):
-#            monitor_count_old = monitor_count
-#            for monitor_number in range(monitor_count):
-#                if monitor_number == 0:
-#                    monitor_list.append(str(monitor_number))
-#                else:
-#                    monitor_list.append(str(monitor_number))
-#            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
-#
-#        ### would like this to only check every 3-5 seconds for new windows
-#        ### Getting Active Windows and updating choice state only when windows change.
-#        global windows_active
-#        windows_active = get_windows()
-#          
-#        if len(old_results) is not len(windows_active):
-#            windows_active = get_windows()
-#            print("Previous Count:", len(old_results), "New Count:", len(windows_active))
-#            old_results = windows_active
-#            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
-#            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
-#        else:
-#            windows_active = get_windows()
-#            old_results = windows_active
-#        ##end of changes
-        
         current_audio_source = ["Master Volume", "Current app"]
         can_audio_run = True
         try:
@@ -429,6 +822,7 @@ def updateStates():
                             TPClient.removeState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}')
                             print(f'Removing {x}')
                         except Exception:
+                            print("exception at 765")
                             pass
                     
             for x in global_states:
@@ -446,6 +840,9 @@ def updateStates():
                     pass 
         counter = counter + 1
         if counter >= 5:
+
+            
+            
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
             activeWindow = getActiveExecutablePath()
             if activeWindow != None:
@@ -475,47 +872,17 @@ def updateStates():
                 )
         if counter >= 34:
             counter = 0
-            output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
-            for x in output:
-                if x['Type'] == "Playback" and x['Default'] == True:
-                    TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
-                elif x['Type'] == "Recording" and x['Default'] == True:
-                    TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
-                    
-                    ###
-        
-            #### I feel like this should loop every 30 seconds at minimum
-            ### Updating Monitor States
-            monitor_list = []
-            monitor_count = check_number_of_monitors()
-            if str(monitor_count_old) == str(monitor_count):
-                pass
-            elif str(monitor_count_old) is not str(monitor_count):
-                monitor_count_old = monitor_count
-                for monitor_number in range(monitor_count):
-                    if monitor_number == 0:
-                        monitor_list.append(str(monitor_number))
-                    else:
-                        monitor_list.append(str(monitor_number))
-                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
-
-            ### would like this to only check every 3-5 seconds for new windows
-            ### Getting Active Windows and updating choice state only when windows change.
-            global windows_active
-            windows_active = get_windows()
-
-            if len(old_results) is not len(windows_active):
-                windows_active = get_windows()
-                print("Previous Count:", len(old_results), "New Count:", len(windows_active))
-                old_results = windows_active
-                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
-                TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
-            else:
-                windows_active = get_windows()
-                old_results = windows_active
-        ##end of changes
-        
-        
+            try:
+                output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
+                for x in output:
+                    if x['Type'] == "Playback" and x['Default'] == True:
+                        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
+                    elif x['Type'] == "Recording" and x['Default'] == True:
+                        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
+            except json.JSONDecodeError as err:
+                print("Audio Device Decode to Json Error: ", err)
+                pass     
+                   
         
         # try:
         #     currentActiveWindowIco = extract_icon.extractIco(getActiveExecutablePath())
@@ -536,10 +903,33 @@ running = False
 updateStates()
 @TPClient.on('info')
 def onStart(data):
+    print(data)
     global running
     running = True
-    print(data)
     updateStates()
+    check_number_of_monitors()
+    vd_check()
+    get_windows_update()
+    disk_usage()
+
+
+
+
+settings = {}
+def handleSettings(settings, on_connect=False):
+    print(settings)
+    stop_run_continuously.set()
+    settings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
+    return settings
+    interval_ = settings['Twitch Username']
+    oath_token_unformatted = settings['Chatbot OAUTH Token']
+
+# Settings handler
+@TPClient.on(TouchPortalAPI.TYPES.onSettingUpdate)
+def onSettingUpdate(data):
+    if (settings := data.get('values')):
+        handleSettings(settings, False)
+        #print(settings)
 
     
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
@@ -578,63 +968,93 @@ def Actions(data):
         else:
             updateXY = True
             
-    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.clipboard":
-        if data['data'][0]['value'] == "ALL DISPLAYS":
-            screenshot_monitor(monitor_number=0, clipboard=True)
-            screenshot_monitor(0, "test_file", clipboard = True)
-            print("FUCKIN EH")
-        else:
-            shortened = monitor_number=data['data'][0]['value'].replace("Display #", "")
-            screenshot_monitor(monitor_number=int(shortened),clipboard=True)
-            print("else...")
         
-    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.clipboard":
-        screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
-        
-        
-        ###using wildcard to clipboard
-    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.clipboard.wildcard":
-        for thing in windows_active:
-            if data['data'][0]['value'].lower() in thing.lower():
-                print("We found", thing)
-                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
-                break
-        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.window.current":
+        if data['data'][0]['value'] == "Clipboard":
+            print("clip board stuff")
+            current_window = pygetwindow.getActiveWindowTitle()
+            print(current_window)
+            screenshot_window(capture_type=3, window_title=current_window, clipboard=True)
+        elif data['data'][0]['value'] == "File":
+            current_window = pygetwindow.getActiveWindowTitle()
+            afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value']) 
+            print(afile_name)
+            screenshot_window(capture_type=3, window_title=current_window, clipboard=False, save_location=afile_name)
+            print("to file stuff")
+            
                ###using wildcard to FILE
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
+        global windows_active
+        windows_active = get_windows()
         for thing in windows_active:
             if data['data'][0]['value'].lower() in thing.lower():
                 print("We found", thing)
-                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
-                print(afile_name)    
-                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
+                if data['data'][4]['value'] == "Clipboard":
+                    print("cliboard mmk")
+                    screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
+                    
+                elif data['data'][4]['value'] == "File":
+                    print("File stuf")
+                    afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
+  
+                    screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
                 break
              
-    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":
-        afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value'])        
-        screenshot_monitor(monitor_number=int(data['data'][0]['value']), filename=afile_name, clipboard=False)
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":   
+        if data['data'][1]['value'] == "Clipboard":
+            screenshot_monitor(monitor_number=int(data['data'][0]['value']), clipboard=True)
+        elif data['data'][1]['value'] == "File":
+            try:
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                screenshot_monitor(monitor_number=int(data['data'][0]['value']), filename=afile_name, clipboard=False)
+            except:
+                pass
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file":
-        afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
-        print(afile_name)       
-        screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+        if (data['data'][0]['value']):
+            if data['data'][4]['value'] == "Clipboard":
+                print("we here")
+                print(data['data'][0]['value'])
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
+            if data['data'][4]['value'] == "File":
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
         
         
-            ###using wildcard to FILE
+
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.processcheck":
         app_to_check = data['data'][0]['value'].lower()
         focus = data['data'][1]['value']
-        focus_type = data['data'][2]['value']
-        shortcut_to_open = data['data'][3]['value']
+        afocus_type = data['data'][2]['value']
+        shortcut_to_open = ""
+        if data['data'][3]['value']:
+            shortcut_to_open = data['data'][3]['value']
         if focus == "Focus":
             focus_check = True
         else:
             focus_check = False
         
-        check_process(app_to_check, shortcut_to_open, focus=focus_check)
+        check_process(app_to_check, shortcut_to_open, focus=focus_check, focus_type=afocus_type)
         
         
-    
+    if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
+        print(data['data'][0]['value'])
+        send_to_clipboard("text", data['data'][0]['value'] )
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions":
+        choice = data['data'][0]['value']
+        virtual_desktop(target_desktop=choice)
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
+        choice = data['data'][0]['value']
+        if data['data'][1]['value'] == "False":
+            virtual_desktop(move=True, target_desktop=choice)
+        if data['data'][1]['value'] == "True":
+            virtual_desktop(move=True, target_desktop=choice, pinned=True)
+        
+        
+        
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
     print(data)
@@ -680,6 +1100,10 @@ def listChangeAction(data):
             updateDeviceOutput(data['value'])
         except KeyError:
             pass
+        
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.screencapture.window.clipboard':
+
+        pass
 
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
