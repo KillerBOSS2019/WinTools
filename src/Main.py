@@ -36,6 +36,7 @@ import dateutil.relativedelta
 from datetime import datetime
 from wintoast import ToastNotifier
 import wintoast
+from winotify import Notification, audio
 
 
 ### 
@@ -50,72 +51,50 @@ TPClient = TouchPortalAPI.Client('Windows-Tools')
 
 
 
-from winotify import Notification, audio
-
-
-def win_toast(atitle="Hi There friend", amsg="It seems to work maybe", iconpath=rf"C:\Users\dbcoo\Downloads\TPLogoWhite128.png", aduration="short", button=False, alink=False, theaudio=False):
+def win_toast(atitle="", amsg="", aduration="short", icon=""):
     ### setting the base notification stuff
-    
-    toast = Notification(app_id="WinTools Fool",
+    if not os.path.exists(rf"{icon}") or icon == "": icon = os.path.join(os.getcwd(),"src\icon.png")
+    print(icon)
+    toast = Notification(app_id="WinTools",
                          title=atitle,
-                         msg=amsg, 
-                         icon=iconpath,
-                         duration = "short")
+                         msg=amsg,
+                         icon=rf"{icon}",
+                         duration = aduration.lower(),
+                         )
     
-    if button:
+    if False:
         toast.add_actions(label=button, 
                         link=alink)
 
-    if theaudio:
-        print(f"ADDING SOME AUDIO: {theaudio}")
-        if theaudio =="Default":
-            toast.set_audio(audio.Default, loop=False)
-        if theaudio =="IM":
-            toast.set_audio(audio.IM, loop=False)
-        if theaudio =="Mail":
-            toast.set_audio(audio.Mail, loop=False)
-        if theaudio =="Reminder":
-            toast.set_audio(audio.Reminder, loop=False)
-        if theaudio =="SMS":
-            toast.set_audio(audio.SMS, loop=False)
-        if theaudio =="LoopingAlarm1":
-            toast.set_audio(audio.LoopingAlarm, loop=False)
-        if theaudio =="LoopingAlarm2":
-            toast.set_audio(audio.LoopingAlarm2, loop=False)
-        if theaudio =="LoopingAlarm3":
-            toast.set_audio(audio.LoopingAlarm3, loop=False)
-        if theaudio =="LoopingAlarm4":
-            toast.set_audio(audio.LoopingAlarm4, loop=False)
-        if theaudio =="LoopingAlarm5":
-            toast.set_audio(audio.LoopingAlarm6, loop=False)
-        if theaudio =="LoopingAlarm6":
-            toast.set_audio(audio.LoopingAlarm8, loop=False)
-        if theaudio =="LoopingAlarm7":
-            toast.set_audio(audio.LoopingAlarm9, loop=False)
-        if theaudio =="LoopingAlarm8":
-            toast.set_audio(audio.LoopingAlarm10, loop=False)
-        if theaudio =="LoopingCall1":
-            toast.set_audio(audio.LoopingCall, loop=False)
-        if theaudio =="LoopingCall2":
-            toast.set_audio(audio.LoopingCall2, loop=False)
-        if theaudio =="LoopingCall3":
-            toast.set_audio(audio.LoopingCall3, loop=False)
-        if theaudio =="LoopingCall4":
-            toast.set_audio(audio.LoopingCall4, loop=False)
-        if theaudio =="LoopingCall5":
-            toast.set_audio(audio.LoopingCall5, loop=False)
-        if theaudio =="LoopingCall6":
-            toast.set_audio(audio.LoopingCall6, loop=False)
-        if theaudio =="LoopingCall7":
-            toast.set_audio(audio.LoopingCall7, loop=False)
-        if theaudio =="LoopingCall8":
-            toast.set_audio(audio.LoopingCall8, loop=False)
-        if theaudio =="LoopingCall9":
-            toast.set_audio(audio.LoopingCall9, loop=False)
-        if theaudio =="LoopingCall10":
-            toast.set_audio(audio.LoopingCall, loop=False)
-        if theaudio =="Silent":
-            toast.set_audio(audio.Silent, loop=False)
+    if True:
+        audioDic = {
+            "Default": audio.Default,
+            "IM": audio.IM,
+            "Mail": audio.Mail,
+            "Reminder": audio.Mail,
+            "SMS": audio.SMS,
+            "LoopingAlarm1": audio.LoopingAlarm,
+            "LoopingAlarm2": audio.LoopingAlarm2,
+            "LoopingAlarm3": audio.LoopingAlarm3,
+            "LoopingAlarm4": audio.LoopingAlarm4,
+            "LoopingAlarm5": audio.LoopingAlarm6,
+            "LoopingAlarm6": audio.LoopingAlarm8,
+            "LoopingAlarm7": audio.LoopingAlarm9,
+            "LoopingAlarm8": audio.LoopingAlarm10,
+            "LoopingCall1": audio.LoopingCall,
+            "LoopingCall2": audio.LoopingCall,
+            "LoopingCall3": audio.LoopingCall,
+            "LoopingCall4": audio.LoopingCall,
+            "LoopingCall5": audio.LoopingCall,
+            "LoopingCall6": audio.LoopingCall,
+            "LoopingCall7": audio.LoopingCall,
+            "LoopingCall8": audio.LoopingCall,
+            "LoopingCall9": audio.LoopingCall,
+            "LoopingCall10": audio.LoopingCall,
+            "Silent": audio.Silent,
+        }
+        #if theaudio =="Default":
+        toast.set_audio(audioDic["Default"], loop=False)
             
             
     toast.build().show()
@@ -482,14 +461,14 @@ def pc_uptime():
 ### Find when PC was booted
 previous_time = ""
 def time_booted():
-        global previous_time
-        boot_time_timestamp = psutil.boot_time()
-       # bt = datetime.fromtimestamp(boot_time_timestamp)
-        current = time.time()
-        dt1 = datetime.fromtimestamp(boot_time_timestamp)
-        dt2 = datetime.fromtimestamp(current) 
-        rd = dateutil.relativedelta.relativedelta (dt2, dt1)
-        return rd
+    global previous_time
+    boot_time_timestamp = psutil.boot_time()
+    # bt = datetime.fromtimestamp(boot_time_timestamp)
+    current = time.time()
+    dt1 = datetime.fromtimestamp(boot_time_timestamp)
+    dt2 = datetime.fromtimestamp(current) 
+    rd = dateutil.relativedelta.relativedelta (dt2, dt1)
+    return rd
 
 
 ###   ### Find when PC was booted
@@ -1230,7 +1209,7 @@ def Actions(data):
         magnifier(data['data'][0]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
-        win_toast(atitle=(data['data'][0]['value']), amsg=(data['data'][1]['value']), aduration=(data['data'][2]['value']), button=(data['data'][3]['value']), alink=(data['data'][4]['value']),iconpath=(data['data'][5]['value']), theaudio=(data['data'][6]['value']))
+        win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
         winextra("Emoji")
@@ -1309,10 +1288,10 @@ def connectors(data):
 @TPClient.on('closePlugin')
 def Shutdown(data):
     global running, Timer
-    TPClient.disconnect()
     running = False
-    Timer.cancel()
     stop_run_continuously.set()
     schedule.clear()
+    TPClient.disconnect()
+    Timer.cancel()
     sys.exit()
 TPClient.connect()
