@@ -29,11 +29,14 @@ from PIL import Image
 import win32clipboard
 import win32ui
 import win32gui
-import win32con  ### needed to show window without issues
+import win32con 
 import time
 import schedule
 import dateutil.relativedelta
 from datetime import datetime
+from wintoast import ToastNotifier
+import wintoast
+
 
 ### 
 # Origin Launcher Window = OriginWebHelperService
@@ -43,6 +46,82 @@ from datetime import datetime
 
 
 TPClient = TouchPortalAPI.Client('Windows-Tools')
+
+
+
+
+from winotify import Notification, audio
+
+
+def win_toast(atitle="Hi There friend", amsg="It seems to work maybe", iconpath=rf"C:\Users\dbcoo\Downloads\TPLogoWhite128.png", aduration="short", button=False, alink=False, theaudio=False):
+    ### setting the base notification stuff
+    
+    toast = Notification(app_id="WinTools Fool",
+                         title=atitle,
+                         msg=amsg, 
+                         icon=iconpath,
+                         duration = "short")
+    
+    if button:
+        toast.add_actions(label=button, 
+                        link=alink)
+
+    if theaudio:
+        print(f"ADDING SOME AUDIO: {theaudio}")
+        if theaudio =="Default":
+            toast.set_audio(audio.Default, loop=False)
+        if theaudio =="IM":
+            toast.set_audio(audio.IM, loop=False)
+        if theaudio =="Mail":
+            toast.set_audio(audio.Mail, loop=False)
+        if theaudio =="Reminder":
+            toast.set_audio(audio.Reminder, loop=False)
+        if theaudio =="SMS":
+            toast.set_audio(audio.SMS, loop=False)
+        if theaudio =="LoopingAlarm1":
+            toast.set_audio(audio.LoopingAlarm, loop=False)
+        if theaudio =="LoopingAlarm2":
+            toast.set_audio(audio.LoopingAlarm2, loop=False)
+        if theaudio =="LoopingAlarm3":
+            toast.set_audio(audio.LoopingAlarm3, loop=False)
+        if theaudio =="LoopingAlarm4":
+            toast.set_audio(audio.LoopingAlarm4, loop=False)
+        if theaudio =="LoopingAlarm5":
+            toast.set_audio(audio.LoopingAlarm6, loop=False)
+        if theaudio =="LoopingAlarm6":
+            toast.set_audio(audio.LoopingAlarm8, loop=False)
+        if theaudio =="LoopingAlarm7":
+            toast.set_audio(audio.LoopingAlarm9, loop=False)
+        if theaudio =="LoopingAlarm8":
+            toast.set_audio(audio.LoopingAlarm10, loop=False)
+        if theaudio =="LoopingCall1":
+            toast.set_audio(audio.LoopingCall, loop=False)
+        if theaudio =="LoopingCall2":
+            toast.set_audio(audio.LoopingCall2, loop=False)
+        if theaudio =="LoopingCall3":
+            toast.set_audio(audio.LoopingCall3, loop=False)
+        if theaudio =="LoopingCall4":
+            toast.set_audio(audio.LoopingCall4, loop=False)
+        if theaudio =="LoopingCall5":
+            toast.set_audio(audio.LoopingCall5, loop=False)
+        if theaudio =="LoopingCall6":
+            toast.set_audio(audio.LoopingCall6, loop=False)
+        if theaudio =="LoopingCall7":
+            toast.set_audio(audio.LoopingCall7, loop=False)
+        if theaudio =="LoopingCall8":
+            toast.set_audio(audio.LoopingCall8, loop=False)
+        if theaudio =="LoopingCall9":
+            toast.set_audio(audio.LoopingCall9, loop=False)
+        if theaudio =="LoopingCall10":
+            toast.set_audio(audio.LoopingCall, loop=False)
+        if theaudio =="Silent":
+            toast.set_audio(audio.Silent, loop=False)
+            
+            
+    toast.build().show()
+    
+    
+
 
 def run_continuously(interval=1):
     """Continuously run, while executing pending jobs at each
@@ -69,6 +148,28 @@ def run_continuously(interval=1):
     return cease_continuous_run
 
 
+def magnifier(action):
+    if action == "Zoom In":
+        pyautogui.hotkey('win', '=')
+    if action == "Zoom Out":
+        pyautogui.hotkey('win', '-')
+    if action == "Exit":
+        pyautogui.hotkey('win', 'escape')
+        
+def winextra(action):
+  # if action == "Keep Active, Minimize All (Toggle)":
+  #     pyautogui.hotkey('win', 'home')
+  #     
+  # if action == "Minimize All (Toggle)":
+  #         pyautogui.hotkey('win', 'd')
+  #         
+    if action == "Emoji":
+        pyautogui.hotkey('win', '.')
+        
+    if action == "Keyboard":
+        pyautogui.hotkey('win', 'ctrl', "o")
+        
+
 def get_app_icon():
     import win32api
     active_path = getActiveExecutablePath()
@@ -91,7 +192,7 @@ def get_app_icon():
            hdc.SelectObject( hbmp )
            hdc.DrawIcon( (0,0), large[0] )
 
-           hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\Desktop\bgs\newwwwicon.bmp')  
+           hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\tmp\newwwwicon.bmp')  
            time.sleep(2)
        except IndexError as err:
             print(err)
@@ -103,8 +204,6 @@ def get_app_icon():
 
 from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
 def virtual_desktop(target_desktop=None, move=False, pinned=False):
-    #from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
-
     number_of_active_desktops = len(get_virtual_desktops())
     print(f"There are {number_of_active_desktops} active desktops")
 
@@ -218,12 +317,10 @@ def get_size(bytes, suffix="B"):
         bytes /= factor
         
 
-
-import subprocess 
 def getDriveName(driveletter):
     return subprocess.check_output(["cmd","/c vol "+driveletter]).decode().split("\r\n")[0]
 
-
+## NOT TO BE CONFUSED WITH UPLOAD / DOWNLOAD SPEED
 def network_usage():
     ### this gets ran by disk_usage
     adict = {}
@@ -231,6 +328,7 @@ def network_usage():
     adict['sent'] = get_size(net_io.bytes_sent)
     adict['received'] = get_size(net_io.bytes_recv)
     return adict
+
 
 def disk_usage(drives=False):
     # Disk Information
@@ -326,8 +424,6 @@ def disk_usage(drives=False):
     print(f"Total write: {get_size(disk_io.write_bytes)}")
    
     network = network_usage()
-    #print(network['sent'])
-    #print(network['received'])
     print(f"Total Bytes Sent: {network['received']}")
     print(f"Total Bytes Received: {network['sent']}")
     TPClient.stateUpdateMany([
@@ -352,35 +448,81 @@ def disk_usage(drives=False):
 #disk_usage(drives=["C"])
 
 
+def pc_uptime():
+    rd = time_booted()    
+    hours = rd.hours
+    minutes = rd.minutes
+    seconds = rd.seconds
+
+    while True:
+        seconds = int(seconds)
+        minutes = int(minutes)
+        hours = int(hours)
+        if seconds == 59:
+            seconds =  seconds = 0
+            minutes = minutes + 1
+        elif seconds < 59:
+            seconds = seconds + 1   
+        if minutes == 60:
+           minutes = minutes = 0
+           hours = hours + 1
+           
+ ### makin it look "pretty"      
+        if minutes <10:
+            minutes = "0" + str(minutes)
+        if seconds <10:
+            seconds = "0" + str(seconds)
+        time.sleep(1)
+        
+        pc_live_time = (f"{hours}:{minutes}:{seconds}")
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(pc_live_time))
+        print(pc_live_time)
+    
+
 ### Find when PC was booted
 previous_time = ""
 def time_booted():
-    global previous_time
-    #import dateutil.relativedelta
-   #from datetime import datetime
-    boot_time_timestamp = psutil.boot_time()
-    bt = datetime.fromtimestamp(boot_time_timestamp)
-    #print(f"Boot Time: {bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}")
-    
-    ## how to get unix timestamp from datetime instead of time module?
-    current = time.time()
-    dt1 = datetime.fromtimestamp(boot_time_timestamp)
-    dt2 = datetime.fromtimestamp(current) 
-    rd = dateutil.relativedelta.relativedelta (dt2, dt1)
-    if rd.minutes <10:
-        rd.minutes = "0" + str(rd.minutes)
-    if rd.seconds <10:
-        rd.seconds = "0" + str(rd.seconds)
-    
-    if rd.seconds == previous_time:
-        pass
-    else:
-        previous_time = rd.seconds
-        print(f"PC LIVE TIME: {rd.hours}:{rd.minutes}:{rd.seconds}")  
-        pc_live_time = (f"{rd.hours}:{rd.minutes}:{rd.seconds}")
-        #TPClient.createState("KillerBOSS.TP.Plugins.Windows.livetime", "Windows Live Time", "")
-        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(pc_live_time))
-        return(f"{rd.hours}:{rd.minutes}:{rd.seconds}")
+        global previous_time
+        boot_time_timestamp = psutil.boot_time()
+       # bt = datetime.fromtimestamp(boot_time_timestamp)
+        current = time.time()
+        dt1 = datetime.fromtimestamp(boot_time_timestamp)
+        dt2 = datetime.fromtimestamp(current) 
+        rd = dateutil.relativedelta.relativedelta (dt2, dt1)
+        return rd
+
+
+###   ### Find when PC was booted
+###   previous_time = ""
+###   def time_booted():
+###       global previous_time
+###       boot_time_timestamp = psutil.boot_time()
+###       bt = datetime.fromtimestamp(boot_time_timestamp)
+###       #print(f"Boot Time: {bt.year}/{bt.month}/{bt.day} {bt.hour}:{bt.minute}")
+###       
+###       ## how to get unix timestamp from datetime instead of time module?
+###       current = time.time()
+###       dt1 = datetime.fromtimestamp(boot_time_timestamp)
+###       dt2 = datetime.fromtimestamp(current) 
+###       rd = dateutil.relativedelta.relativedelta (dt2, dt1)
+###       #return rd
+###       
+###       
+###       
+###       if rd.minutes <10:
+###           rd.minutes = "0" + str(rd.minutes)
+###       if rd.seconds <10:
+###           rd.seconds = "0" + str(rd.seconds)
+###       
+###       if rd.seconds == previous_time:
+###           pass
+###       else:
+###           previous_time = rd.seconds
+###           print(f"PC LIVE TIME: {rd.hours}:{rd.minutes}:{rd.seconds}")  
+###           pc_live_time = (f"{rd.hours}:{rd.minutes}:{rd.seconds}")
+###           #TPClient.createState("KillerBOSS.TP.Plugins.Windows.livetime", "Windows Live Time", "")
+###           TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(pc_live_time))
+###           return(f"{rd.hours}:{rd.minutes}:{rd.seconds}")
 
 
 
@@ -405,22 +547,18 @@ def check_process(process_name, shortcut ="", focus=True, focus_type="Restore"):
                 #SW_SHOWMAXIMIZED,  SW_RESTORE, SW_SHOWNOACTIVATE, SW_SHOWNORMAL, Minimize 
                 #### How to SHOW but not bring to front? certain times windows wont capture cause they arent in some sort of focus...
                 if focus_type == "Normal":                 ### difference between SHOWNORMAL and NORMAL  ??  or SHOW_OPENWINDOW ?
-                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL)  ##updated n working
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWNORMAL) 
                     win32gui.SetForegroundWindow(hwnd)
                 if focus_type == "Maximized":
-                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMAXIMIZED)  ##updated n working
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMAXIMIZED)  
                     win32gui.SetForegroundWindow(hwnd)
                 if focus_type == "Restore":
-                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)  ##updated n working
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)  
                     win32gui.SetForegroundWindow(hwnd)
                 if focus_type == "Minimized":
-                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMINIMIZED)  ##updated n working
+                    win32gui.ShowWindow(hwnd, win32con.SW_SHOWMINIMIZED)  
                     win32gui.SetForegroundWindow(hwnd)
-                    
-                    
-               #### break so it doesnt keep on triggering random process'
                 break
-                #print(f"{window_name:20.20} {class_name:20.20}")
     if not exist:
         try:
             print("load via shortcut")
@@ -446,6 +584,7 @@ old_results = []
 def get_windows_update():
     global windows_active, old_results
     windows_active = get_windows()
+    print("triggered get_windows")
     if len(old_results) is not len(windows_active):
         # windows_active = get_windows()
         print("Previous Count:", len(old_results), "New Count:", len(windows_active))
@@ -462,7 +601,6 @@ def copy_im_to_clipboard(image):
     image.save(bio, 'BMP')
     data = bio.getvalue()[14:] # removing some headers
     bio.close()
-
     send_to_clipboard(win32clipboard.CF_DIB, data)
 
 
@@ -496,6 +634,7 @@ def file_to_bytes(filepath):
 
 monitor_count_old = ""
 def check_number_of_monitors():
+    print("triggered get num of monitors")
     global monitor_count_old
     with mss.mss() as sct:
         monitor_count = (len(sct.monitors))
@@ -535,7 +674,7 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
         saveDC.SelectObject(saveBitMap)
         
         # Change the line below depending on whether you want the whole window
-        # or just the client area. 
+        # or just the client area as shown above. 
                               # 1, 2, 3 all give different results   ( 3 seems to work for everything)
         result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
         bmpinfo = saveBitMap.GetInfo()
@@ -567,7 +706,6 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
     except:
         pass
 
-#screenshot_window(capture_type=3, window_title="Calculator", clipboard=False, save_location="testing2.png")
 
 def screenshot_monitor(monitor_number, filename="", clipboard = False):    
     with mss.mss() as sct:
@@ -614,15 +752,15 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
 ### tried hard to get into settings but it gave me non stop issues.. i give up for now..
 
 ## Computer Up-Time Check
-schedule.every(1).seconds.do(time_booted)
-## Gets Active windows and updates stuff if they are different
-schedule.every(30).seconds.do(get_windows_update)
-## Virtual Desktop Check
-schedule.every(5).minutes.do(vd_check)
-## Check Number of Monitors
-schedule.every(5).minutes.do(check_number_of_monitors)
-## Disk Usage Check
-schedule.every(55).seconds.do(disk_usage)
+##   schedule.every(1).seconds.do(time_booted)
+##   ## Gets Active windows and updates stuff if they are different
+##   schedule.every(30).seconds.do(get_windows_update)
+##   ## Virtual Desktop Check
+##   schedule.every(5).minutes.do(vd_check)
+##   ## Check Number of Monitors
+##   schedule.every(5).minutes.do(check_number_of_monitors)
+##   ## Disk Usage Check
+##   schedule.every(55).seconds.do(disk_usage)
 
 
 
@@ -903,33 +1041,71 @@ running = False
 updateStates()
 @TPClient.on('info')
 def onStart(data):
-    print(data)
+    if settings := data.get('settings'):
+        handleSettings(settings, False)
+
+    th_uptime = threading.Thread(target=pc_uptime)
+    th_uptime.start()
     global running
     running = True
     updateStates()
-    check_number_of_monitors()
-    vd_check()
-    get_windows_update()
-    disk_usage()
-
-
 
 
 settings = {}
 def handleSettings(settings, on_connect=False):
-    print(settings)
+    newsettings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
+    global stop_run_continuously
+    
+    
+    ###Stopping Scheduled Tasks and Clearing List
     stop_run_continuously.set()
-    settings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
+    schedule.clear()
+    time.sleep(2)
+    
+    ### looping thru and checking if zero, if so we dont reschedule it
+    for setting in newsettings:
+        interval = float(newsettings[setting])
+
+        if setting == "Update Interval: Hard Drive":
+            if interval > 0:
+                schedule.every(interval).seconds.do(disk_usage)
+                print(f"{setting} is now {interval}")
+            else:
+                print(f"{setting} is TURNED OFF")
+
+        if settings == "Update Interval: Network'":
+            if interval > 0:
+                #schedule.every(interval).seconds.do(vd_check)
+                print(f"{setting} is now {interval}")
+            else:
+                print(f"{setting} is TURNED OFF")
+
+
+        if setting == "Update Interval: Active Monitors":
+            if interval > 0:
+                schedule.every(interval).seconds.do(check_number_of_monitors)
+                print(f"{setting} is now {interval}")
+            else:
+                print(f"{setting} is TURNED OFF")
+
+        if setting == "Update Interval: Active Windows":
+            if interval > 0:
+                schedule.every(interval).seconds.do(get_windows_update)
+                print(f"{setting} is now {interval}")
+            else:
+                print(f"{setting} is TURNED OFF")
+
+# Start the background threads again
+    stop_run_continuously = run_continuously()
     return settings
-    interval_ = settings['Twitch Username']
-    oath_token_unformatted = settings['Chatbot OAUTH Token']
+
 
 # Settings handler
 @TPClient.on(TouchPortalAPI.TYPES.onSettingUpdate)
 def onSettingUpdate(data):
     if (settings := data.get('values')):
         handleSettings(settings, False)
-        #print(settings)
+
 
     
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
@@ -978,9 +1154,7 @@ def Actions(data):
         elif data['data'][0]['value'] == "File":
             current_window = pygetwindow.getActiveWindowTitle()
             afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value']) 
-            print(afile_name)
             screenshot_window(capture_type=3, window_title=current_window, clipboard=False, save_location=afile_name)
-            print("to file stuff")
             
                ###using wildcard to FILE
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
@@ -1013,8 +1187,6 @@ def Actions(data):
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file":
         if (data['data'][0]['value']):
             if data['data'][4]['value'] == "Clipboard":
-                print("we here")
-                print(data['data'][0]['value'])
                 screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
             if data['data'][4]['value'] == "File":
                 afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
@@ -1038,13 +1210,13 @@ def Actions(data):
         
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
-        print(data['data'][0]['value'])
         send_to_clipboard("text", data['data'][0]['value'] )
         
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions":
         choice = data['data'][0]['value']
         virtual_desktop(target_desktop=choice)
+        
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
         choice = data['data'][0]['value']
@@ -1053,7 +1225,19 @@ def Actions(data):
         if data['data'][1]['value'] == "True":
             virtual_desktop(move=True, target_desktop=choice, pinned=True)
         
+    if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.actions":
+        print(data['data'][0]['value'])
+        magnifier(data['data'][0]['value'])
         
+    if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
+        win_toast(atitle=(data['data'][0]['value']), amsg=(data['data'][1]['value']), aduration=(data['data'][2]['value']), button=(data['data'][3]['value']), alink=(data['data'][4]['value']),iconpath=(data['data'][5]['value']), theaudio=(data['data'][6]['value']))
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
+        winextra("Emoji")
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.keyboard":
+        winextra("Keyboard")
+            
         
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
@@ -1128,5 +1312,7 @@ def Shutdown(data):
     TPClient.disconnect()
     running = False
     Timer.cancel()
+    stop_run_continuously.set()
+    schedule.clear()
     sys.exit()
 TPClient.connect()
