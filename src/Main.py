@@ -1,7 +1,4 @@
-from typing import Type
 import TouchPortalAPI
-from numpy import clip
-import pycaw
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -20,7 +17,6 @@ import win32process
 import pygetwindow
 import os
 
-
 ### Gitago Imports
 import mss
 import mss.tools
@@ -34,10 +30,9 @@ import time
 import schedule
 import dateutil.relativedelta
 from datetime import datetime
-from wintoast import ToastNotifier
-import wintoast
 from winotify import Notification, audio
 
+import pyttsx3
 
 ### 
 # Origin Launcher Window = OriginWebHelperService
@@ -51,53 +46,51 @@ TPClient = TouchPortalAPI.Client('Windows-Tools')
 
 
 
-def win_toast(atitle="", amsg="", aduration="short", icon=""):
+def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", aduration="short", icon=""):
     ### setting the base notification stuff
     if not os.path.exists(rf"{icon}") or icon == "": icon = os.path.join(os.getcwd(),"src\icon.png")
     print(icon)
     toast = Notification(app_id="WinTools",
                          title=atitle,
                          msg=amsg,
-                         icon=rf"{icon}",
+                         icon=icon,
                          duration = aduration.lower(),
                          )
     
-    if False:
-        toast.add_actions(label=button, 
-                        link=alink)
+    if buttonText != "" and buttonlink != "":
+        toast.add_actions(label=buttonText, 
+                        link=buttonlink)
 
-    if True:
-        audioDic = {
-            "Default": audio.Default,
-            "IM": audio.IM,
-            "Mail": audio.Mail,
-            "Reminder": audio.Mail,
-            "SMS": audio.SMS,
-            "LoopingAlarm1": audio.LoopingAlarm,
-            "LoopingAlarm2": audio.LoopingAlarm2,
-            "LoopingAlarm3": audio.LoopingAlarm3,
-            "LoopingAlarm4": audio.LoopingAlarm4,
-            "LoopingAlarm5": audio.LoopingAlarm6,
-            "LoopingAlarm6": audio.LoopingAlarm8,
-            "LoopingAlarm7": audio.LoopingAlarm9,
-            "LoopingAlarm8": audio.LoopingAlarm10,
-            "LoopingCall1": audio.LoopingCall,
-            "LoopingCall2": audio.LoopingCall,
-            "LoopingCall3": audio.LoopingCall,
-            "LoopingCall4": audio.LoopingCall,
-            "LoopingCall5": audio.LoopingCall,
-            "LoopingCall6": audio.LoopingCall,
-            "LoopingCall7": audio.LoopingCall,
-            "LoopingCall8": audio.LoopingCall,
-            "LoopingCall9": audio.LoopingCall,
-            "LoopingCall10": audio.LoopingCall,
-            "Silent": audio.Silent,
-        }
-        #if theaudio =="Default":
-        toast.set_audio(audioDic["Default"], loop=False)
+    audioDic = {
+        "Default": audio.Default,
+        "IM": audio.IM,
+        "Mail": audio.Mail,
+        "Reminder": audio.Mail,
+        "SMS": audio.SMS,
+        "LoopingAlarm1": audio.LoopingAlarm,
+        "LoopingAlarm2": audio.LoopingAlarm2,
+        "LoopingAlarm3": audio.LoopingAlarm3,
+        "LoopingAlarm4": audio.LoopingAlarm4,
+        "LoopingAlarm5": audio.LoopingAlarm6,
+        "LoopingAlarm6": audio.LoopingAlarm8,
+        "LoopingAlarm7": audio.LoopingAlarm9,
+        "LoopingAlarm8": audio.LoopingAlarm10,
+        "LoopingCall1": audio.LoopingCall,
+        "LoopingCall2": audio.LoopingCall,
+        "LoopingCall3": audio.LoopingCall,
+        "LoopingCall4": audio.LoopingCall,
+        "LoopingCall5": audio.LoopingCall,
+        "LoopingCall6": audio.LoopingCall,
+        "LoopingCall7": audio.LoopingCall,
+        "LoopingCall8": audio.LoopingCall,
+        "LoopingCall9": audio.LoopingCall,
+        "LoopingCall10": audio.LoopingCall,
+        "Silent": audio.Silent,
+    }
+    toast.set_audio(audioDic[sound], loop=False)
             
-            
-    toast.build().show()
+    toast.build()
+    toast.show()
     
     
 
@@ -181,7 +174,7 @@ def get_app_icon():
 ### gotta get this to go to icon, then have to get it to nt update less its new...
 ##   schedule.every(1).seconds.do(get_app_icon)
 
-from pyvda import AppView, get_apps_by_z_order, VirtualDesktop, get_virtual_desktops
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 def virtual_desktop(target_desktop=None, move=False, pinned=False):
     number_of_active_desktops = len(get_virtual_desktops())
     print(f"There are {number_of_active_desktops} active desktops")
@@ -819,12 +812,30 @@ def getActiveExecutablePath():
     else:
         _, pid = win32process.GetWindowThreadProcessId(hWnd)
         return psutil.Process(pid).exe()
+
+
+def TextToSpeech(message, voicesChoics, volume=100):
+    engine = pyttsx3.init()
+    voices = engine.getProperty('voices')
+
+    engine.setProperty("volume", volume/100)
+    engine.setProperty('voice', voices[1].id if voicesChoics == "Female" else voices[0].id)
+
+    print("Speaking", message)
+    try:
+        engine.say(message)
+        engine.runAndWait()
+        engine.stop()
+    except Exception as e:
+        print("test", e)
     
+
     
 
 # Setup TouchPortal connection
 TPClient = TouchPortalAPI.Client('Windows-Tools')
 
+TTSThread = threading.Thread(target=TextToSpeech)
 running = False
 updateXY = True
 
@@ -1089,6 +1100,7 @@ def onSettingUpdate(data):
     
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
 def Actions(data):
+    global TTSThread
     print(data)
     if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute':
         if data['data'][0]['value'] is not '':
@@ -1209,15 +1221,25 @@ def Actions(data):
         magnifier(data['data'][0]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
-        win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'])
+        print(data['data'][0]['value'], data['data'][1]['value'], data['data'][2]['value'])
+        win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'], buttonText=data['data'][3]['value'], buttonlink=data['data'][4]['value'], sound=data['data'][6]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
         winextra("Emoji")
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.keyboard":
         winextra("Keyboard")
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
+        TTSThread = threading.Thread(target=TextToSpeech, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']),))
+        TTSThread.setDaemon(True)
+        TTSThread.start()
             
-        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
+        if TTSThread.is_alive():
+            pass
+
+
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
     print(data)

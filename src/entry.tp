@@ -559,14 +559,13 @@
           }
         ]
       },
-
       {
         "id": "KillerBOSS.TP.Plugins.toast.create",
-        "name": "Toast Notification",
+        "name": "Windows Notification",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Toast: Title:{$KillerBOSS.TP.Plugins.toast.title$}  Message: {$KillerBOSS.TP.Plugins.toast.message$} Audio: {$KillerBOSS.TP.Plugins.toast.audio$} Duration: {$KillerBOSS.TP.Plugins.toast.duration$}  Icon: {$KillerBOSS.TP.Plugins.toast.iconpath$}  Button Text:{$KillerBOSS.TP.Plugins.toast.buttontext$}  Button Link: {$KillerBOSS.TP.Plugins.toast.buttonlink$}  ",
+        "format": "Create windows notification title {$KillerBOSS.TP.Plugins.toast.title$} and Message {$KillerBOSS.TP.Plugins.toast.message$} for duration {$KillerBOSS.TP.Plugins.toast.duration$} Optional Icon {$KillerBOSS.TP.Plugins.toast.iconpath$} and Notify sound {$KillerBOSS.TP.Plugins.toast.audio$} Optional Button setting Button Text {$KillerBOSS.TP.Plugins.toast.buttontext$} and Button link (When Clicked) {$KillerBOSS.TP.Plugins.toast.buttonlink$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.toast.title",
@@ -606,7 +605,8 @@
             "id": "KillerBOSS.TP.Plugins.toast.iconpath",
             "type": "file",
             "label": "file",
-            "extensions": ["*.jpg","*.png", "*.ico"]
+            "extensions": ["*.jpg","*.png", "*.ico"],
+            "default": ""
           },
           {
             "id": "KillerBOSS.TP.Plugins.toast.audio",
@@ -642,7 +642,6 @@
           }
         ]
       },
-
       {
         "id": "KillerBOSS.TP.Plugins.winextra.keyboard",
         "name": "On-Screen Keyboard(Toggle)",
@@ -659,24 +658,14 @@
           }
         ]
       },
-
       {
         "id": "KillerBOSS.TP.Plugins.winextra.emojipanel",
         "name": "Emoji Panel",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Open Emoji Panel",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winextra.action",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          }
-        ]
+        "format": "Open Emoji Panel"
       },
-      
       {
         "id": "KillerBOSS.TP.Plugins.capture.clipboard",
         "name": "Text / Value to Clipboard",
@@ -693,7 +682,6 @@
           }
         ]
       },
-
       {
         "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions",
         "name": "Virtual Desktop: Next / Previous",
@@ -714,7 +702,6 @@
           }
         ]
       },
-
       {
         "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window",
         "name": "Virtual Desktop: Move Current Window to #",
@@ -741,11 +728,49 @@
             ]
           }
         ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.TextToSpeech.speak",
+        "name": "Text To Speech: Speak X",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Speech {$KillerBOSS.TP.Plugins.TextToSpeech.text$} using {$KillerBOSS.TP.Plugins.TextToSpeech.voices$} voice and set Volume at {$KillerBOSS.TP.Plugins.TextToSpeech.volume$} percent ",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.TextToSpeech.voices",
+            "type": "choice",
+            "label": "choice",
+            "default": "Male",
+            "valueChoices": [
+              "Female",
+              "Male"
+            ]
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.TextToSpeech.text",
+            "type": "text",
+            "label": "text",
+            "default": "Hello!"
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.TextToSpeech.volume",
+            "type": "number",
+            "label": "tts volume",
+            "default": "100"
+          }
+        ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.TextToSpeech.stop",
+        "name": "Text to Speech: Stop",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Stop TextToSpeech"
       }
-
     ],
       "events": [],
-
       "states": [
         {
             "id": "KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X",
