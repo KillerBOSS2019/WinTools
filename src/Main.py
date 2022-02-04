@@ -410,42 +410,19 @@ def handleSettings(settings, on_connect=False):
     stop_run_continuously.set()
     schedule.clear()
     time.sleep(2)
-    
-    ### looping thru and checking if zero, if so we dont reschedule it
-    for setting in newsettings:
-        interval = float(newsettings[setting])
 
-        if setting == "Update Interval: Hard Drive":
-            if interval > 0:
-                schedule.every(interval).seconds.do(disk_usage)
-                print(f"{setting} is now {interval}")
-            else:
-                print(f"{setting} is TURNED OFF")
+    for scheduleFunc in [(disk_usage, "Update Interval: Hard Drive"),
+                         (vd_check, "Update Interval: Network Up/Down(INCOMPLETE)"),
+                         (check_number_of_monitors, "Update Interval: Active Monitors"),
+                         (get_windows_update, "Update Interval: Active Windows")]:
+        interval = float(newsettings[scheduleFunc[1]])
+        if int(newsettings[scheduleFunc[1]]) > 0:
+            schedule.every(interval).seconds.do(scheduleFunc[0])
+            print(f"{scheduleFunc[1]} is now {interval}")
+        else:
+            print(f"{scheduleFunc[1]} is TURNED OFF")
 
-        if settings == "Update Interval: Network'":
-            if interval > 0:
-                #schedule.every(interval).seconds.do(vd_check)
-                print(f"{setting} is now {interval}")
-            else:
-                print(f"{setting} is TURNED OFF")
-
-
-        if setting == "Update Interval: Active Monitors":
-            if interval > 0:
-                schedule.every(interval).seconds.do(check_number_of_monitors)
-                print(f"{setting} is now {interval}")
-            else:
-                print(f"{setting} is TURNED OFF")
-
-        if setting == "Update Interval: Active Windows":
-            if interval > 0:
-                schedule.every(interval).seconds.do(get_windows_update)
-                print(f"{setting} is now {interval}")
-            else:
-                print(f"{setting} is TURNED OFF")
-
-# Start the background threads again
-    #stop_run_continuously = run_continuously()
+    stop_run_continuously = run_continuously()
     return settings
 
 
