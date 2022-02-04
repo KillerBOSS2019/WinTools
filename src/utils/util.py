@@ -22,6 +22,12 @@ from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from winotify import Notification, audio
 
 
+#####################################################
+#                                                   #
+#             Audio Stuff...                        #          
+#                                                   #
+######################################################
+
 class AudioController(object):
     def __init__(self, process_name):
         self.process_name = process_name
@@ -112,6 +118,13 @@ def getMasterVolume() -> int:
     volume = cast(interface, POINTER(IAudioEndpointVolume))
     return int(round(volume.GetMasterVolumeLevelScalar() * 100))
 
+
+#####################################################
+#                                                   #
+#             Mouse func                            #          
+#                                                   #
+######################################################
+
 def AdvancedMouseFunction(x, y, delay, look):
     if look == 0:
         look = None
@@ -146,6 +159,12 @@ def AdvancedMouseFunction(x, y, delay, look):
         except:
             pass
 
+
+#####################################################
+#                                                   #
+#             Windows Notification                  #          
+#                                                   #
+######################################################
 
 def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", aduration="short", icon=""):
     ### setting the base notification stuff
@@ -192,6 +211,104 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
             
     toast.build()
     toast.show()
+
+#####################################################
+#                                                   #
+#             Clipboard stuff                       #          
+#                                                   #
+######################################################
+
+def copy_im_to_clipboard(image):
+    bio = BytesIO()
+    image.save(bio, 'BMP')
+    data = bio.getvalue()[14:] # removing some headers
+    bio.close()
+    send_to_clipboard(win32clipboard.CF_DIB, data)
+
+
+def send_to_clipboard(clip_type, data):
+    if clip_type == "text":
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardText(data)
+        win32clipboard.CloseClipboard()
+    else:
+        win32clipboard.OpenClipboard()
+        win32clipboard.EmptyClipboard()
+        win32clipboard.SetClipboardData(clip_type, data)
+        win32clipboard.CloseClipboard()
+
+## potentially not needed anymore
+def file_to_bytes(filepath):
+    ## Take image into bytes and onto clipboard
+    image = Image.open(filepath)
+    output = BytesIO()
+    image.convert("RGB").save(output, "BMP")
+    data = output.getvalue()[14:]
+    output.close()
+    
+    ### Sending to Clipboard
+    send_to_clipboard(win32clipboard.CF_DIB, data)
+    ### Deleting Temp File
+    os.remove(filepath)
+    print("Temp Image Deleted")
+
+###screenshot window without bringing it to foreground 
+def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
+    from ctypes import windll
+    hwnd = win32gui.FindWindow(None, window_title)
+    try:
+        left, top, right, bot = win32gui.GetClientRect(hwnd)
+        #left, top, right, bot = win32gui.GetWindowRect(hwnd)
+        w = right - left
+        h = bot - top
+        
+        hwndDC = win32gui.GetWindowDC(hwnd)
+        mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+        saveDC = mfcDC.CreateCompatibleDC()
+        
+        saveBitMap = win32ui.CreateBitmap()
+        saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+        saveDC.SelectObject(saveBitMap)
+        
+        # Change the line below depending on whether you want the whole window
+        # or just the client area as shown above. 
+                              # 1, 2, 3 all give different results   ( 3 seems to work for everything)
+        result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
+        bmpinfo = saveBitMap.GetInfo()
+        bmpstr = saveBitMap.GetBitmapBits(True)
+        
+        im = Image.frombuffer(
+            'RGB',
+            (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+            bmpstr, 'raw', 'BGRX', 0, 1)
+        
+        win32gui.DeleteObject(saveBitMap.GetHandle())
+        saveDC.DeleteDC()
+        mfcDC.DeleteDC()
+        win32gui.ReleaseDC(hwnd, hwndDC)
+        
+        if result == 1:
+            #PrintWindow Succeeded
+            if clipboard == True:
+                copy_im_to_clipboard(im)
+                print("Copied to Clipboard")
+            elif clipboard == False:
+                im.save(save_location+".png")
+                ### very bad and ugly compression
+               ### im.save(save_location+"_Compressed_.png", 
+               ###     "JPEG", 
+               ###     optimize = True, 
+               ###     quality = 10)
+                print("Saved to Folder")
+    except Exception as e:
+        print("error screenshot" + e )
+
+#####################################################
+#                                                   #
+#             Other                                 #          
+#                                                   #
+######################################################
 
 def magnifier(action):
     if action == "Zoom In":
@@ -385,93 +502,6 @@ def get_windows():
                 
     win32gui.EnumWindows(winEnumHandler, None)
     return results
-
-
-def copy_im_to_clipboard(image):
-    bio = BytesIO()
-    image.save(bio, 'BMP')
-    data = bio.getvalue()[14:] # removing some headers
-    bio.close()
-    send_to_clipboard(win32clipboard.CF_DIB, data)
-
-
-def send_to_clipboard(clip_type, data):
-    if clip_type == "text":
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardText(data)
-        win32clipboard.CloseClipboard()
-    else:
-        win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(clip_type, data)
-        win32clipboard.CloseClipboard()
-
-## potentially not needed anymore
-def file_to_bytes(filepath):
-    ## Take image into bytes and onto clipboard
-    image = Image.open(filepath)
-    output = BytesIO()
-    image.convert("RGB").save(output, "BMP")
-    data = output.getvalue()[14:]
-    output.close()
-    
-    ### Sending to Clipboard
-    send_to_clipboard(win32clipboard.CF_DIB, data)
-    ### Deleting Temp File
-    os.remove(filepath)
-    print("Temp Image Deleted")
-
-###screenshot window without bringing it to foreground 
-def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
-    from ctypes import windll
-    hwnd = win32gui.FindWindow(None, window_title)
-    try:
-        left, top, right, bot = win32gui.GetClientRect(hwnd)
-        #left, top, right, bot = win32gui.GetWindowRect(hwnd)
-        w = right - left
-        h = bot - top
-        
-        hwndDC = win32gui.GetWindowDC(hwnd)
-        mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
-        saveDC = mfcDC.CreateCompatibleDC()
-        
-        saveBitMap = win32ui.CreateBitmap()
-        saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
-        saveDC.SelectObject(saveBitMap)
-        
-        # Change the line below depending on whether you want the whole window
-        # or just the client area as shown above. 
-                              # 1, 2, 3 all give different results   ( 3 seems to work for everything)
-        result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
-        bmpinfo = saveBitMap.GetInfo()
-        bmpstr = saveBitMap.GetBitmapBits(True)
-        
-        im = Image.frombuffer(
-            'RGB',
-            (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-            bmpstr, 'raw', 'BGRX', 0, 1)
-        
-        win32gui.DeleteObject(saveBitMap.GetHandle())
-        saveDC.DeleteDC()
-        mfcDC.DeleteDC()
-        win32gui.ReleaseDC(hwnd, hwndDC)
-        
-        if result == 1:
-            #PrintWindow Succeeded
-            if clipboard == True:
-                copy_im_to_clipboard(im)
-                print("Copied to Clipboard")
-            elif clipboard == False:
-                im.save(save_location+".png")
-                ### very bad and ugly compression
-               ### im.save(save_location+"_Compressed_.png", 
-               ###     "JPEG", 
-               ###     optimize = True, 
-               ###     quality = 10)
-                print("Saved to Folder")
-    except Exception as e:
-        print("error screenshot" + e )
 
 def AudioDeviceCmdlets(command, output=True):
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
