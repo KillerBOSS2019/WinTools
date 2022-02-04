@@ -453,7 +453,19 @@ def time_booted():
     dt1 = datetime.fromtimestamp(boot_time_timestamp)
     dt2 = datetime.fromtimestamp(current) 
     rd = dateutil.relativedelta.relativedelta (dt2, dt1)
-    return rd
+    hours = rd.hours
+    minutes = rd.minutes
+    seconds = rd.seconds
+    seconds = int(seconds)
+    minutes = int(minutes)
+    hours = int(hours)
+    if minutes <10:
+        minutes = "0" + str(minutes)
+    if seconds <10:
+        seconds = "0" + str(seconds)
+    time.sleep(1)
+    
+    return f"{rd.days}:{hours}:{minutes}:{seconds}"
 
 def check_process(process_name, shortcut ="", focus=True, focus_type="Restore"):
     exist = False

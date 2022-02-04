@@ -179,42 +179,6 @@ def disk_usage(drives=False):
         ])
     except Exception as e:
         print("error disk usage n stuff " + e)
-## we could let user limit the drives we get details from... but should we bother?
-#disk_usage(drives=["C"])
-
-
-def pc_uptime():
-    rd = time_booted()    
-    hours = rd.hours
-    minutes = rd.minutes
-    seconds = rd.seconds
-
-    while True:
-        seconds = int(seconds)
-        minutes = int(minutes)
-        hours = int(hours)
-        if seconds == 59:
-            seconds =  seconds = 0
-            minutes = minutes + 1
-        elif seconds < 59:
-            seconds = seconds + 1   
-        if minutes == 60:
-           minutes = minutes = 0
-           hours = hours + 1
-           
- ### makin it look "pretty"      
-        if minutes <10:
-            minutes = "0" + str(minutes)
-        if seconds <10:
-            seconds = "0" + str(seconds)
-        time.sleep(1)
-        
-        pc_live_time = (f"{hours}:{minutes}:{seconds}")
-        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(pc_live_time))
-        #print(pc_live_time)
-
-    
-#check_process("Discord", shortcut=r"C:\Users\dbcoo\AppData\Local\Discord\Update.exe --processStart Discord.exe", focus=True)
 
 old_results = []
 def get_windows_update():
@@ -361,10 +325,11 @@ def updateStates():
                 except TypeError:
                     pass 
         counter = counter + 1
-        if counter >= 5:
-
-            
-            
+        if counter%2 == 0:
+            """
+            Updates every 5 loops 
+            """
+            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
             activeWindow = getActiveExecutablePath()
             if activeWindow != None:
@@ -392,7 +357,7 @@ def updateStates():
                         "value": "0"
                     }
                 )
-        if counter >= 34:
+        if counter >= 35:
             counter = 0
             try:
                 output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
