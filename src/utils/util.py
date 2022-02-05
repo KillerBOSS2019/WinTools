@@ -349,7 +349,7 @@ def rotate_display(display_num, rotate_choice):
     win32api.ChangeDisplaySettingsEx(device.DeviceName,dm)
     
     
-#rotate_display(2,"0")
+
 
 def magnifier(action):
     if action == "Zoom In":
@@ -358,19 +358,104 @@ def magnifier(action):
         pyautogui.hotkey('win', '-')
     if action == "Exit":
         pyautogui.hotkey('win', 'escape')
+    
+    
+    ### used mostly for checking numlock status
+def get_key_state(key):
+    import ctypes
+    hllDll = ctypes.WinDLL ("User32.dll")
+    if key == "NUM LOCK":
+        return hllDll.GetKeyState(0x90)
+    if key == "CAPS LOCK":
+        return hllDll.GetKeyState(0x14)
+
+def move_win_button(direction):
+    check = get_key_state('NUM LOCK')
+    if not check:
+        pyautogui.hotkey('win', 'shift', direction)
+    elif check:
+        pyautogui.press('numlock')
+        pyautogui.hotkey('win', 'shift', direction)
+        pyautogui.press('numlock')
+    
+    
+    
+def win_shutdown(time, cancel=False):
+    ## should we create a shutdown timer/countdown ??  we can warn the user 5 minutes before shutting down so they can cancel
+    time= pyautogui.prompt(text='💻 How many MINUTES do you want to wait before shutting down?', title='Shutdown PC?', default='')
+    if time:
+        try:
+            time = int(time) * 60    ## multiplying by 60 to get minutes
+            os.system(f"shutdown -s -t {time}")
+        except:
+            pass
+    else:
+        os.system(f"shutdown -a")
+    
+
+
+
+
+from subprocess import PIPE, run
+
+def out(command):
+    result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+    return result.stdout
+
+def get_powerplans(currentcheck=False):
+    import re
+    pplans={}
+    for powerplan in out("powercfg -List").split("\n")[2:]:
+        if "Scheme" in powerplan.split():
+            ParsedData = powerplan.split(":")[1].split()
+            the_data = (ParsedData[0])
+            plan_name = (" ".join(ParsedData[1:]))
+        
+    
+            if "*" in plan_name:
+                print("this is current")
+                ##Update TP State to Show Current Power Plan.
+                
+                ### Removing all special chars except spaces and *
+                regex = re.compile('[^a-zA-Z]')
+                #First parameter is the replacement, second parameter is your input string
+                plan_name = regex.sub('', plan_name)
+                pplans[plan_name]=the_data
+                if currentcheck==True:
+                    return plan_name
+            else:
+                regex = re.compile('[^a-zA-Z]')
+                plan_name = regex.sub('', plan_name)
+                pplans[plan_name]=the_data
+        
+    return pplans
+    
+
+def change_pplan(choice):
+    the_thing=(get_powerplans())
+    print(the_thing)
+    out(f"powercfg.exe /S {the_thing[choice]}")
+    
+    
         
 def winextra(action):
+    
   # if action == "Keep Active, Minimize All (Toggle)":
   #     pyautogui.hotkey('win', 'home')
-  #     
+  #    
   # if action == "Minimize All (Toggle)":
-  #         pyautogui.hotkey('win', 'd')
-  #         
+  #     pyautogui.hotkey('win', 'd')
+#         
+  #  if action =="Clipboard History":
+  #      pyautogui.hotkey('win', 'v')
+        
     if action == "Emoji":
         pyautogui.hotkey('win', '.')
         
     if action == "Keyboard":
         pyautogui.hotkey('win', 'ctrl', "o")
+        
+    
 
 def getActiveExecutablePath():
     hWnd = ctypes.windll.user32.GetForegroundWindow()

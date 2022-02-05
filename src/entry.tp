@@ -366,6 +366,60 @@
       },
 
       {
+        "id": "KillerBOSS.TP.Plugins.winsettings.move_window",
+        "name": "Windows: Move Application To Monitor Left/Right",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Move Current Window {$KillerBOSS.TP.Plugins.winsettings.move_window_choice$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.move_window_choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick a Monitor",
+            "valueChoices": ["Left", "Right"]
+          }
+        ]
+      },
+
+
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.shutdown",
+        "name": "Windows: Shutdown Computer in (x)",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Shutdown Computer in X SECONDS",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_seconds",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
+
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
+        "name": "Windows: Change Powerplan",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
+            "type": "choice",
+            "label": "pplan choice",
+            "default": "",
+            "valueChoices": []
+          }
+        ]
+      },
+
+      {
         "id": "KillerBOSS.TP.Plugins.screencapture.full.file",
         "name": "Capture: Display to File / Clipboard",
         "prefix": "plugin",
@@ -710,6 +764,7 @@
         "tryInline": true,
         "format": "Open Emoji Panel"
       },
+      
       {
         "id": "KillerBOSS.TP.Plugins.capture.clipboard",
         "name": "Text / Value to Clipboard",

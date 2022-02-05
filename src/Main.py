@@ -400,6 +400,27 @@ def onStart(data):
      ### Updating Choices for Windows Settings options from util.py
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
     
+    pplans = get_powerplans()
+    pplans_list =[]
+    for item in pplans:
+        pplans_list.append(item)
+        
+        
+    try:
+        import requests
+        pub_ip = requests.get('https://checkip.amazonaws.com').text.strip()  
+        TPClient.createState("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", "Your Public IP", pub_ip)
+    except:
+        pass
+    
+
+        ## instead of creating, put in entry ?
+    TPClient.createState("KillerBOSS.TP.Plugins.winsettings.powerplan_current", "Current Power Plan", get_powerplans(currentcheck=True))
+    
+        
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)
+        
+        
     the_devices = getAllOutput_TTS2()
     tts_outputs = []
     for item in the_devices:
@@ -557,6 +578,19 @@ def Actions(data):
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.rotate_display":
         rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.shutdown":
+        win_shutdown(data['data'][0]['value'])
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.powerplan":
+        change_pplan(data['data'][0]['value'])
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_current", get_powerplans(currentcheck=True))
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.move_window":
+        move_win_button(data['data'][0]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
         choice = data['data'][0]['value']
