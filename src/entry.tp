@@ -321,6 +321,50 @@
             }
           ]
       },
+
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.action",
+        "name": "Windows: System Settings",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Open: {$KillerBOSS.TP.Plugins.winsettings.choice$} settings section",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "SYSTEM:  Settings Home Page",
+            "valueChoices": []
+          }
+        ]
+      },
+
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.rotate_display",
+        "name": "Windows: Rotate Display",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Set Monitor {$KillerBOSS.TP.Plugins.winsettings.monchoice$} to {$KillerBOSS.TP.Plugins.winsettings.mon_rotate$}  degrees",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.monchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick a Monitor",
+            "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.mon_rotate",
+            "type": "choice",
+            "label": "choice",
+            "default": "0",
+            "valueChoices": ["0", "90", "180", "270"]
+          }
+        ]
+      },
+
       {
         "id": "KillerBOSS.TP.Plugins.screencapture.full.file",
         "name": "Capture: Display to File / Clipboard",
@@ -735,7 +779,7 @@
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Speech {$KillerBOSS.TP.Plugins.TextToSpeech.text$} using {$KillerBOSS.TP.Plugins.TextToSpeech.voices$} voice and set Volume at {$KillerBOSS.TP.Plugins.TextToSpeech.volume$} percent ",
+        "format": "Speech {$KillerBOSS.TP.Plugins.TextToSpeech.text$} using {$KillerBOSS.TP.Plugins.TextToSpeech.voices$} voice and set Volume at {$KillerBOSS.TP.Plugins.TextToSpeech.volume$}  Speech Rate at {$KillerBOSS.TP.Plugins.TextToSpeech.rate$}    OUTPUT:{$KillerBOSS.TP.Plugins.TextToSpeech.output$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.TextToSpeech.voices",
@@ -757,7 +801,26 @@
             "id": "KillerBOSS.TP.Plugins.TextToSpeech.volume",
             "type": "number",
             "label": "tts volume",
-            "default": "100"
+            "allowDecimals": false,
+            "default": "100", 
+            "minValue":0,
+            "maxValue":100
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.TextToSpeech.rate",
+            "type": "number",
+            "label": "tts rate",
+            "allowDecimals": false,
+            "default": "175",
+            "minValue":25,
+            "maxValue":600
+          },  
+          {
+            "id": "KillerBOSS.TP.Plugins.TextToSpeech.output",
+            "type": "choice",
+            "label": "tts output choice",
+            "default": "",
+            "valueChoices":[]
           }
         ]
       },

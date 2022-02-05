@@ -213,8 +213,12 @@ def check_number_of_monitors():
                 monitor_list.append(str(monitor_number))
             else:
                 monitor_list.append(str(monitor_number))
-                
+        
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
+        ## Removing first entry which is 0 from list since thats global and we dont want that for next list
+        monitor_list.remove(monitor_list[0])
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", monitor_list)
+        
         ### would love to be able to capture the monitor name but cannot find the method.. need to use user32.dll ??  - https://discord.com/channels/@me/786771528381104178/934685222577004545
         return monitor_count
         
@@ -392,7 +396,19 @@ updateStates()
 def onStart(data):
     if settings := data.get('settings'):
         handleSettings(settings, False)
-
+     
+     ### Updating Choices for Windows Settings options from util.py
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
+    
+    the_devices = getAllOutput_TTS2()
+    tts_outputs = []
+    for item in the_devices:
+        tts_outputs.append(item)
+        
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
+        
+    print(tts_outputs)
+    
     #th_uptime = threading.Thread(target=pc_uptime)
     #th_uptime.start()
     global running
@@ -471,19 +487,18 @@ def Actions(data):
         else:
             updateXY = True
             
-        
+## Screencap Window Current
     if data['actionId'] == "KillerBOSS.TP.Plugins.window.current":
         if data['data'][0]['value'] == "Clipboard":
-            print("clip board stuff")
             current_window = pygetwindow.getActiveWindowTitle()
-            print(current_window)
             screenshot_window(capture_type=3, window_title=current_window, clipboard=True)
+            
         elif data['data'][0]['value'] == "File":
             current_window = pygetwindow.getActiveWindowTitle()
             afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value']) 
             screenshot_window(capture_type=3, window_title=current_window, clipboard=False, save_location=afile_name)
             
-               ###using wildcard to FILE
+##Screen Cap Window Wildcard to FILE
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
         global windows_active
         windows_active = get_windows()
@@ -491,13 +506,11 @@ def Actions(data):
             if data['data'][0]['value'].lower() in thing.lower():
                 print("We found", thing)
                 if data['data'][4]['value'] == "Clipboard":
-                    print("cliboard mmk")
                     screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
                     
                 elif data['data'][4]['value'] == "File":
                     print("File stuf")
                     afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
-  
                     screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
                 break
              
@@ -535,15 +548,15 @@ def Actions(data):
         
         check_process(app_to_check, shortcut_to_open, focus=focus_check, focus_type=afocus_type)
         
-        
     if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
         send_to_clipboard("text", data['data'][0]['value'] )
-        
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions":
         choice = data['data'][0]['value']
         virtual_desktop(target_desktop=choice)
         
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.rotate_display":
+        rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
         choice = data['data'][0]['value']
@@ -553,11 +566,9 @@ def Actions(data):
             virtual_desktop(move=True, target_desktop=choice, pinned=True)
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.actions":
-        print(data['data'][0]['value'])
         magnifier(data['data'][0]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
-        print(data['data'][0]['value'], data['data'][1]['value'], data['data'][2]['value'])
         win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'], buttonText=data['data'][3]['value'], buttonlink=data['data'][4]['value'], sound=data['data'][6]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
@@ -565,15 +576,21 @@ def Actions(data):
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.keyboard":
         winextra("Keyboard")
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.action":
+        activate_windows_setting(data['data'][0]['value'])
 
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
-        TTSThread = threading.Thread(target=TextToSpeech, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']),))
+        #print(data['data'][3]['value'])
+        TTSThread = threading.Thread(target=TextToSpeech, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
         TTSThread.setDaemon(True)
         TTSThread.start()
             
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
         if TTSThread.is_alive():
             pass
+        
+
 
 
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)

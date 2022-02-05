@@ -16,6 +16,7 @@ import win32con
 import win32gui
 import win32process
 import win32ui
+import win32api
 from comtypes import CLSCTX_ALL
 from PIL import Image
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -310,6 +311,46 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 #                                                   #
 ######################################################
 
+
+
+import sounddevice as sd
+import audio2numpy as a2n
+### Getting all audio outputs available for use with TTS
+def getAllOutput_TTS2():
+    audio_dict = {}
+    for outputDevice in sd.query_hostapis(0)['devices']:
+        if sd.query_devices(outputDevice)['max_output_channels'] > 0:
+            audio_dict[sd.query_devices(device=outputDevice)['name']] = sd.query_devices(device=outputDevice)['default_samplerate']
+    return audio_dict
+
+
+
+def rotate_display(display_num, rotate_choice):
+    ### display num is gonna need add or subtractin to match other things..  cause 0 is monitor 1 here, and in other spots 0 is ALL monitors..
+    ## so display 0 would actually be display 1 in "settings"
+    display_num = display_num -1
+    rotation_val=""
+    if (rotate_choice != None):
+        if (rotate_choice == "180"):
+            rotation_val=win32con.DMDO_180
+        elif(rotate_choice == "90"):
+            rotation_val=win32con.DMDO_270
+        elif (rotate_choice == "270"):   
+            rotation_val=win32con.DMDO_90
+        else:
+            rotation_val=win32con.DMDO_DEFAULT
+
+    device = win32api.EnumDisplayDevices(None,display_num)
+    dm = win32api.EnumDisplaySettings(device.DeviceName,win32con.ENUM_CURRENT_SETTINGS)
+    if((dm.DisplayOrientation + rotation_val)%2==1):
+        dm.PelsWidth, dm.PelsHeight = dm.PelsHeight, dm.PelsWidth   
+    dm.DisplayOrientation = rotation_val
+
+    win32api.ChangeDisplaySettingsEx(device.DeviceName,dm)
+    
+    
+#rotate_display(2,"0")
+
 def magnifier(action):
     if action == "Zoom In":
         pyautogui.hotkey('win', '=')
@@ -340,7 +381,7 @@ def getActiveExecutablePath():
         return psutil.Process(pid).exe()
 
 def get_app_icon():
-    import win32api
+    
     active_path = getActiveExecutablePath()
     print(active_path)
  
@@ -409,7 +450,7 @@ def virtual_desktop(target_desktop=None, move=False, pinned=False):
             else:
                 pass
             
-    elif target_desktop is not "Previous" or "Next":  ## else if 0, 1, 2 3, etc.. anything but next or previous
+    elif target_desktop != "Previous" or "Next":  ## else if 0, 1, 2 3, etc.. anything but next or previous
         print("THE TARGETED DESKTOP IS", target_desktop)
         if move:
             target_desktop2 = int(target_desktop)
@@ -524,18 +565,94 @@ def AudioDeviceCmdlets(command, output=True):
 
 
 
-
-def TextToSpeech(message, voicesChoics, volume=100):
+import sounddevice as sd
+import audio2numpy as a2n
+import pyttsx3
+def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-
     engine.setProperty("volume", volume/100)
+    engine.setProperty("rate", rate)
     engine.setProperty('voice', voices[1].id if voicesChoics == "Female" else voices[0].id)
 
-    print("Speaking", message)
-    try:
-        engine.say(message)
-        engine.runAndWait()
-        engine.stop()
-    except Exception as e:
-        print("test", e)
+    if output =="Default":
+        try:
+            engine.say(message)
+            engine.runAndWait()
+            engine.stop()
+        except Exception as e:
+            print("TTS Error", e)
+    else:
+        try:
+            appdata = os.getenv('APPDATA')
+            engine.save_to_file(message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+            engine.runAndWait()
+            engine.stop()
+            device = getAllOutput_TTS2()  ### can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
+            sd.default.samplerate = device[output]
+            sd.default.device = output +", MME"
+            x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+            sd.play(x, sr, blocking=True)
+        except Exception as e:
+            print("test", e)
+            
+        
+        
+def activate_windows_setting(choice=False):
+    
+    settings ={
+        "SYSTEM:  Display": 'ms-settings:display',
+        "SYSTEM:  Advanced Display": 'ms-settings:display-advanced',
+        "SYSTEM:  Night Light": 'ms-settings:nightlight',
+        "SYSTEM:  Sound": 'ms-settings:sound',
+        "SYSTEM:  Manage Sound Devices": 'ms-settings:sound-devices',
+        "SYSTEM:  Manage App/Device Volume": 'ms-settings:apps-volume',
+        "SYSTEM:  App Volume & Device Preferences": 'ms-settings:apps-volume',
+        "SYSTEM:  Notifcations & Actions": 'ms-settings:notifications',
+        "SYSTEM:  Power & Sleep": 'ms-settings:powersleep',
+        "SYSTEM:  Battery": 'ms-settings:batterysaver',
+        "SYSTEM:  Battery Usage Details": 'ms-settings:batterysaver-usagedetails',
+        "SYSTEM:  Default Save Locations": 'ms-settings:savelocations',
+        "SYSTEM:  Multi-Tasking": 'ms-settings:multitasking',
+        "SYSTEM:  Sign-in Options": 'ms-settings:signinoptions',     ## this was 'ACCOUNTS'
+        "SYSTEM:  Date & Time": 'ms-settings:dateandtime',             ## this was 'TIME & LANGUAGE*
+        "SYSTEM:  Time Region": 'ms-settings:regionformatting',        ## this was 'TIME & LANGUAGE*
+        "SYSTEM:  Settings Home Page": 'ms-settings:',
+        "NETWORK:  Ethernet": 'ms-settings:network-ethernet',
+        "NETWORK:  Wi-Fi": 'ms-settings:network-wifi',
+        "PERSONALIZATION:  Background": 'ms-settings:personalization-background',
+        "PERSONALIZATION:  Colors": 'ms-settings:personalization-colors',
+        "PERSONALIZATION:  Lock Screen": 'ms-settings:lockscreen',
+        "PERSONALIZATION:  Themes": 'ms-settings:themes',
+        "PERSONALIZATION:  Start Folders": 'ms-settings:personalization-start-places',
+        "APPS:  Apps & Features": 'ms-settings:appsfeatures',
+        "APPS:  Manage Startup Apps": 'ms-settings:startupapps',
+        "APPS:  Manage Default Apps": 'ms-settings:defaultapps',
+        "APPS:  Manage Optional Features": 'ms-settings:optionalfeatures',
+        "GAMING:  Game Bar": 'ms-settings:gaming-gamebar',
+        "GAMING:  Game DVR": 'ms-settings:gaming-gamedvr',
+        "GAMING:  Game Mode": 'ms-settings:gaming-gamemode',
+        "GAMING:  XBOX Networking": 'ms-settings:gaming-xboxnetworking',
+        "PRIVACY:  Activity History": 'ms-settings:privacy-activityhistory',
+        "PRIVACY:  Webcam": 'ms-settings:privacy-webcam',
+        "PRIVACY:  Microphone": 'ms-settings:privacy-microphone',
+        "PRIVACY:  Background Apps": 'ms-settings:privacy-backgroundapps',
+        r"UPDATE & SECURITY:  Windows Update": 'ms-settings:windowsupdate',
+        r"UPDATE & SECURITY:  Windows Recovery": 'ms-settings:recovery',
+        r"UPDATE & SECURITY:  Update history": 'ms-settings:windowsupdate-history',
+        r"UPDATE & SECURITY:  Restart Options": 'ms-settings:windowsupdate-restartoptions',
+        r"UPDATE & SECURITY:  Delivery Optimization": 'ms-settings:delivery-optimization',
+        r"UPDATE & SECURITY:  Windows Security": 'ms-settings:windowsdefender',
+        r"UPDATE & SECURITY:  Windows Defender": 'windowsdefender:',
+        r"UPDATE & SECURITY:  For Developers": 'ms-settings:developers',
+    }
+    if not choice:
+        settings_list =[]
+        for thing in settings:
+            settings_list.append(thing)
+        return settings_list
+    else:
+        os.system(f'explorer "{settings[choice]}"')
+
+
+print(activate_windows_setting())
