@@ -653,6 +653,3 @@ def activate_windows_setting(choice=False):
         return settings_list
     else:
         os.system(f'explorer "{settings[choice]}"')
-
-
-print(activate_windows_setting())

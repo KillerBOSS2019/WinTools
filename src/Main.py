@@ -195,7 +195,8 @@ def get_windows_update():
 monitor_count_old = ""
 def check_number_of_monitors():
     global monitor_count_old
-    if monitor_count_old is not (listMonitor := [monitor for monitor in range(len(get_monitors())+1)]):
+    if monitor_count_old != (listMonitor := [str(monitor) for monitor in range(len(get_monitors())+1)]):
+        print(listMonitor)
         monitor_count_old = listMonitor   
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", listMonitor)
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", listMonitor[1:])
@@ -289,8 +290,8 @@ def updateStates():
                         try:
                             TPClient.removeState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}')
                             print(f'Removing {x}')
-                        except Exception:
-                            print("exception at 956")
+                        except Exception as e:
+                            print("exception at 293", e)
                             pass
                     
             for x in global_states:
@@ -534,7 +535,8 @@ def Actions(data):
         virtual_desktop(target_desktop=choice)
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.rotate_display":
-        rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
+        if data['data'][0]['value'] != "Pick a Monitor":
+            rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
         choice = data['data'][0]['value']
