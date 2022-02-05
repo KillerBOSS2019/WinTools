@@ -17,6 +17,7 @@ import TouchPortalAPI
 from PIL import Image
 from pycaw.pycaw import AudioUtilities
 from TouchPortalAPI import TYPES
+from screeninfo import get_monitors
 
 from utils.util import *
 
@@ -53,9 +54,7 @@ def vd_check():
     vdlist.append("Previous")
     for i in range (virtual_desk_count):
         vdlist.append(str(i))
-    print(vdlist)
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
-    print("choice updated?")
         
 
 
@@ -151,12 +150,10 @@ def disk_usage(drives=False):
     # get IO statistics since boot
     try:
         disk_io = psutil.disk_io_counters()
-        print("disk write bytes" + str(disk_io.write_bytes))
         # print(f"Total read: {get_size(disk_io.read_bytes)}")
         # print(f"Total write: {get_size(disk_io.write_bytes)}")
     
         network = network_usage()
-        print("Network usage", network)
         # print(f"Total Bytes Sent: {network['received']}")
         # print(f"Total Bytes Received: {network['sent']}")
         TPClient.stateUpdateMany([
@@ -184,7 +181,6 @@ old_results = []
 def get_windows_update():
     global windows_active, old_results
     windows_active = get_windows()
-    print("triggered get_windows")
     if len(old_results) is not len(windows_active):
         # windows_active = get_windows()
         print("Previous Count:", len(old_results), "New Count:", len(windows_active))
@@ -198,29 +194,11 @@ def get_windows_update():
 
 monitor_count_old = ""
 def check_number_of_monitors():
-    print("triggered get num of monitors")
     global monitor_count_old
-    with mss.mss() as sct:
-        monitor_count = (len(sct.monitors))
-        
-    monitor_list = []
-    if str(monitor_count_old) == str(monitor_count):
-        pass
-    elif str(monitor_count_old) is not str(monitor_count):
-        monitor_count_old = monitor_count
-        for monitor_number in range(monitor_count):
-            if monitor_number == 0:
-                monitor_list.append(str(monitor_number))
-            else:
-                monitor_list.append(str(monitor_number))
-        
-        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", monitor_list)
-        ## Removing first entry which is 0 from list since thats global and we dont want that for next list
-        monitor_list.remove(monitor_list[0])
-        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", monitor_list)
-        
-        ### would love to be able to capture the monitor name but cannot find the method.. need to use user32.dll ??  - https://discord.com/channels/@me/786771528381104178/934685222577004545
-        return monitor_count
+    if monitor_count_old is not (listMonitor := [monitor for monitor in range(len(get_monitors())+1)]):
+        monitor_count_old = listMonitor   
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", listMonitor)
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", listMonitor[1:])
         
 
 
