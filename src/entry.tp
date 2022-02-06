@@ -569,6 +569,43 @@
         ]
       },
 
+              {
+          "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
+          "name": "UTILITY:  Change Powerplan",
+          "prefix": "plugin",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
+              "type": "choice",
+              "label": "pplan choice",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        },  
+
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.primary_monitor",
+          "name": "UTILITY:  Change Primary Monitor",
+          "prefix": "plugin",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Change Primary Monitor To {$KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice",
+              "type": "choice",
+              "label": "primary monitor choice",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        },  
+
+
       {
         "id": "KillerBOSS.TP.Plugins.winsettings.rotate_display",
         "name": "UTILITY:  Rotate Display / Monitor",

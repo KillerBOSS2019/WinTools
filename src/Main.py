@@ -46,6 +46,9 @@ def run_continuously(interval=1):
     continuous_thread.start()
     return cease_continuous_run
         
+        
+def timebooted_loop():
+    TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
 
 def vd_check():
     vdlist=[]
@@ -200,6 +203,8 @@ def check_number_of_monitors():
         monitor_count_old = listMonitor   
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", listMonitor)
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", listMonitor[1:])
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", listMonitor[1:])
+        
         
 
 
@@ -312,7 +317,7 @@ def updateStates():
             """
             Updates every 5 loops 
             """
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
+            #TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
             activeWindow = getActiveExecutablePath()
             if activeWindow != None:
@@ -375,16 +380,22 @@ updateStates()
 def onStart(data):
     if settings := data.get('settings'):
         handleSettings(settings, False)
+        
+    ### making this trigger every 1 seconds forever...
+    ##happening in handleSettings intead...
+    #schedule.every(1).seconds.do(timebooted_loop)
      
-     ### Updating Choices for Windows Settings options from util.py
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
-    
+    ### Getting Power Plan Details and Updating States and Choices
     pplans = get_powerplans()
     pplans_list =[]
     for item in pplans:
         pplans_list.append(item)
-        
-        
+    TPClient.createState("KillerBOSS.TP.Plugins.winsettings.powerplan_current", "Current Power Plan", get_powerplans(currentcheck=True))
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)
+    
+    ### Updating Choices for Windows Settings options from util.py
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
+    
     try:
         import requests
         pub_ip = requests.get('https://checkip.amazonaws.com').text.strip()  
@@ -392,14 +403,6 @@ def onStart(data):
     except:
         pass
     
-
-        ## instead of creating, put in entry ?
-    TPClient.createState("KillerBOSS.TP.Plugins.winsettings.powerplan_current", "Current Power Plan", get_powerplans(currentcheck=True))
-    
-        
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)
-        
-        
     the_devices = getAllOutput_TTS2()
     tts_outputs = []
     for item in the_devices:
@@ -407,10 +410,6 @@ def onStart(data):
         
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
         
-    print(tts_outputs)
-    
-    #th_uptime = threading.Thread(target=pc_uptime)
-    #th_uptime.start()
     global running
     running = True
     updateStates()
@@ -432,12 +431,14 @@ def handleSettings(settings, on_connect=False):
                          (check_number_of_monitors, "Update Interval: Active Monitors"),
                          (get_windows_update, "Update Interval: Active Windows")]:
         interval = float(newsettings[scheduleFunc[1]])
+        
         if int(newsettings[scheduleFunc[1]]) > 0:
             schedule.every(interval).seconds.do(scheduleFunc[0])
             print(f"{scheduleFunc[1]} is now {interval}")
         else:
             print(f"{scheduleFunc[1]} is TURNED OFF")
-
+            
+    schedule.every(1).seconds.do(timebooted_loop)
     stop_run_continuously = run_continuously()
     return settings
 
@@ -562,6 +563,9 @@ def Actions(data):
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.shutdown":
         win_shutdown(data['data'][0]['value'])
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.primary_monitor":
+        change_primary(data['data'][0]['value'])
         
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.powerplan":
