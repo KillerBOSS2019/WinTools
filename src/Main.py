@@ -198,19 +198,24 @@ def get_windows_update():
 monitor_count_old = ""
 def check_number_of_monitors():
     global monitor_count_old
-    if monitor_count_old != (listMonitor := [str(monitor) for monitor in range(len(get_monitors())+1)]):
-        print(listMonitor)
-        monitor_count_old = listMonitor   
-        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", listMonitor)
-        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", listMonitor[1:])
-        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", listMonitor[1:])
+    mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
+    
+    if monitor_count_old != mon_length:
+        list_monitor_full = get_monitors2()
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", list_monitor_full)
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", list_monitor_full)
+        list_monitor_full.insert(0, "0: ALL MONITORS")
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", list_monitor_full)  #  KillerBOSS.TP.Plugins.screencapture.full.file 
+        monitor_count_old = mon_length
         
         
 
 
 
 
-def screenshot_monitor(monitor_number, filename="", clipboard = False):    
+
+def screenshot_monitor(monitor_number, filename="", clipboard = False):   
+    monitor_number = int(monitor_number.split(":")[0])
     with mss.mss() as sct:
         try:
             mon = sct.monitors[monitor_number]  
@@ -517,11 +522,14 @@ def Actions(data):
              
     if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":   
         if data['data'][1]['value'] == "Clipboard":
-            screenshot_monitor(monitor_number=int(data['data'][0]['value']), clipboard=True)
+            try:
+                screenshot_monitor(monitor_number=(data['data'][0]['value']), clipboard=True)
+            except:
+                pass
         elif data['data'][1]['value'] == "File":
             try:
                 afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
-                screenshot_monitor(monitor_number=int(data['data'][0]['value']), filename=afile_name, clipboard=False)
+                screenshot_monitor(monitor_number=(data['data'][0]['value']), filename=afile_name, clipboard=False)
             except:
                 pass
         
@@ -606,6 +614,7 @@ def Actions(data):
             
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
         if TTSThread.is_alive():
+            sd.stop()
             pass
         
 

@@ -686,7 +686,7 @@
             "id": "KillerBOSS.TP.Plugins.toast.audio",
             "type": "choice",
             "label": "choice",
-            "default": "Silent",
+            "default": "Default",
             "valueChoices": [
               "Default",
               "IM",

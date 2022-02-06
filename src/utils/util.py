@@ -171,7 +171,7 @@ def AdvancedMouseFunction(x, y, delay, look):
 def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", aduration="short", icon=""):
     ### setting the base notification stuff
     if not os.path.exists(rf"{icon}") or icon == "": icon = os.path.join(os.getcwd(),"src\icon.png")
-    print(icon)
+
     toast = Notification(app_id="WinTools",
                          title=atitle,
                          msg=amsg,
@@ -209,10 +209,39 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
         "LoopingCall10": audio.LoopingCall,
         "Silent": audio.Silent,
     }
+
     toast.set_audio(audioDic[sound], loop=False)
-            
+         
     toast.build()
     toast.show()
+
+from win32com.client import GetObject
+def get_monitors2():
+    objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
+    count = 0
+    monitor_list = []
+    for obj in objWMI:
+        count = count + 1
+       # print("######  Monitor " +str(count) + " ########")
+        if obj.Active != None:
+            monitor_is_active = str(obj.Active)
+        if obj.InstanceName != None:
+           pass
+        if obj.ManufacturerName != None:
+            monitor_manufacturer = (bytes(obj.ManufacturerName)).decode()
+            split_manufacturer_name = monitor_manufacturer.split("\x00")
+        if obj.UserFriendlyName != None:
+            monitor_name = (bytes(obj.UserFriendlyName)).decode()
+            split_monitor_name = monitor_name.split("\x00")
+            
+        the_end = (str(count) +": "+ str((split_monitor_name[0]))+"("+str(split_manufacturer_name[0])+")")
+        print(the_end)
+        monitor_list.append(the_end)
+
+    return monitor_list
+    
+
+
 
 #####################################################
 #                                                   #
@@ -329,6 +358,7 @@ def getAllOutput_TTS2():
 def rotate_display(display_num, rotate_choice):
     ### display num is gonna need add or subtractin to match other things..  cause 0 is monitor 1 here, and in other spots 0 is ALL monitors..
     ## so display 0 would actually be display 1 in "settings"
+    display_num = display_num.split(":")[0]
     display_num = display_num -1
     rotation_val=""
     if (rotate_choice != None):
@@ -385,13 +415,15 @@ def win_shutdown(time, cancel=False):
     ## should we create a shutdown timer/countdown ??  we can warn the user 5 minutes before shutting down so they can cancel
     time= pyautogui.prompt(text='💻 How many MINUTES do you want to wait before shutting down?', title='Shutdown PC?', default='')
     if time:
-        try:
-            time = int(time) * 60    ## multiplying by 60 to get minutes
-            os.system(f"shutdown -s -t {time}")
-        except:
-            pass
-    else:
+        if int(time) >0:
+            try:
+                time = int(time) * 60    ## multiplying by 60 to get minutes
+                os.system(f"shutdown -s -t {time}")
+            except:
+                pass
+    elif time == None or 0:
         os.system(f"shutdown -a")
+        pyautogui.alert("System Shutdown CANCELLED!")
     
 
 
@@ -628,9 +660,15 @@ def time_booted():
         minutes = "0" + str(minutes)
     if seconds <10:
         seconds = "0" + str(seconds)
-    #time.sleep(1)
-    print(f"{rd.days}:{hours}:{minutes}:{seconds}")
-    return f"{rd.days}:{hours}:{minutes}:{seconds}"
+        
+    if rd.days >0:
+        print(f"{rd.days}:{hours}:{minutes}:{seconds}")
+        return f"{rd.days}:{hours}:{minutes}:{seconds}"
+    else:
+        print(f"{hours}:{minutes}:{seconds}")
+        return f"{hours}:{minutes}:{seconds}"
+
+
 
 def check_process(process_name, shortcut ="", focus=True, focus_type="Restore"):
     exist = False
@@ -695,9 +733,10 @@ import pyttsx3
 def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
+    print(voices)
     engine.setProperty("volume", volume/100)
     engine.setProperty("rate", rate)
-    engine.setProperty('voice', voices[1].id if voicesChoics == "Female" else voices[0].id)
+    engine.setProperty('voice', voices[1].id if voicesChoics == "Female" else voices[2].id)
 
     if output =="Default":
         try:
@@ -815,7 +854,10 @@ primary_device = None
 primary_settings = None
 
 def change_primary(monitornum):
+    
+    monitornum = monitornum.split(":")[0]
     primary = rf"\\.\DISPLAY{monitornum}"
+    print("After splitting", monitornum)
     
     # Find the settings of the new primary display
     i = 0
