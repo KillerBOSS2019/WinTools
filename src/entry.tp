@@ -323,109 +323,13 @@
       },
 
       {
-        "id": "KillerBOSS.TP.Plugins.winsettings.action",
-        "name": "Windows: System Settings",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Open: {$KillerBOSS.TP.Plugins.winsettings.choice$} settings section",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "SYSTEM:  Settings Home Page",
-            "valueChoices": []
-          }
-        ]
-      },
-
-      {
-        "id": "KillerBOSS.TP.Plugins.winsettings.rotate_display",
-        "name": "Windows: Rotate Display",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Set Monitor {$KillerBOSS.TP.Plugins.winsettings.monchoice$} to {$KillerBOSS.TP.Plugins.winsettings.mon_rotate$}  degrees",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.monchoice",
-            "type": "choice",
-            "label": "choice",
-            "default": "Pick a Monitor",
-            "valueChoices": []
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.mon_rotate",
-            "type": "choice",
-            "label": "choice",
-            "default": "0",
-            "valueChoices": ["0", "90", "180", "270"]
-          }
-        ]
-      },
-
-      {
-        "id": "KillerBOSS.TP.Plugins.winsettings.move_window",
-        "name": "Windows: Move Application To Monitor Left/Right",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Move Current Window {$KillerBOSS.TP.Plugins.winsettings.move_window_choice$}",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.move_window_choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "Pick a Monitor",
-            "valueChoices": ["Left", "Right"]
-          }
-        ]
-      },
-
-
-      {
-        "id": "KillerBOSS.TP.Plugins.winsettings.shutdown",
-        "name": "Windows: Shutdown Computer in (x)",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Shutdown Computer in X SECONDS",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_seconds",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          }
-        ]
-      },
-
-      {
-        "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
-        "name": "Windows: Change Powerplan",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
-            "type": "choice",
-            "label": "pplan choice",
-            "default": "",
-            "valueChoices": []
-          }
-        ]
-      },
-
-      {
         "id": "KillerBOSS.TP.Plugins.screencapture.full.file",
-        "name": "Capture: Display to File / Clipboard",
+        "name": "CAPTURE:  Display to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Capture Display #{$KillerBOSS.TP.Plugins.screencapture.monitors$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} and {$KillerBOSS.TP.Plugins.screencapture.filepath$} and {$KillerBOSS.TP.Plugins.screencapture.filename$}",
+        "description": "Capture Display to Clipboard OR File",
+        "format": "Display #{$KillerBOSS.TP.Plugins.screencapture.monitors$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} and {$KillerBOSS.TP.Plugins.screencapture.filepath$} and {$KillerBOSS.TP.Plugins.screencapture.filename$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.monitors",
@@ -453,17 +357,18 @@
             "id": "KillerBOSS.TP.Plugins.screencapture.filename",
             "type": "text",
             "label": "text",
-            "default": "meh"
+            "default": ""
           }
         ]
       },
       {
         "id": "KillerBOSS.TP.Plugins.screencapture.window.file",
-        "name": "Capture: Window to File / Clipboard",
+        "name": "CAPTURE:  Window to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": " Capture Window ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} - Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
+        "description": "Capture Window to Clipboard OR File",
+        "format": "Window:{$KillerBOSS.TP.Plugins.screencapture.window_name$} Save:{$KillerBOSS.TP.Plugins.screencapture.window_active_capture$}  Directory->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
@@ -510,11 +415,12 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard",
-        "name": "Capture: Window to File / Clipboard (*)",
+        "name": "CAPTURE:  Window to File / Clipboard (*)",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": " Capture Window to Clipboard by name ->{$KillerBOSS.TP.Plugins.screencapture.window_name$} to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$}  Directory ->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
+        "description": "Capture Window by Name to Clipboard OR File ",
+        "format": "Window Name*:{$KillerBOSS.TP.Plugins.screencapture.window_name$}  Save:{$KillerBOSS.TP.Plugins.screencapture.window_active_capture$}  Directory->{$KillerBOSS.TP.Plugins.screencapture.filepath$} and file name ->{$KillerBOSS.TP.Plugins.screencapture.filename$} ",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.window_name",
@@ -560,11 +466,12 @@
           },
           {
         "id": "KillerBOSS.TP.Plugins.window.current",
-        "name": "Capture: Current Active Window to File / Clipboard",
+        "name": "CAPTURE:  Current Active Window to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Capture current Active Window - Save to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$} and if file -> {$KillerBOSS.TP.Plugins.screencapture.filepath2$} and {$KillerBOSS.TP.Plugins.screencapture.filename2$}",
+        "description": "Capture CURRENT Active Window to Clipboard OR File ",
+        "format": "Save to {$KillerBOSS.TP.Plugins.screencapture.window_active_capture$}    IF file -> {$KillerBOSS.TP.Plugins.screencapture.filepath2$} and {$KillerBOSS.TP.Plugins.screencapture.filename2$}.png",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.screencapture.window_active_capture",
@@ -586,84 +493,116 @@
             "id": "KillerBOSS.TP.Plugins.screencapture.filename2",
             "type": "text",
             "label": "text",
-            "default": "meh"
+            "default": ""
           }
         ]
         },
-          
-          {
-        "id": "KillerBOSS.TP.Plugins.screencapture.processcheck",
-        "name": "Check if Proccess Running",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": " Check the process {$KillerBOSS.TP.Plugins.screencapture.process_name$} -> IF running {$KillerBOSS.TP.Plugins.screencapture.process_focus$} {$KillerBOSS.TP.Plugins.screencapture.process_focus_type$} else if NOT running open shortcut->{$KillerBOSS.TP.Plugins.process_shortcut$} ",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.process_name",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.process_focus",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": [
-              "Focus",
-              "Do Not Focus"
-            ]
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.screencapture.process_focus_type",
-            "type": "choice",
-            "label": "choice",
-            "default": "Restore",
-            "valueChoices": [
-              "Restore",
-              "Maximized",
-              "Minimized",
-              "Normal"
-            ]
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.process_shortcut",
-            "type": "file",
-            "label": "file",
-            "default":""
-          }
-    ]
-      },
+
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.move_window",
+          "name": "UTILITY:  Move Application To Monitor Left/Right",
+          "prefix": "plugin",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Move Current Window {$KillerBOSS.TP.Plugins.winsettings.move_window_choice$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.move_window_choice",
+              "type": "choice",
+              "label": "choice",
+              "default": "Pick a Monitor",
+              "valueChoices": ["Left", "Right"]
+            }
+          ]
+        },
+
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.shutdown",
+          "name": "UTILITY:  Shutdown Computer in (x)",
+          "prefix": "plugin",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Shutdown Computer in X SECONDS",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_seconds",
+              "type": "text",
+              "label": "text",
+              "default": ""
+            }
+          ]
+        },
+  
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
+          "name": "UTILITY:  Change Powerplan",
+          "prefix": "plugin",
+          "type": "communicate",
+          "tryInline": true,
+          "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
+              "type": "choice",
+              "label": "pplan choice",
+              "default": "",
+              "valueChoices": []
+            }
+          ]
+        },  
 
       {
-        "id": "KillerBOSS.TP.Plugins.magnifier.actions",
-        "name": "Magnifier Glass",
+        "id": "KillerBOSS.TP.Plugins.winsettings.action",
+        "name": "UTILITY:  System Settings",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Magnifier Glass: {$KillerBOSS.TP.Plugins.magnifier.actionchoice$} ",
+        "format": "Open: {$KillerBOSS.TP.Plugins.winsettings.choice$} settings section",
         "data": [
           {
-            "id": "KillerBOSS.TP.Plugins.magnifier.actionchoice",
+            "id": "KillerBOSS.TP.Plugins.winsettings.choice",
             "type": "choice",
             "label": "choice",
-            "default": "",
-            "valueChoices": [
-              "Zoom In",
-              "Zoom Out",
-              "Exit"
-            ]
+            "default": "SYSTEM:  Settings Home Page",
+            "valueChoices": []
           }
         ]
       },
+
       {
-        "id": "KillerBOSS.TP.Plugins.toast.create",
-        "name": "Windows Notification",
+        "id": "KillerBOSS.TP.Plugins.winsettings.rotate_display",
+        "name": "UTILITY:  Rotate Display / Monitor",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Create windows notification title {$KillerBOSS.TP.Plugins.toast.title$} and Message {$KillerBOSS.TP.Plugins.toast.message$} for duration {$KillerBOSS.TP.Plugins.toast.duration$} Optional Icon {$KillerBOSS.TP.Plugins.toast.iconpath$} and Notify sound {$KillerBOSS.TP.Plugins.toast.audio$} Optional Button setting Button Text {$KillerBOSS.TP.Plugins.toast.buttontext$} and Button link (When Clicked) {$KillerBOSS.TP.Plugins.toast.buttonlink$}",
+        "format": "Set Monitor {$KillerBOSS.TP.Plugins.winsettings.monchoice$} to {$KillerBOSS.TP.Plugins.winsettings.mon_rotate$}  degrees",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.monchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick a Monitor",
+            "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.mon_rotate",
+            "type": "choice",
+            "label": "choice",
+            "default": "0",
+            "valueChoices": ["0", "90", "180", "270"]
+          }
+        ]
+      },
+
+
+      {
+        "id": "KillerBOSS.TP.Plugins.toast.create",
+        "name": "UTILITY:  Windows Notification",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "description": "Create Windows Notification / Toast",
+        "format": "Title:{$KillerBOSS.TP.Plugins.toast.title$}   Message:{$KillerBOSS.TP.Plugins.toast.message$}   Duration:{$KillerBOSS.TP.Plugins.toast.duration$}   Icon(optional) {$KillerBOSS.TP.Plugins.toast.iconpath$}   Sound:{$KillerBOSS.TP.Plugins.toast.audio$}  Button-Text(optional):{$KillerBOSS.TP.Plugins.toast.buttontext$}   Button-Link(When Clicked):{$KillerBOSS.TP.Plugins.toast.buttonlink$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.toast.title",
@@ -741,8 +680,30 @@
         ]
       },
       {
+        "id": "KillerBOSS.TP.Plugins.magnifier.actions",
+        "name": "UTILITY:  Magnifier Glass",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Magnifier Glass: {$KillerBOSS.TP.Plugins.magnifier.actionchoice$} ",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.magnifier.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Zoom In",
+              "Zoom Out",
+              "Exit"
+            ]
+          }
+        ]
+      },
+
+      {
         "id": "KillerBOSS.TP.Plugins.winextra.keyboard",
-        "name": "On-Screen Keyboard(Toggle)",
+        "name": "UTILITY:  On-Screen Keyboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -758,7 +719,7 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.winextra.emojipanel",
-        "name": "Emoji Panel",
+        "name": "UTILITY:  Emoji Panel",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -767,7 +728,7 @@
       
       {
         "id": "KillerBOSS.TP.Plugins.capture.clipboard",
-        "name": "Text / Value to Clipboard",
+        "name": "UTILITY:  Text / Value to Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -783,7 +744,7 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions",
-        "name": "Virtual Desktop: Next / Previous",
+        "name": "UTILITY:  Virtual Desktop: Next / Previous",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -803,7 +764,7 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window",
-        "name": "Virtual Desktop: Move Current Window to #",
+        "name": "UTILITY:  Virtual Desktop: Move Current Window to #",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -830,11 +791,12 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.TextToSpeech.speak",
-        "name": "Text To Speech: Speak X",
+        "name": "UTILITY:  Text To Speech: Speak X",
         "prefix": "plugin",
         "type": "communicate",
+        "description": "Play Text to Speech thru a specific Audio Output",
         "tryInline": true,
-        "format": "Speech {$KillerBOSS.TP.Plugins.TextToSpeech.text$} using {$KillerBOSS.TP.Plugins.TextToSpeech.voices$} voice and set Volume at {$KillerBOSS.TP.Plugins.TextToSpeech.volume$}  Speech Rate at {$KillerBOSS.TP.Plugins.TextToSpeech.rate$}    OUTPUT:{$KillerBOSS.TP.Plugins.TextToSpeech.output$}",
+        "format": "Text:{$KillerBOSS.TP.Plugins.TextToSpeech.text$}     Voice: {$KillerBOSS.TP.Plugins.TextToSpeech.voices$}     Volume:{$KillerBOSS.TP.Plugins.TextToSpeech.volume$}     Speech Rate:{$KillerBOSS.TP.Plugins.TextToSpeech.rate$}    OUTPUT:{$KillerBOSS.TP.Plugins.TextToSpeech.output$}",
         "data": [
           {
             "id": "KillerBOSS.TP.Plugins.TextToSpeech.voices",
@@ -881,7 +843,7 @@
       },
       {
         "id": "KillerBOSS.TP.Plugins.TextToSpeech.stop",
-        "name": "Text to Speech: Stop",
+        "name": "UTILITY:  Text to Speech: Stop",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,

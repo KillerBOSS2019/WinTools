@@ -21,7 +21,7 @@ from comtypes import CLSCTX_ALL
 from PIL import Image
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from winotify import Notification, audio
-
+import re
 
 #####################################################
 #                                                   #
@@ -431,9 +431,44 @@ def get_powerplans(currentcheck=False):
     return pplans
     
 
+################### THIS NEEDS IMPLEMENTED ###################
+### Should we let the user 'schedule' a ping that goes every X seconds to give results?
+### Should we just have it on press only so they can make a custom repeat rate, or spam issues with that maybe?
+def ping_ip(the_ip):
+
+    ping_result = subprocess.check_output('ping -n 3 ' + the_ip,  universal_newlines=True)
+
+    ping_pattern = re.compile("time[<, =, >](?P<ms>\d+)ms")
+    ttl_pattern = re.compile("TTL[<, =, >](?P<ms>\d+)")
+    ip_pattern = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+
+
+    pings = re.findall(ping_pattern, ping_result)
+    ttl =  re.findall(ttl_pattern, ping_result)
+    pinged_ip = ip_pattern.search(ping_result)[0]
+
+    for i in range(0, len(pings)):
+        pings[i] = int(pings[i])
+
+    for i in range(0, len(ttl)):
+        ttl[i] = int(ttl[i])
+
+    ip_dict = {
+        "The IP": pinged_ip,
+        "Average": f'{round(sum(pings) / len(pings))}ms',
+        "TTL": f'{round(sum(ttl) / len(ttl))}'
+    }
+
+    print(f"The average ping for {the_ip} was {round(sum(pings) / len(pings), 2)}ms")
+    print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
+    
+    return ip_dict
+
+
+
+
 def change_pplan(choice):
     the_thing=(get_powerplans())
-    print(the_thing)
     out(f"powercfg.exe /S {the_thing[choice]}")
     
     
