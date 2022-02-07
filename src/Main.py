@@ -227,10 +227,10 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
                 "height": mon["height"],
                 "mon": monitor_number,
             }
-            
+
             # Grab the Image
             sct_img = sct.grab(monitor)     
-            
+    
             if clipboard == True:
                 if monitor_number==0:
                     print("capturing all, using temp file")  ## having to use temp file to capture all screens successfully?
@@ -241,10 +241,12 @@ def screenshot_monitor(monitor_number, filename="", clipboard = False):
                 elif monitor_number != 0:
                     img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
                     copy_im_to_clipboard(img)
+                  #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", getFrame_base64(img).decode())
 
             if clipboard == False:
                 mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
                 print("Image saved -> "+ filename+ ".png" )
+                
 
         except IndexError:
             print("This Monitor does not exist")
@@ -362,6 +364,8 @@ def updateStates():
             except json.JSONDecodeError as err:
                 print("Audio Device Decode to Json Error: ", err)
                 pass     
+            except UnicodeDecodeError as err:
+                print("Unicode Decode Error: ", err)
                    
         
         # try:
@@ -697,3 +701,4 @@ def Shutdown(data):
     Timer.cancel()
     sys.exit()
 TPClient.connect()
+

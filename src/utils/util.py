@@ -340,7 +340,35 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 #             Other                                 #          
 #                                                   #
 ######################################################
+import mss
+import base64
+from PIL import Image
 
+def getFrame_base64(frame_image):
+ #  # Get frame (only rgb - smaller size)
+ #  frame_rgb     = mss.mss().grab(mss.mss().monitors[2]).rgb 
+
+ #  # Convert it from bytes to resize
+ #  frame_image   = Image.frombytes("RGB", (1920, 1080), frame_rgb, "raw", "RGB") 
+    
+    #### RESIZING THE IMAGE
+   #size = 256,256
+   #frame_image.thumbnail(size, Image.LANCZOS)
+    #frame_image.save("resized.jpg", "JPEG")   ## SAVE THE IMAGE?
+    
+    ### TEMP SAVING IMAGE TO BUFFER THEN TO BASE 64
+    buffer = BytesIO()
+    frame_image.save(buffer, format='PNG')
+    frame_image.save("testimage.png", format='PNG')
+    b64_str = base64.standard_b64encode(buffer.getvalue())
+    
+    
+    frame_image.close()
+
+
+    #pyperclip3.copy(b64_str)
+    return b64_str
+    
 
 
 import sounddevice as sd
