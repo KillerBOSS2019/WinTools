@@ -22,7 +22,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install pyinstaller
-        pip install requirements.txt
+        pip install -r requirements.txt
     - name: build exe using pyinstaller
       run: |
         pyinstaller --onefile --icon=icon.ico WinTools.py
