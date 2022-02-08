@@ -19,6 +19,8 @@ for file in os.listdir("."):
     if file not in ["compile.py", "utils", "requirements.txt", "build", "dist", "Main.py", "main.spec", "__pycache__", "temp"]:
         print("copying", file)
         shutil.copy(os.path.join(os.getcwd(), file), os.path.join("temp", filedirectory))
+        
+os.rename("dist\Main.exe", "dist\WinTools.exe")
 shutil.copy(os.path.join(os.getcwd(), r"dist\Main.exe"), "temp/"+filedirectory)
 
 shutil.make_archive(base_name="WinTools", format='zip', root_dir="temp", base_dir="WinTools") 
