@@ -1,175 +1,279 @@
-from typing import Type
-import TouchPortalAPI
-import pycaw
-from ctypes import cast, POINTER
-from comtypes import CLSCTX_ALL
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-import threading
-import pyautogui
-from time import sleep
-from TouchPortalAPI import TYPES
-import subprocess
 import json
-import sys
-import pythoncom
-# import extract_icon
-import ctypes
-import psutil
-import win32process
-import pygetwindow
 import os
+import sys
+import threading
+import time
+from time import sleep
+
+### Gitago Imports
+import mss
+import mss.tools
+import psutil
+import pyautogui
+import pygetwindow
+import pythoncom
+import schedule
+import TouchPortalAPI
+from PIL import Image
+from pycaw.pycaw import AudioUtilities
+from TouchPortalAPI import TYPES
+from screeninfo import get_monitors
+
+from utils.util import *
 
 
-class AudioController(object):
-    def __init__(self, process_name):
-        self.process_name = process_name
-        self.volume = self.process_volume()
+def run_continuously(interval=1):
+    """Continuously run, while executing pending jobs at each
+    elapsed time interval.
+    @return cease_continuous_run: threading. Event which can
+    be set to cease continuous run. Please note that it is
+    *intended behavior that run_continuously() does not run
+    missed jobs*. For example, if you've registered a job that
+    should run every minute and you set a continuous run
+    interval of one hour then your job won't be run 60 times
+    at each interval but only once.
+    """
+    cease_continuous_run = threading.Event()
 
-    def mute(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                interface.SetMute(1, None)
-                print(self.process_name, 'has been muted.')  # debug
+    class ScheduleThread(threading.Thread):
+        @classmethod
+        def run(cls):
+            while not cease_continuous_run.is_set():
+                schedule.run_pending()
+                time.sleep(interval)
 
-    def unmute(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                interface.SetMute(0, None)
-                print(self.process_name, 'has been unmuted.')  # debug
+    continuous_thread = ScheduleThread()
+    continuous_thread.start()
+    return cease_continuous_run
+        
+        
+def timebooted_loop():
+    TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
 
-    def process_volume(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                #print('Volume:', interface.GetMasterVolume())  # debug
-                return interface.GetMasterVolume()
+def vd_check():
+    vdlist=[]
+    virtual_desk_count = len(get_virtual_desktops())
+    vdlist.append("Next")
+    vdlist.append("Previous")
+    for i in range (virtual_desk_count):
+        vdlist.append(str(i))
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
+        
+        
+        ## should we bother checking old IP info to new to see if its different before we update states?
+def get_ip_loop():
+    try:
+        pub_ip =get_ip_details("choice1")  
+        for item in pub_ip:
+            TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.publicip.{item}", pub_ip[item])
+    except:
+        pass
 
-    def set_volume(self, decibels):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                # only set volume in the range 0.0 to 1.0
-                self.volume = min(1.0, max(0.0, decibels))
-                interface.SetMasterVolume(self.volume, None)
+def disk_usage(drives=False):
+    # Disk Information
+    # get all disk partitions
+    try:
+        partitions = psutil.disk_partitions()
 
-    def decrease_volume(self, decibels):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                # 0.0 is the min value, reduce by decibels
-                self.volume = max(0.0, self.volume-decibels)
-                interface.SetMasterVolume(self.volume, None)
+        def getDriveName(driveletter):
+            return subprocess.check_output(["cmd","/c vol "+driveletter]).decode().split("\r\n")[0]
+        drives = False
+        for partition in partitions:
+            the_partition = partition.device.split(":")
+            driveletter = (the_partition[0])       
+            if not drives:
+                #print(f"=== Device: {partition.device} ===")
+                #print("NOT DRIVES")
+                # print(f"  Mountpoint: {partition.mountpoint}")
+                #print(f"  File system type: {partition.fstype}")
+                the_partition = partition.device.split(":")
+                drive_name = getDriveName(the_partition[:1][0]+":")
+                print(getDriveName(the_partition[:1][0]+":"))
+                drive_name_replaced = drive_name.replace(f"Volume in drive {the_partition[:1][0]} is", "")
+                if drive_name.endswith("has no label."):
+                    drive_name_replaced = partition.mountpoint
+                try:
+                    partition_usage = psutil.disk_usage(partition.mountpoint)
+                except PermissionError as e:
+                            # this can be catched due to the disk that
+                            # isn't ready
+                    print("Permission error " + e)
+                    continue
+                freespace = get_size(partition_usage.free).replace("GB","")
+                usedspace = get_size(partition_usage.used).replace("GB","")
 
-    def increase_volume(self, decibels):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                # 1.0 is the max value, raise by decibels
-                self.volume = min(1.0, self.volume+decibels)
-                interface.SetMasterVolume(self.volume, None)
-def AudioDeviceCmdlets(command, output=True):
-    process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
-    proc_stdout = process.communicate()[0]
-    if output:
-        proc_stdout = proc_stdout[proc_stdout.decode("utf-8", "ignore").index("["):-1]
-        return json.loads(proc_stdout) 
 
-def getActiveExecutablePath():
-    hWnd = ctypes.windll.user32.GetForegroundWindow()
-    if hWnd == 0:
-        return None # Note that this function doesn't use GetLastError().
+                TPClient.createStateMany([
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.letter_{driveletter}',
+                    "desc": f"{driveletter} Drive: Name",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.size_{driveletter}',
+                    "desc": f"{driveletter} Drive: Total Space",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.free_{driveletter}',
+                    "desc": f"{driveletter} Drive: Free Space",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "desc": f"{driveletter} Drive: Used",
+                    "value": ""
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "desc": f"{driveletter} Drive: Percentage",
+                    "value": ""
+                },
+                ])
+
+                percentage = 100 - partition_usage.percent
+                str_percent = str(percentage)
+                str_percent = str_percent[0:4]
+
+                TPClient.stateUpdateMany([
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.letter_{driveletter}',
+                    "value": drive_name_replaced
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.size_{driveletter}',
+                    "value": get_size(partition_usage.total)
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.free_{driveletter}',
+                    "value": freespace
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.used_{driveletter}',
+                    "value": usedspace
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
+                    "value": str_percent
+                },
+                ])
+    except Exception as e:
+        print("Disk usage", e)
+     
+     ### Total Read/Write since boot       
+    # get IO statistics since boot
+    try:
+        disk_io = psutil.disk_io_counters()
+
+        network = network_usage()
+
+        TPClient.stateUpdateMany([
+        {
+            "id": f'KillerBOSS.TP.Plugins.windows.network.sent',
+            "value": network['sent']
+        },
+        {
+            "id": f'KillerBOSS.TP.Plugins.windows.network.received',
+            "value": network['received']
+        },
+        {
+            "id": f'KillerBOSS.TP.Plugins.windows.disk.read',
+            "value": get_size(disk_io.read_bytes)
+        },
+        {
+            "id": f'KillerBOSS.TP.Plugins.windows.disk.write',
+            "value": get_size(disk_io.write_bytes)
+        },
+        ])
+    except Exception as e:
+        print("error disk usage n stuff " + e)
+
+old_results = []
+def get_windows_update():
+    global windows_active, old_results
+    windows_active = get_windows()
+    if len(old_results) is not len(windows_active):
+        # windows_active = get_windows()
+        print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+        old_results = windows_active
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.window_name", windows_active)
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.activeCOUNT", str(len(windows_active)))
     else:
-        _, pid = win32process.GetWindowThreadProcessId(hWnd)
-        return psutil.Process(pid).exe()
+        windows_active = get_windows()
+        old_results = windows_active
+
+
+monitor_count_old = ""
+def check_number_of_monitors():
+    global monitor_count_old
+    mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
+    
+    if monitor_count_old != mon_length:
+        list_monitor_full = get_monitors2()
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", list_monitor_full)
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", list_monitor_full)
+        list_monitor_full.insert(0, "0: ALL MONITORS")
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", list_monitor_full)  #  KillerBOSS.TP.Plugins.screencapture.full.file 
+        monitor_count_old = mon_length
+        
+        
+
+
+
+
+
+def screenshot_monitor(monitor_number, filename="", clipboard = False):   
+    monitor_number = int(monitor_number.split(":")[0])
+    with mss.mss() as sct:
+        try:
+            mon = sct.monitors[monitor_number]  
+            # Capturing Entire Monitor
+            monitor = {
+                "top": mon["top"],
+                "left": mon["left"],
+                "width": mon["width"],
+                "height": mon["height"],
+                "mon": monitor_number,
+            }
+
+            # Grab the Image
+            sct_img = sct.grab(monitor)     
+    
+            if clipboard == True:
+                if monitor_number==0:
+                    print("capturing all, using temp file")  ## having to use temp file to capture all screens successfully?
+                    mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
+                    file_to_bytes("temp.png") ## Saved to Clipboard
+                    
+                 ##   Instead of making a temp file we get it direct from raw to clipboard
+                elif monitor_number != 0:
+                    img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    copy_im_to_clipboard(img)
+                  #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", getFrame_base64(img).decode())
+
+            if clipboard == False:
+                mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
+                print("Image saved -> "+ filename+ ".png" )
+                
+
+        except IndexError:
+            print("This Monitor does not exist")
+stop_run_continuously = run_continuously()
 
 # Setup TouchPortal connection
 TPClient = TouchPortalAPI.Client('Windows-Tools')
 
+TTSThread = threading.Thread(target=TextToSpeech)
 running = False
 updateXY = True
 
-def muteAndUnMute(process, value):
-    if value == "Mute":
-        value = 1
-    elif value == "Unmute":
-        value = 0
-    sessions = AudioUtilities.GetAllSessions()
-    for session in sessions:
-        volume = session.SimpleAudioVolume
-        if session.Process and session.Process.name() == process:
-            volume.SetMute(value, None)
-
-def volumeChanger(process, action, value):
-    if action == "Set":
-        AudioController(str(process)).set_volume((int(value)*0.01))
-    elif action == "Increase":
-        AudioController(str(process)).increase_volume((int(value)*0.01))
-    elif action == "Decrease":
-        AudioController(str(process)).decrease_volume((int(value)*0.01))
-
-def setMasterVolume(Vol):
-    devices = AudioUtilities.GetSpeakers()
-    interface = devices.Activate(
-    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-    volume = cast(interface, POINTER(IAudioEndpointVolume))
-    scalarVolume = int(Vol) / 100
-    volume.SetMasterVolumeLevelScalar(scalarVolume, None)
-
-def getMasterVolume() -> int:
-    devices = AudioUtilities.GetSpeakers()
-    interface = devices.Activate(
-    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-    volume = cast(interface, POINTER(IAudioEndpointVolume))
-    return int(round(volume.GetMasterVolumeLevelScalar() * 100))
-
-def AdvancedMouseFunction(x, y, delay, look):
-    if look == 0:
-        look = None
-    if look == "None":
-        try:
-            pyautogui.moveTo(x, y, delay)
-        except:
-            pass
-    elif look == "Start slow, end fast":
-        try:
-            pyautogui.moveTo(x, y, delay, pyautogui.easeInQuad)
-        except:
-            pass
-    elif look == "Start fast, end slow":
-        try:
-            pyautogui.moveTo(x, y, delay, pyautogui.easeOutQuad)
-        except:
-            pass
-    elif look == "Start and end fast, slow in middle":
-        try:
-            pyautogui.moveTo(x, y, delay, pyautogui.easeInOutQuad)
-        except:
-            pass
-    elif look == "bounce at the end":
-        try:
-            pyautogui.moveTo(x, y, delay, pyautogui.easeInBounce)
-        except:
-            pass
-    elif look == "rubber band at the end":
-        try:
-            pyautogui.moveTo(x, y, delay, pyautogui.easeInElastic)
-        except:
-            pass
-
 old_volume_list = []
+monitor_count_old = 0
 global_states = []
 global Timer
 counter = 0
 def updateStates():
-    global old_volume_list, global_states, Timer, counter
+    global old_volume_list, global_states, Timer, counter, monitor_count_old
     Timer = threading.Timer(0.4, updateStates)
     Timer.start()
     if running:
@@ -180,6 +284,7 @@ def updateStates():
             sessions = AudioUtilities.GetAllSessions()
         except Exception as e:
             can_audio_run = False
+            print("error on Pythoncom", e)
             pass
         if can_audio_run:
             for x in sessions:
@@ -197,6 +302,7 @@ def updateStates():
                 for eachprocess in current_audio_source[2:]:
                     if eachprocess not in global_states:
                         TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "0")
+                        TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}.muteState', f'{eachprocess} is Muted', "False")
                         global_states.append(eachprocess)
                         print(f'creating states for {eachprocess}')
 
@@ -205,13 +311,17 @@ def updateStates():
                         try:
                             TPClient.removeState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}')
                             print(f'Removing {x}')
-                        except Exception:
+                        except Exception as e:
+                            if "exist" in str(e).split():
+                                global_states.remove(x)
+                            print("exception at 293", e)
                             pass
                     
             for x in global_states:
                 try:
                     appVolume = str(int(AudioController(x).process_volume()*100))
                     TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}', appVolume)
+                    TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}.muteState', str(bool(AudioController(x).getMuteState())))
                     TPClient.send(
                     {
                         "type":"connectorUpdate",
@@ -222,7 +332,11 @@ def updateStates():
                 except TypeError:
                     pass 
         counter = counter + 1
-        if counter >= 5:
+        if counter%2 == 0:
+            """
+            Updates every 5 loops 
+            """
+            #TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted()))
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
             activeWindow = getActiveExecutablePath()
             if activeWindow != None:
@@ -250,14 +364,22 @@ def updateStates():
                         "value": "0"
                     }
                 )
-        if counter >= 34:
+        if counter >= 35:
             counter = 0
-            output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
-            for x in output:
-                if x['Type'] == "Playback" and x['Default'] == True:
-                    TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
-                elif x['Type'] == "Recording" and x['Default'] == True:
-                    TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
+            try:
+                output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
+                for x in output:
+                    if x['Type'] == "Playback" and x['Default'] == True:
+                        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice', x['Name'])
+                    elif x['Type'] == "Recording" and x['Default'] == True:
+                        TPClient.stateUpdate('KillerBOSS.TP.Plugins.Sound.CurrentInputDevice', x['Name'])
+            except json.JSONDecodeError as err:
+                print("Audio Device Decode to Json Error: ", err)
+                pass     
+            except UnicodeDecodeError as err:
+                print("Unicode Decode Error: ", err)
+                   
+        
         # try:
         #     currentActiveWindowIco = extract_icon.extractIco(getActiveExecutablePath())
         #     TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.CurrentProgramIco", currentActiveWindowIco)
@@ -277,14 +399,80 @@ running = False
 updateStates()
 @TPClient.on('info')
 def onStart(data):
+    if settings := data.get('settings'):
+        handleSettings(settings, False)
+        
+    ### making this trigger every 1 seconds forever...
+    ##happening in handleSettings intead...
+    #schedule.every(1).seconds.do(timebooted_loop)
+     
+    ### Getting Power Plan Details and Updating States and Choices
+    pplans = get_powerplans()
+    pplans_list =[]
+    for item in pplans:
+        pplans_list.append(item)
+    print(pplans)
+    TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_current", get_powerplans(currentcheck=True))
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)  ### Updating Power Plan Choices
+    
+    ### Updating Choices for Windows Settings options from util.py
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
+    
+
+    the_devices = getAllOutput_TTS2()
+    tts_outputs = []
+    for item in the_devices:
+        tts_outputs.append(item)
+        
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
+        
     global running
     running = True
-    print(data)
     updateStates()
+
+
+settings = {}
+def handleSettings(settings, on_connect=False):
+    newsettings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
+    global stop_run_continuously
+    
+    
+    ###Stopping Scheduled Tasks and Clearing List
+    stop_run_continuously.set()
+    schedule.clear()
+    time.sleep(2)
+
+    for scheduleFunc in [(disk_usage, "Update Interval: Hard Drive"),
+                         (vd_check, "Update Interval: Network Up/Down(INCOMPLETE)"),
+                         (check_number_of_monitors, "Update Interval: Active Monitors"),
+                         (get_windows_update, "Update Interval: Active Windows")]:
+        interval = float(newsettings[scheduleFunc[1]])
+        
+        if int(newsettings[scheduleFunc[1]]) > 0:
+            schedule.every(interval).seconds.do(scheduleFunc[0])
+            print(f"{scheduleFunc[1]} is now {interval}")
+        else:
+            print(f"{scheduleFunc[1]} is TURNED OFF")
+    
+    ### mandatory loops....
+    schedule.every(5).minutes.do(get_ip_loop)
+    schedule.every(1).seconds.do(timebooted_loop)
+    ## Starting Back Up
+    stop_run_continuously = run_continuously()
+    return settings
+
+
+# Settings handler
+@TPClient.on(TouchPortalAPI.TYPES.onSettingUpdate)
+def onSettingUpdate(data):
+    if (settings := data.get('values')):
+        handleSettings(settings, False)
+
 
     
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
 def Actions(data):
+    global TTSThread
     print(data)
     if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute':
         if data['data'][0]['value'] is not '':
@@ -318,7 +506,134 @@ def Actions(data):
             updateXY = False
         else:
             updateXY = True
-    
+            
+## Screencap Window Current
+    if data['actionId'] == "KillerBOSS.TP.Plugins.window.current":
+        if data['data'][0]['value'] == "Clipboard":
+            current_window = pygetwindow.getActiveWindowTitle()
+            screenshot_window(capture_type=3, window_title=current_window, clipboard=True)
+            
+        elif data['data'][0]['value'] == "File":
+            current_window = pygetwindow.getActiveWindowTitle()
+            afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value']) 
+            screenshot_window(capture_type=3, window_title=current_window, clipboard=False, save_location=afile_name)
+            
+##Screen Cap Window Wildcard to FILE
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
+        global windows_active
+        windows_active = get_windows()
+        for thing in windows_active:
+            if data['data'][0]['value'].lower() in thing.lower():
+                print("We found", thing)
+                if data['data'][4]['value'] == "Clipboard":
+                    screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
+                    
+                elif data['data'][4]['value'] == "File":
+                    print("File stuf")
+                    afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
+                    screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
+                break
+             
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":   
+        if data['data'][1]['value'] == "Clipboard":
+            try:
+                screenshot_monitor(monitor_number=(data['data'][0]['value']), clipboard=True)
+            except:
+                pass
+        elif data['data'][1]['value'] == "File":
+            try:
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                screenshot_monitor(monitor_number=(data['data'][0]['value']), filename=afile_name, clipboard=False)
+            except:
+                pass
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file":
+        if (data['data'][0]['value']):
+            if data['data'][4]['value'] == "Clipboard":
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
+            if data['data'][4]['value'] == "File":
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+        
+        
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.processcheck":
+        app_to_check = data['data'][0]['value'].lower()
+        focus = data['data'][1]['value']
+        afocus_type = data['data'][2]['value']
+        shortcut_to_open = ""
+        if data['data'][3]['value']:
+            shortcut_to_open = data['data'][3]['value']
+        if focus == "Focus":
+            focus_check = True
+        else:
+            focus_check = False
+        
+        check_process(app_to_check, shortcut_to_open, focus=focus_check, focus_type=afocus_type)
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
+        send_to_clipboard("text", data['data'][0]['value'] )
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions":
+        choice = data['data'][0]['value']
+        virtual_desktop(target_desktop=choice)
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.rotate_display":
+        if data['data'][0]['value'] != "Pick a Monitor":
+            rotate_display(int(data['data'][0]['value']), data['data'][1]['value'])
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.shutdown":
+        win_shutdown(data['data'][0]['value'])
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.primary_monitor":
+        change_primary(data['data'][0]['value'])
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.powerplan":
+        change_pplan(data['data'][0]['value'])
+        TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_current", get_powerplans(currentcheck=True))
+        
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.move_window":
+        move_win_button(data['data'][0]['value'])
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window":
+        choice = data['data'][0]['value']
+        if data['data'][1]['value'] == "False":
+            virtual_desktop(move=True, target_desktop=choice)
+        if data['data'][1]['value'] == "True":
+            virtual_desktop(move=True, target_desktop=choice, pinned=True)
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.actions":
+        magnifier(data['data'][0]['value'])
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
+        win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'], buttonText=data['data'][3]['value'], buttonlink=data['data'][4]['value'], sound=data['data'][6]['value'])
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
+        winextra("Emoji")
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.keyboard":
+        winextra("Keyboard")
+        
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.action":
+        activate_windows_setting(data['data'][0]['value'])
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
+        #print(data['data'][3]['value'])
+        TTSThread = threading.Thread(target=TextToSpeech, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
+        TTSThread.setDaemon(True)
+        TTSThread.start()
+            
+    if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
+        if TTSThread.is_alive():
+            sd.stop()
+            pass
+        
+
+
+
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
     print(data)
@@ -364,6 +679,10 @@ def listChangeAction(data):
             updateDeviceOutput(data['value'])
         except KeyError:
             pass
+        
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.screencapture.window.clipboard':
+
+        pass
 
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
@@ -385,8 +704,11 @@ def connectors(data):
 @TPClient.on('closePlugin')
 def Shutdown(data):
     global running, Timer
-    TPClient.disconnect()
     running = False
+    stop_run_continuously.set()
+    schedule.clear()
+    TPClient.disconnect()
     Timer.cancel()
     sys.exit()
 TPClient.connect()
+
