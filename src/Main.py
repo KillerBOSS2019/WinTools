@@ -75,17 +75,20 @@ def disk_usage(drives=False):
     try:
         partitions = psutil.disk_partitions()
 
+        def getDriveName(driveletter):
+            return subprocess.check_output(["cmd","/c vol "+driveletter]).decode().split("\r\n")[0]
+        drives = False
         for partition in partitions:
             the_partition = partition.device.split(":")
             driveletter = (the_partition[0])       
             if not drives:
-               #print(f"=== Device: {partition.device} ===")
-               #print("NOT DRIVES")
+                #print(f"=== Device: {partition.device} ===")
+                #print("NOT DRIVES")
                 # print(f"  Mountpoint: {partition.mountpoint}")
                 #print(f"  File system type: {partition.fstype}")
                 the_partition = partition.device.split(":")
                 drive_name = getDriveName(the_partition[:1][0]+":")
-
+                print(getDriveName(the_partition[:1][0]+":"))
                 drive_name_replaced = drive_name.replace(f"Volume in drive {the_partition[:1][0]} is", "")
                 if drive_name.endswith("has no label."):
                     drive_name_replaced = partition.mountpoint
@@ -299,6 +302,7 @@ def updateStates():
                 for eachprocess in current_audio_source[2:]:
                     if eachprocess not in global_states:
                         TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "0")
+                        TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}.muteState', f'{eachprocess} is Muted', "False")
                         global_states.append(eachprocess)
                         print(f'creating states for {eachprocess}')
 
@@ -317,6 +321,7 @@ def updateStates():
                 try:
                     appVolume = str(int(AudioController(x).process_volume()*100))
                     TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}', appVolume)
+                    TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}.muteState', str(bool(AudioController(x).getMuteState())))
                     TPClient.send(
                     {
                         "type":"connectorUpdate",
