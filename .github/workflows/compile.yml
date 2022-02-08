@@ -3,9 +3,9 @@ name: compile for Windows
 on: [push, release]
 
 jobs:
-  build-n-publish:
+  build:
     name: build Windows TPP
-    run-on: windows-latest
+    runs-on: windows-latest
 
     steps:
     - uses: action/checkout@master
@@ -29,11 +29,10 @@ jobs:
       run: |
         python compile.py
     - name: uploading TPP file
-      working-directory: ./src
       uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.TOKEN }}
-        file: WinTools.tpp
+        file: ./src/WinTools.tpp
         asset_name: WinTool $tag.tpp
         tag: ${{ github.ref }}
         overwrite: true
