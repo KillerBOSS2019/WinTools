@@ -294,6 +294,7 @@ def updateStates():
                 for eachprocess in current_audio_source[2:]:
                     if eachprocess not in global_states:
                         TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}', f'{eachprocess} Volume', "0")
+                        TPClient.createState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{eachprocess}.muteState', f'{eachprocess} is Muted', "False")
                         global_states.append(eachprocess)
                         print(f'creating states for {eachprocess}')
 
@@ -310,6 +311,7 @@ def updateStates():
                 try:
                     appVolume = str(int(AudioController(x).process_volume()*100))
                     TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}', appVolume)
+                    TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}.muteState', str(bool(AudioController(x).getMuteState())))
                     TPClient.send(
                     {
                         "type":"connectorUpdate",

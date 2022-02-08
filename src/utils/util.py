@@ -58,6 +58,14 @@ class AudioController(object):
             if session.Process and session.Process.name() == self.process_name:
                 #print('Volume:', interface.GetMasterVolume())  # debug
                 return interface.GetMasterVolume()
+    
+    def getMuteState(self):
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            interface = session.SimpleAudioVolume
+            if session.Process and session.Process.name() == self.process_name:
+                #print('Volume:', interface.GetMasterVolume())  # debug
+                return interface.GetMute()
 
     def set_volume(self, decibels):
         sessions = AudioUtilities.GetAllSessions()
