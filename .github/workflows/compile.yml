@@ -25,6 +25,7 @@ jobs:
         pip install -r requirements.txt
     - name: build exe using pyinstaller
       run: |
+        pip uninstall enum34
         pyinstaller --onefile --icon=icon.ico WinTools.py
     - name: packaging file
       run: |
