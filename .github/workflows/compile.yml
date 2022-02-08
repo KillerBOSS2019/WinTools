@@ -23,5 +23,14 @@ jobs:
         pip install requirements.txt
     - name: build exe using pyinstaller
       run: |
-        pyinstaller WinTools.py
+        pyinstaller --onefile --icon=icon.ico WinTools.py
         python compile.py
+    - name: uploading TPP file
+      working-directory: ./src
+      - uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.TOKEN }}
+        file: WinTools.tpp
+        asset_name: WinTool $tag.tpp
+        tag: ${{ github.ref }}
+        overwrite: true
