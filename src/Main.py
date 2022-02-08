@@ -59,7 +59,15 @@ def vd_check():
         vdlist.append(str(i))
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
         
-
+        
+        ## should we bother checking old IP info to new to see if its different before we update states?
+def get_ip_loop():
+    try:
+        pub_ip =get_ip_details("choice1")  
+        for item in pub_ip:
+            TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.publicip.{item}", pub_ip[item])
+    except:
+        pass
 
 def disk_usage(drives=False):
     # Disk Information
@@ -153,12 +161,9 @@ def disk_usage(drives=False):
     # get IO statistics since boot
     try:
         disk_io = psutil.disk_io_counters()
-        # print(f"Total read: {get_size(disk_io.read_bytes)}")
-        # print(f"Total write: {get_size(disk_io.write_bytes)}")
-    
+
         network = network_usage()
-        # print(f"Total Bytes Sent: {network['received']}")
-        # print(f"Total Bytes Received: {network['sent']}")
+
         TPClient.stateUpdateMany([
         {
             "id": f'KillerBOSS.TP.Plugins.windows.network.sent',
@@ -303,6 +308,8 @@ def updateStates():
                             TPClient.removeState(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}')
                             print(f'Removing {x}')
                         except Exception as e:
+                            if "exist" in str(e).split():
+                                global_states.remove(x)
                             print("exception at 293", e)
                             pass
                     
@@ -399,19 +406,14 @@ def onStart(data):
     pplans_list =[]
     for item in pplans:
         pplans_list.append(item)
-    TPClient.createState("KillerBOSS.TP.Plugins.winsettings.powerplan_current", "Current Power Plan", get_powerplans(currentcheck=True))
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)
+    print(pplans)
+    TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_current", get_powerplans(currentcheck=True))
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.powerplan_choice", pplans_list)  ### Updating Power Plan Choices
     
     ### Updating Choices for Windows Settings options from util.py
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", activate_windows_setting())
     
-    try:
-        import requests
-        pub_ip = requests.get('https://checkip.amazonaws.com').text.strip()  
-        TPClient.createState("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", "Your Public IP", pub_ip)
-    except:
-        pass
-    
+
     the_devices = getAllOutput_TTS2()
     tts_outputs = []
     for item in the_devices:
@@ -446,8 +448,11 @@ def handleSettings(settings, on_connect=False):
             print(f"{scheduleFunc[1]} is now {interval}")
         else:
             print(f"{scheduleFunc[1]} is TURNED OFF")
-            
+    
+    ### mandatory loops....
+    schedule.every(5).minutes.do(get_ip_loop)
     schedule.every(1).seconds.do(timebooted_loop)
+    ## Starting Back Up
     stop_run_continuously = run_continuously()
     return settings
 

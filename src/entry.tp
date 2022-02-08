@@ -9,6 +9,52 @@
   },
   "plugin_start_cmd": "%TP_PLUGIN_FOLDER%WinTools\\WinTools.exe",
   "categories": [
+
+    {
+        "id":"Public IP",
+        "name":"Public IP Info",
+        "events":[
+        ],
+        "states":[
+          {
+              "id":"KillerBOSS.TP.Plugins.publicip.ip",
+              "type":"text",
+              "desc":"Public IP: IP Address",
+              "default":""
+          },
+          {
+            "id":"KillerBOSS.TP.Plugins.publicip.city",
+            "type":"text",
+            "desc":"Pubic IP: City",
+            "default":""
+          },
+          {
+              "id":"KillerBOSS.TP.Plugins.publicip.country",
+              "type":"text",
+              "desc":"Public IP: Country",
+              "default":""
+          },
+          {
+            "id":"KillerBOSS.TP.Plugins.publicip.region",
+            "type":"text",
+            "desc":"Public IP: Region",
+            "default":""
+        },
+          {
+              "id":"KillerBOSS.TP.Plugins.publicip.timezone",
+              "type":"text",
+              "desc":"Pubic IP: Timezone",
+              "default":""
+          },
+          {
+            "id":"KillerBOSS.TP.Plugins.publicip.organization",
+            "type":"text",
+            "desc":"Pubic IP: Internet Provider",
+            "default":""
+        }
+        ]
+    },
+
     {
       "id": "main",
       "name": "Windows-Tool",
@@ -522,10 +568,10 @@
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
-          "format": "Shutdown Computer in X SECONDS",
+          "format": "Shutdown Computer in {$KillerBOSS.TP.Plugins.winsettings.shutdown_minutes$} MINUTES",
           "data": [
             {
-              "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_seconds",
+              "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_minutes",
               "type": "text",
               "label": "text",
               "default": ""
@@ -568,24 +614,6 @@
           }
         ]
       },
-
-              {
-          "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
-          "name": "UTILITY:  Change Powerplan",
-          "prefix": "plugin",
-          "type": "communicate",
-          "tryInline": true,
-          "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
-          "data": [
-            {
-              "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
-              "type": "choice",
-              "label": "pplan choice",
-              "default": "",
-              "valueChoices": []
-            }
-          ]
-        },  
 
         {
           "id": "KillerBOSS.TP.Plugins.winsettings.primary_monitor",
@@ -948,7 +976,13 @@
           "type": "text",
           "desc": "Active Window Count",
           "default": ""
-        }, 
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_current",
+          "type": "text",
+          "desc": "Active Power Plan",
+          "default": ""
+        },  
         {
           "id": "KillerBOSS.TP.Plugins.Windows.livetime",
           "type": "text",

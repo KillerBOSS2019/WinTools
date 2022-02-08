@@ -3,7 +3,7 @@ import json
 import os
 import subprocess
 import time
-from ctypes import POINTER, cast
+from ctypes import POINTER, cast, windll
 from datetime import datetime
 from io import BytesIO
 
@@ -286,7 +286,6 @@ def file_to_bytes(filepath):
 
 ###screenshot window without bringing it to foreground 
 def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
-    from ctypes import windll
     hwnd = win32gui.FindWindow(None, window_title)
     try:
         left, top, right, bot = win32gui.GetClientRect(hwnd)
@@ -421,7 +420,6 @@ def magnifier(action):
     
     ### used mostly for checking numlock status
 def get_key_state(key):
-    import ctypes
     hllDll = ctypes.WinDLL ("User32.dll")
     if key == "NUM LOCK":
         return hllDll.GetKeyState(0x90)
@@ -441,55 +439,65 @@ def move_win_button(direction):
     
 def win_shutdown(time, cancel=False):
     ## should we create a shutdown timer/countdown ??  we can warn the user 5 minutes before shutting down so they can cancel
-    time= pyautogui.prompt(text='💻 How many MINUTES do you want to wait before shutting down?', title='Shutdown PC?', default='')
-    if time:
+    
+    ## IF Blank then we show the GUI
+    if time == "":
+        time_set= pyautogui.prompt(text='💻 How many MINUTES do you want to wait before shutting down?', title='Shutdown PC?', default='')
+        if time_set == "0":
+            os.system(f"shutdown -a")
+            pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
+            time="DONE"
+        if type(time) == int:
+            if int(time_set) > 0:
+                print(f"Shutdown in {time_set} minutes")
+                time_set = int(time_set) * 60
+                os.system(f"shutdown -s -t {time}")
+                time="DONE"
+                
+    if time == "NOW":
+        os.system(f"shutdown -s -t 0")
+        
+    if type(time) == int:
+    
         if int(time) >0:
             try:
-                time = int(time) * 60    ## multiplying by 60 to get minutes
+                print("Shutdown soon?")
+                time = int(time) * 60 
                 os.system(f"shutdown -s -t {time}")
             except:
                 pass
-    elif time == None or 0:
-        os.system(f"shutdown -a")
-        pyautogui.alert("System Shutdown CANCELLED!")
-    
-
-
-
+        elif int(time) == None or 0:
+            os.system(f"shutdown -a")
+            pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
+        
 
 from subprocess import PIPE, run
-
+import subprocess
 def out(command):
-    result = run(command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
-    return result.stdout
+    systemencoding = windll.kernel32.GetConsoleOutputCP()
+    systemencoding= f"cp{systemencoding}"
+    output = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+    result = str(output.stdout.decode(systemencoding))
+    return result
 
 def get_powerplans(currentcheck=False):
-    import re
     pplans={}
     for powerplan in out("powercfg -List").split("\n")[2:]:
         if "Scheme" in powerplan.split():
             ParsedData = powerplan.split(":")[1].split()
             the_data = (ParsedData[0])
             plan_name = (" ".join(ParsedData[1:]))
-        
     
             if "*" in plan_name:
-                print("this is current")
-                ##Update TP State to Show Current Power Plan.
-                
-                ### Removing all special chars except spaces and *
-                regex = re.compile('[^a-zA-Z]')
-                #First parameter is the replacement, second parameter is your input string
-                plan_name = regex.sub('', plan_name)
+                plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                 pplans[plan_name]=the_data
                 if currentcheck==True:
                     return plan_name
             else:
-                regex = re.compile('[^a-zA-Z]')
-                plan_name = regex.sub('', plan_name)
+                plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                 pplans[plan_name]=the_data
-        
     return pplans
+
     
 
 ################### THIS NEEDS IMPLEMENTED ###################
@@ -524,6 +532,24 @@ def ping_ip(the_ip):
     print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
     
     return ip_dict
+
+
+import requests 
+
+def get_ip_details(choice):
+	if choice == "choice1":
+		choice = "https://ip.seeip.org/geoip/"
+	if choice == "choice2":
+		choice = "http://ipinfo.io/json"
+	r = requests.get(choice)
+	r= json.loads(r.text)
+	list = ['ip', 'country',  'region', 'city', 'organization', 'timezone', 'postal']
+	ip_dict = {}
+	for item in r:
+		for thing in list:
+			if item in thing:
+				ip_dict[thing] = r[item]
+	return ip_dict
 
 
 
@@ -746,11 +772,16 @@ def get_windows():
     win32gui.EnumWindows(winEnumHandler, None)
     return results
 
+
+
+
 def AudioDeviceCmdlets(command, output=True):
-    process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True)
+    systemencoding = windll.kernel32.GetConsoleOutputCP()
+    systemencoding= f"cp{systemencoding}"
+    process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True, encoding=systemencoding)
     proc_stdout = process.communicate()[0]
     if output:
-        proc_stdout = proc_stdout[proc_stdout.decode("utf-8", "ignore").index("["):-1]
+        proc_stdout = proc_stdout[proc_stdout.index("["):-1]
         return json.loads(proc_stdout) 
 
 
