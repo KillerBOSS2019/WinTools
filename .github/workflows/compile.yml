@@ -24,10 +24,13 @@ jobs:
     - name: build exe using pyinstaller
       run: |
         pyinstaller --onefile --icon=icon.ico WinTools.py
-        python compile
+    - name: packaging file
+      working-directory: ./src
+      run: |
+        python compile.py
     - name: uploading TPP file
       working-directory: ./src
-      - uses: svenstaro/upload-release-action@v2
+      uses: svenstaro/upload-release-action@v2
       with:
         repo_token: ${{ secrets.TOKEN }}
         file: WinTools.tpp
