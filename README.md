@@ -16,33 +16,33 @@
 WinTool is multi Tools that is made to work with Windows machine.
 
 ## Actions
-- ![](https://img.shields.io/static/v1?style=for-the-badge&message=VolumeMixer&color=darkgreen&label=Action) [VolumeMixer] Mute/Unmute process volume <br>
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [VolumeMixer] Mute/Unmute process volume <br>
 - ![#f03c15](https://i.imgur.com/n8joDW9.png) [VOLUME MIXER] Increase/Decrease process volume (slider control available)
-- [Action] [VOLUME MIXER] Increase/Decrease process volume (slider control available)
-- [Action] [Sound] Change Input/Output Device
-- [Action] [Mouse] Toggle Mouse Down/Up
-- [Action] [Mouse] Stop X, Y Update (Togglable)
-- [Action] [Mouse] Teleport Mouse X, Y with delay, animation
-- [Action] [Mouse] Advanced Mouse Click
-- [Action] [Capture] Display to File / Clipboard 
-- [Action] [Capture] Window to File / Clipboard 
-- [Action] [Capture] Window to File / Clipboard (*Wildcard)
-- [Action] [Capture] Current Active Window File / Clipboard
-- [Action] [Utility] Text To Speech: Speak 
-- [Action] [Utility] Text To Speech: Stop
-- [Action] [Utility] Move Application To Monitor Left/Right
-- [Action] [Utility] Shutdown Computer in (X) minutes
-- [Action] [Utility] Change Powerplan
-- [Action] [Utility] System Settings
-- [Action] [Utility] Change Primary Monitor
-- [Action] [Utility] Rotate Display / Monitor
-- [Action] [Utility] Windows Notifcation
-- [Action] [Utility] Magnifier Glass
-- [Action] [Utility] On-Screen Keyboard
-- [Action] [Utility] Emoji Panel
-- [Action] [Utility] Text / Value to Clipboard
-- [Action] [Utility] Virtual Desktop: Next / Previous
-- [Action] [Utility] Virtual Desktop: Move Current Window to #
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [VOLUME MIXER] Increase/Decrease process volume (slider control available)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Sound] Change Input/Output Device
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Toggle Mouse Down/Up
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Stop X, Y Update (Togglable)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Teleport Mouse X, Y with delay, animation
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Advanced Mouse Click
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Display to File / Clipboard 
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Window to File / Clipboard 
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Window to File / Clipboard (*Wildcard)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Current Active Window File / Clipboard
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Text To Speech: Speak 
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Text To Speech: Stop
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Move Application To Monitor Left/Right
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Shutdown Computer in (X) minutes
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Change Powerplan
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] System Settings
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Change Primary Monitor
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Rotate Display / Monitor
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Windows Notifcation
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Magnifier Glass
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] On-Screen Keyboard
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Emoji Panel
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Text / Value to Clipboard
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Virtual Desktop: Next / Previous
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Utility] Virtual Desktop: Move Current Window to #
 
 ## States
 - [State] [Advance Mouse] Current Mouse X pos
