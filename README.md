@@ -3,26 +3,16 @@
 
 <p align="center">
 
-- [WinTool Plugin](#wintool-plugin)
-    - [Description](#description)
-    - [Actions](#actions)
-    - [States](#states)
-- [Installation Guide](#installation-guide)
-- [Settings Overview](#settings-Overview)
-- [info](#info)
+    - [WinTool Plugin](#wintool-plugin)
+        - [Description](#description)
+        - [Actions](#actions)
+        - [States](#states)
+    - [Installation Guide](#installation-guide)
+    - [Settings Overview](#settings-Overview)
+    - [info](#info)
 </p>
 
 
-Normal Text
-
-<p align="center">
-  <b>Some Links:</b><br>
-  <a href="#">Link 1</a> |
-  <a href="#">Link 2</a> |
-  <a href="#">Link 3</a>
-  <br><br>
-  <img src="http://s.4cdn.org/image/title/105.gif">
-</p>
 
 
 ## Description
