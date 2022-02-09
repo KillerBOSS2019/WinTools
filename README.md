@@ -8,8 +8,6 @@
 - [Settings Overview](#settings-Overview)
 - [info](#info)
 
-[![Test](https://img.shields.io/badge/github-blue?style=for-the-badge)](https://github.com/hamzamohdzubair/redant)
-
 ## Description
 WinTool is multi Tools that is made to work with Windows machine.
 
