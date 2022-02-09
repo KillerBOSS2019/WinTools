@@ -26,22 +26,22 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [Action] [Capture] Display to File / Clipboard 
 - [Action] [Capture] Window to File / Clipboard 
 - [Action] [Capture] Window to File / Clipboard (*)
-- [Action] [UTILITY] Text To Speech: Speak X
-- [Action] [UTILITY] Text To Speech: Stop
 - [Action] [Capture] Current Active Window File / Clipboard
-- [Action] [UTILITY] Move Application To Monitor Left/Right
-- [Action] [UTILITY] Shutdown Computer in (x)
-- [Action] [UTILITY] Change Powerplan
-- [Action] [UTILITY] System Settings
-- [Action] [UTILITY] Change Primary Monitor
-- [Action] [UTILITY] Rotate Display / Monitor
-- [Action] [UTILITY] Windows Notifcation
-- [Action] [UTILITY] Magnifier Glass
-- [Action] [UTILITY] On-Screen Keyboard
-- [Action] [UTILITY] Emoji Panel
-- [Action] [UTILITY] Text / Value to Clipboard
-- [Action] [UTILITY] Virtual Desktop: Next / previous
-- [Action] [UTILITY] Virtual Desktop: Move Current Window to #
+- [Action] [Utility] Text To Speech: Speak X
+- [Action] [Utility] Text To Speech: Stop
+- [Action] [Utility] Move Application To Monitor Left/Right
+- [Action] [Utility] Shutdown Computer in (x)
+- [Action] [Utility] Change Powerplan
+- [Action] [Utility] System Settings
+- [Action] [Utility] Change Primary Monitor
+- [Action] [Utility] Rotate Display / Monitor
+- [Action] [Utility] Windows Notifcation
+- [Action] [Utility] Magnifier Glass
+- [Action] [Utility] On-Screen Keyboard
+- [Action] [Utility] Emoji Panel
+- [Action] [Utility] Text / Value to Clipboard
+- [Action] [Utility] Virtual Desktop: Next / previous
+- [Action] [Utility] Virtual Desktop: Move Current Window to #
 
 ## States
 - [State] [Advance Mouse] Current Mouse X pos
