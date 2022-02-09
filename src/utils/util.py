@@ -490,12 +490,12 @@ def out(command):
 
 def get_powerplans(currentcheck=False):
     pplans={}
-    for powerplan in out("powercfg -List").split("\n")[2:]:
-        if "Scheme" in powerplan.split():
+    for powerplan in out("powercfg -List").split("\n"):
+        if ":" in powerplan:
             ParsedData = powerplan.split(":")[1].split()
             the_data = (ParsedData[0])
             plan_name = (" ".join(ParsedData[1:]))
-    
+
             if "*" in plan_name:
                 plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                 pplans[plan_name]=the_data
@@ -688,7 +688,9 @@ def get_size(bytes, suffix="B"):
         bytes /= factor
 
 def getDriveName(driveletter):
-    return subprocess.check_output(["cmd","/c vol "+driveletter]).decode().split("\r\n")[0]
+    systemencoding = windll.kernel32.GetConsoleOutputCP()
+    systemencoding= f"cp{systemencoding}"
+    return subprocess.check_output(["cmd","/c vol "+driveletter]).decode(systemencoding).split("\r\n")[0]
 
 ## NOT TO BE CONFUSED WITH UPLOAD / DOWNLOAD SPEED
 def network_usage():
