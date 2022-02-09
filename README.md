@@ -19,8 +19,6 @@ WinTool is multi Tools that is made to work with Windows machine.
 - ![](https://img.shields.io/static/v1?style=for-the-badge&message=VolumeMixer&color=darkgreen&label=Action) [VolumeMixer] Mute/Unmute process volume <br>
 - [Action] [VOLUME MIXER] Increase/Decrease process volume (slider control available)
 - [Action] [Sound] Change Input/Output Device
-- [Action] [UTILITY] Text To Speech: Speak X
-- [Action] [UTILITY] Text To Speech: Stop
 - [Action] [Mouse] Toggle Mouse Down/Up
 - [Action] [Mouse] Stop X, Y Update (Togglable)
 - [Action] [Mouse] Teleport Mouse X, Y with delay, animation
@@ -28,6 +26,8 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [Action] [Capture] Display to File / Clipboard 
 - [Action] [Capture] Window to File / Clipboard 
 - [Action] [Capture] Window to File / Clipboard (*)
+- [Action] [UTILITY] Text To Speech: Speak X
+- [Action] [UTILITY] Text To Speech: Stop
 - [Action] [Capture] Current Active Window File / Clipboard
 - [Action] [UTILITY] Move Application To Monitor Left/Right
 - [Action] [UTILITY] Shutdown Computer in (x)
@@ -48,13 +48,15 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [State] [Advance Mouse] Current Mouse Y pos
 - [State] [Sound] Get Current Output Device
 - [State] [Sound] Get Current Input Device
-- [State] [Application] Get current focused APP
-- [State] [Network] Total Bytes Received
-- [State] [Network] Total Bytes Send
-- [State] [Disk] Total Read
-- [State] [Disk] Total Write
-- [State] [Window] Active Window Count
-- [State] [Power] Active Power Plan
+- [State] [Sound] Application Volume (Create states base on Volume Mixer)
+- [State] [Sound] Application is Muted (Create states base on Volume Mixer)
+- [State] [System] Get Current Focused Application Name
+- [State] [System] Total Bytes Received
+- [State] [System] Total Bytes Send
+- [State] [System] Disk Read Total
+- [State] [System] Disk Write Total
+- [State] [System] Active Window Count
+- [State] [System] Active Power Plan
 - [State] [System] Computer Uptime 
 - [State] [IP] IP Address
 - [State] [IP] City
@@ -62,8 +64,7 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [State] [IP] Region
 - [State] [IP] Timezone
 - [State] [IP] Internet Provider
-- [State] [VolumeMixer] Application Volume (Create states base on Volume Mixer)
-- [State] [VolumeMixer] Application is Muted (Create states base on Volume Mixer)
+
 
 ## Installation Guide
 1. Go to [Releases](https://github.com/KillerBOSS2019/WinTools/releases) and Latest build should be on the top
