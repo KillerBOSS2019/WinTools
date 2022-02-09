@@ -12,7 +12,7 @@
 WinTool is multi Tools that is made to work with Windows machine.
 
 ## Actions
-- ![](https://img.shields.io/badge/-Action-blue) [VolumeMixer] Mute/Unmute process volume <br>
+- ![](https://img.shields.io/badge/-Action-blue?style=for-the-badge) [VolumeMixer] Mute/Unmute process volume <br>
 - [Action] [VolumeMixer] Increase/Decrease process volume (slider control available)
 - [Action] [Sound] Change Input/Output Device
 - [Action] [UTILITY] Text To Speech: Speak X
