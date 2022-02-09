@@ -12,11 +12,6 @@ WinTool is multi Tools that is made to work with Windows machine.
 
 ## Actions
 - [Action] [VolumeMixer] Mute/Unmute process volume <br>
-    Format `[Muted/Unmute] Program [Program list]` <br>
-    Parameter <br>
-        [Muted/Unmute] This ether mutes or Unmute the program <br>
-        [Program list] This will list all possible program that have sound. <br>
-
 - [Action] [VolumeMixer] Increase/Decrease process volume (slider control available)
 - [Action] [Sound] Change Input/Output Device
 - [Action] [UTILITY] Text To Speech: Speak X
