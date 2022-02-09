@@ -25,12 +25,12 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [Action] [Mouse] Advanced Mouse Click
 - [Action] [Capture] Display to File / Clipboard 
 - [Action] [Capture] Window to File / Clipboard 
-- [Action] [Capture] Window to File / Clipboard (*)
+- [Action] [Capture] Window to File / Clipboard (*Wildcard)
 - [Action] [Capture] Current Active Window File / Clipboard
-- [Action] [Utility] Text To Speech: Speak X
+- [Action] [Utility] Text To Speech: Speak 
 - [Action] [Utility] Text To Speech: Stop
 - [Action] [Utility] Move Application To Monitor Left/Right
-- [Action] [Utility] Shutdown Computer in (x)
+- [Action] [Utility] Shutdown Computer in (X) minutes
 - [Action] [Utility] Change Powerplan
 - [Action] [Utility] System Settings
 - [Action] [Utility] Change Primary Monitor
@@ -40,7 +40,7 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [Action] [Utility] On-Screen Keyboard
 - [Action] [Utility] Emoji Panel
 - [Action] [Utility] Text / Value to Clipboard
-- [Action] [Utility] Virtual Desktop: Next / previous
+- [Action] [Utility] Virtual Desktop: Next / Previous
 - [Action] [Utility] Virtual Desktop: Move Current Window to #
 
 ## States
