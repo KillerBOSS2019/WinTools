@@ -14,12 +14,6 @@
 
 ## Description
 WinTool is multi Tools that is made to work with Windows machine.
-```diff
-- text in red
-+ text in green
-! text in orange
-# text in gray
-@@ text in purple (and bold)@@
 
 ## Actions
 - ![](https://img.shields.io/static/v1?style=for-the-badge&message=VolumeMixer&color=darkgreen&label=Action) [VolumeMixer] Mute/Unmute process volume <br>
@@ -70,7 +64,7 @@ WinTool is multi Tools that is made to work with Windows machine.
 - [State] [IP] Internet Provider
 - [State] [VolumeMixer] Application Volume (Create states base on Volume Mixer)
 - [State] [VolumeMixer] Application is Muted (Create states base on Volume Mixer)
-```
+
 ## Installation Guide
 1. Go to [Releases](https://github.com/KillerBOSS2019/WinTools/releases) and Latest build should be on the top
 2. Then scroll down little until you see "Assets" [Image/Assets.png] Click arrow button
