@@ -867,11 +867,8 @@
             "id": "KillerBOSS.TP.Plugins.TextToSpeech.voices",
             "type": "choice",
             "label": "choice",
-            "default": "Male",
-            "valueChoices": [
-              "Female",
-              "Male"
-            ]
+            "default": "",
+            "valueChoices": []
           },
           {
             "id": "KillerBOSS.TP.Plugins.TextToSpeech.text",

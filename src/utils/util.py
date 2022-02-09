@@ -797,13 +797,20 @@ def AudioDeviceCmdlets(command, output=True):
 import sounddevice as sd
 import audio2numpy as a2n
 import pyttsx3
+
+def getAllVoices():
+    engine = pyttsx3.init()
+    return engine.getProperty("voices")
+
 def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
     engine = pyttsx3.init()
     voices = engine.getProperty('voices')
-    print(voices)
     engine.setProperty("volume", volume/100)
     engine.setProperty("rate", rate)
-    engine.setProperty('voice', voices[1].id if voicesChoics == "Female" else voices[2].id)
+    for voice in getAllVoices():
+        if voice.name == voicesChoics:
+            engine.setProperty('voice', voice.id)
+            print("Using", voice.name, "voices", voice)
 
     if output =="Default":
         try:
@@ -825,9 +832,7 @@ def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
             sd.play(x, sr, blocking=True)
         except Exception as e:
             print("test", e)
-            
-        
-        
+
 def activate_windows_setting(choice=False):
     
     settings ={

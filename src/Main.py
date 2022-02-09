@@ -378,7 +378,8 @@ def updateStates():
                 pass     
             except UnicodeDecodeError as err:
                 print("Unicode Decode Error: ", err)
-                   
+            voices = [voice.name for voice in getAllVoices()]
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.voices", voices)
         
         # try:
         #     currentActiveWindowIco = extract_icon.extractIco(getActiveExecutablePath())
@@ -456,7 +457,7 @@ def handleSettings(settings, on_connect=False):
     
     ### mandatory loops....
     schedule.every(5).minutes.do(get_ip_loop)
-    schedule.every(1).seconds.do(timebooted_loop)
+    #schedule.every(1).seconds.do(timebooted_loop)
     ## Starting Back Up
     stop_run_continuously = run_continuously()
     return settings
