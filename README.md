@@ -1,17 +1,27 @@
 ![pngwing com_11](https://user-images.githubusercontent.com/55416314/153131886-42c0448d-81f8-49f3-bc38-693ae2341aaf.png)
 ## WinTool Plugin
 
+
+
+- [WinTool Plugin](#wintool-plugin)
+    - [Description](#description)
+    - [Actions](#actions)
+    - [States](#states)
+- [Installation Guide](#installation-guide)
+- [Settings Overview](#settings-Overview)
+- [info](#info)
+
+
+Normal Text
+
 <p align="center">
-
-    - [WinTool Plugin](#wintool-plugin)
-        - [Description](#description)
-        - [Actions](#actions)
-        - [States](#states)
-    - [Installation Guide](#installation-guide)
-    - [Settings Overview](#settings-Overview)
-    - [info](#info)
+  <b>Some Links:</b><br>
+  <a href="#">Link 1</a> |
+  <a href="#">Link 2</a> |
+  [States](#states)
+  <br><br>
+  <img src="http://s.4cdn.org/image/title/105.gif">
 </p>
-
 
 
 
