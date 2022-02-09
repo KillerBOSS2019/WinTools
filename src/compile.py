@@ -21,7 +21,7 @@ for file in os.listdir("."):
         shutil.copy(os.path.join(os.getcwd(), file), os.path.join("temp", filedirectory))
         
 os.rename("dist\Main.exe", "dist\WinTools.exe")
-shutil.copy(os.path.join(os.getcwd(), r"dist\Main.exe"), "temp/"+filedirectory)
+shutil.copy(os.path.join(os.getcwd(), r"dist\WinTools.exe"), "temp/"+filedirectory)
 
 shutil.make_archive(base_name="WinTools", format='zip', root_dir="temp", base_dir="WinTools") 
 os.rename("WinTools.zip", "WinTools.tpp")
