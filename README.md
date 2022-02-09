@@ -16,18 +16,18 @@
 WinTool is multi Tools that is made to work with Windows machine.
 
 ## Actions
-- ![](https://img.shields.io/static/v1?style=for-the-badge&message=VolumeMixer&color=darkgreen&label=Action) [VolumeMixer] Mute/Unmute process volume <br>
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [VolumeMixer] Mute/Unmute process volume <br>
 - ![#f03c15](https://i.imgur.com/n8joDW9.png) [VOLUME MIXER] Increase/Decrease process volume (slider control available)
-- [Action] [VOLUME MIXER] Increase/Decrease process volume (slider control available)
-- [Action] [Sound] Change Input/Output Device
-- [Action] [Mouse] Toggle Mouse Down/Up
-- [Action] [Mouse] Stop X, Y Update (Togglable)
-- [Action] [Mouse] Teleport Mouse X, Y with delay, animation
-- [Action] [Mouse] Advanced Mouse Click
-- [Action] [Capture] Display to File / Clipboard 
-- [Action] [Capture] Window to File / Clipboard 
-- [Action] [Capture] Window to File / Clipboard (*Wildcard)
-- [Action] [Capture] Current Active Window File / Clipboard
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [VOLUME MIXER] Increase/Decrease process volume (slider control available)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Sound] Change Input/Output Device
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Toggle Mouse Down/Up
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Stop X, Y Update (Togglable)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Teleport Mouse X, Y with delay, animation
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Mouse] Advanced Mouse Click
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Display to File / Clipboard 
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Window to File / Clipboard 
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Window to File / Clipboard (*Wildcard)
+- ![#f03c15](https://i.imgur.com/n8joDW9.png) [Capture] Current Active Window File / Clipboard
 - [Action] [Utility] Text To Speech: Speak 
 - [Action] [Utility] Text To Speech: Stop
 - [Action] [Utility] Move Application To Monitor Left/Right
