@@ -78,25 +78,23 @@ WinTool is multi Tools that is made to work with Windows machine.
 
 ## Settings Overview
 
-    ### Windows-Tools Settings
+### Windows-Tools Settings
+- Update Interval: Network Up-Down(INCOMPLETE)
+    - In seconds of how offen that it will update Network data
+- Update Interval: Hard Drive
+    - In seconds of how offen that it will update infos about storage drive
+- Update Interval: Active Monitors
+    - In seconds of how offen that it will ipdate active monitors. This is also used for Monitor drop-down list for action
+- Update Inerval: Active Windows
+    - In seconds of how offen that it will ipdate active window state
+- Update Interval: Active Virtual Desktops
+    - In seconds of how offen that it will check for Virtual Desktop states
 
-    - Update Interval: Network Up-Down(INCOMPLETE)
-        - In seconds of how offen that it will update Network data
-    - Update Interval: Hard Drive
-        - In seconds of how offen that it will update infos about storage drive
-    - Update Interval: Active Monitors
-        - In seconds of how offen that it will ipdate active monitors. This is also used for Monitor drop-down list for action
-    - Update Inerval: Active Windows
-        - In seconds of how offen that it will ipdate active window state
-    - Update Interval: Active Virtual Desktops
-        - In seconds of how offen that it will check for Virtual Desktop states
-
-
-    ### To access Plugin Settings
-    1. Click Settings button near the email icon
-    2. Select `Settings...`
-    3. It should open Settings window and on the left side you should see `Plug-Ins` tab. Click on that
-    4. Then you should see a drop-down Select `Windows-Tools`. and you should see all the settings
+### To access Plugin Settings
+1. Click Settings button near the email icon
+2. Select `Settings...`
+3. It should open Settings window and on the left side you should see `Plug-Ins` tab. Click on that
+4. Then you should see a drop-down Select `Windows-Tools`. and you should see all the settings
 
 ## Info
 Feel free to suggest a pull request for new features, improvements, or documentation. If you are not sure how to proceed with something, please start an Issue at the GitHub repository.
