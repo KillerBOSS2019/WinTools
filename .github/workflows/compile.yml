@@ -1,6 +1,6 @@
 name: compile for Windows
     
-on: [push, release]
+on: release
 
 jobs:
   build:
