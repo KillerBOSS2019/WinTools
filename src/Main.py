@@ -21,7 +21,7 @@ from screeninfo import get_monitors
 
 from utils.util import *
 
-ss
+
 def run_continuously(interval=1):
     """Continuously run, while executing pending jobs at each
     elapsed time interval.
