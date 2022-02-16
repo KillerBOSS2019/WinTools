@@ -22,10 +22,11 @@ from PIL import Image
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 from pycaw.magic import MagicManager, MagicSession  # isort:skip
 from pycaw.constants import AudioSessionState  # isort:skip
-from winotify import Notification, audio
+from winotify import Notification, audio, Registry, PY_EXE, Notifier
 import re
 import pywintypes
 import pythoncom
+import winreg
 
 
 
@@ -160,21 +161,34 @@ def AdvancedMouseFunction(x, y, delay, look):
 #             Windows Notification                  #          
 #                                                   #
 ######################################################
+app_id = "WinTools-Notify"
+app_path = os.path.abspath(__file__)
+r = Registry(app_id, PY_EXE, app_path, force_override=True)
+notifier = Notifier(r)
+
+@notifier.register_callback
+def clear_notify():
+    notifier.clear()
+
 
 def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", aduration="short", icon=""):
     ### setting the base notification stuff
     if not os.path.exists(rf"{icon}") or icon == "": icon = os.path.join(os.getcwd(),"src\icon.png")
 
-    toast = Notification(app_id="WinTools",
+    toast = notifier.create_notification(
                          title=atitle,
                          msg=amsg,
                          icon=icon,
                          duration = aduration.lower(),
                          )
     
+    ### we can allow multiple links
     if buttonText != "" and buttonlink != "":
         toast.add_actions(label=buttonText, 
-                        link=buttonlink)
+                        launch=buttonlink)
+      # toast.add_actions("Open Github", "https://github.com/versa-syahptr/winotify")
+      # toast.add_actions("Quit app", "Kewl")
+      # toast.add_actions("spam", "sweet")
 
     audioDic = {
         "Default": audio.Default,
@@ -208,6 +222,9 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
     toast.build()
     toast.show()
 
+
+    
+    
 from win32com.client import GetObject
 def get_monitors2():
     objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
@@ -402,13 +419,15 @@ def rotate_display(display_num, rotate_choice):
     
 
 
-def magnifier(action):
+def magnifier(action, amount=None):
     if action == "Zoom In":
         #pyautogui.hotkey('win', '+')
-        out("magnify") #always making sure its open if we zoom in
-        time.sleep(0.5)
+        #out("magnify") #always making sure its open if we zoom in
+        #time.sleep(0.5)
+        mag_level(amount)
     if action == "Zoom Out":
-        pyautogui.hotkey('win', '-')
+        mag_level(amount)
+        #pyautogui.hotkey('win', '-')
     if action == "Dock":
         pyautogui.hotkey('ctrl', 'alt', 'd')
     if action == "Lens":
@@ -668,7 +687,48 @@ def virtual_desktop(target_desktop=None, move=False, pinned=False):
             current_window.move(target_desktop)
 
 
+def rename_vd(name, number=None):
+    number_of_active_desktops = len(get_virtual_desktops())
+    new_vd = VirtualDesktop(number_of_active_desktops)
+    VirtualDesktop.rename(new_vd, name)
+    
 
+def create_vd(name=None):
+    if name:
+        VirtualDesktop.create()  ## Ability to name the desktop upon creation
+        rename_vd(name)
+       #number_of_active_desktops = len(get_virtual_desktops())
+       #new_vd = VirtualDesktop(number_of_active_desktops)
+       #VirtualDesktop.rename(new_vd, name)
+    else:
+        VirtualDesktop.create()
+        
+
+
+def remove_vd(remove, fallbacknum=None):
+    if fallbacknum:
+        try:
+            fall_back =VirtualDesktop(fallbacknum)
+            remove_vd = VirtualDesktop(remove) 
+            VirtualDesktop.remove(remove_vd, fall_back)
+        except ValueError as err:
+            return err
+    else:
+        try:
+            remove_vd=VirtualDesktop(remove)
+            VirtualDesktop.remove(remove_vd)
+        except ValueError as err:
+            return err
+#remove_vd(remove=5,fallbacknum=2)
+
+
+def get_vd_name(number):
+    name = VirtualDesktop(number).name
+    if not name:
+        name = f"Desktop {number}"
+    return name
+
+#### END OF VD STUFF ####
 
 
 def get_size(bytes, suffix="B"):
@@ -748,20 +808,17 @@ def network_usage():
 
 ### Find when PC was booted
 previous_time = ""
-def time_booted(boot_time_timestamp):
+def time_booted(booted_time_timestamp):
     global previous_time
-    ##instead of constantly grabbing psutil.boot_time could we just store that time permanantnly then keep checking current time doing such?
-    #boot_time_timestamp = psutil.boot_time()
+
     current = time.time()
-    dt1 = datetime.fromtimestamp(boot_time_timestamp)
+    dt1 = datetime.fromtimestamp(booted_time_timestamp)
     dt2 = datetime.fromtimestamp(current) 
     rd = dateutil.relativedelta.relativedelta (dt2, dt1)
     hours = rd.hours
     minutes = rd.minutes
     seconds = rd.seconds
-  #seconds = int(seconds)
-  #minutes = int(minutes)
-  #hours = int(hours)
+
     if int(minutes) <10:
         minutes = "0" + str(minutes)
     if int(seconds) <10:
@@ -942,8 +999,7 @@ def activate_windows_setting(choice=False):
         os.system(f'explorer "{settings[choice]}"')
         
         
-#########PRIMARY DISPLAY##############
-
+"""      DISPLAY CHANGE STUFF       """
 #DISPLAY_DEVICE.StateFlags
 DISPLAY_DEVICE_ACTIVE = 0x1
 DISPLAY_DEVICE_MULTI_DRIVER = 0x2
@@ -1024,4 +1080,206 @@ def change_primary(monitornum):
             
     ## Update the displays with the registry settings
     win32api.ChangeDisplaySettingsEx(None, None)
+
+
+"""MAGNIFIER STUFF"""
+
+
+class WindowsRegistry:
+    """Class WindowsRegistry is using for easy manipulating Windows registry.
+
+
+    Methods
+    -------
+    query_value(full_path : str)
+        Check value for existing.
+
+    get_value(full_path : str)
+        Get value's data.
+
+    set_value(full_path : str, value : str, value_type='REG_SZ' : str)
+        Create a new value with data or set data to an existing value.
+
+    delete_value(full_path : str)
+        Delete an existing value.
+
+    query_key(full_path : str)
+        Check key for existing.
+
+    delete_key(full_path : str)
+        Delete an existing key(only without subkeys).
+
+
+    Examples:
+        WindowsRegistry.set_value('HKCU/Software/Microsoft/Windows/CurrentVersion/Run', 'Program', r'"c:\Dir1\program.exe"')
+        WindowsRegistry.delete_value('HKEY_CURRENT_USER/Software/Microsoft/Windows/CurrentVersion/Run/Program')
+    """
+    @staticmethod
+    def __parse_data(full_path):
+        full_path = re.sub(r'/', r'\\', full_path)
+        hive = re.sub(r'\\.*$', '', full_path)
+        if not hive:
+            raise ValueError('Invalid \'full_path\' param.')
+        if len(hive) <= 4:
+            if hive == 'HKLM':
+                hive = 'HKEY_LOCAL_MACHINE'
+            elif hive == 'HKCU':
+                hive = 'HKEY_CURRENT_USER'
+            elif hive == 'HKCR':
+                hive = 'HKEY_CLASSES_ROOT'
+            elif hive == 'HKU':
+                hive = 'HKEY_USERS'
+        reg_key = re.sub(r'^[A-Z_]*\\', '', full_path)
+        reg_key = re.sub(r'\\[^\\]+$', '', reg_key)
+        reg_value = re.sub(r'^.*\\', '', full_path)
+
+        return hive, reg_key, reg_value
+
+    @staticmethod
+    def query_value(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_READ)
+            winreg.QueryValueEx(opened_key, value_list[2])
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+
+    @staticmethod
+    def get_value(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_READ)
+            value_of_value, value_type = winreg.QueryValueEx(opened_key, value_list[2])
+            winreg.CloseKey(opened_key)
+            return value_of_value
+        except WindowsError:
+            return None
+
+    @staticmethod
+    def set_value(full_path, value, value_type='REG_SZ'):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            winreg.CreateKey(getattr(winreg, value_list[0]), value_list[1])
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_WRITE)
+            winreg.SetValueEx(opened_key, value_list[2], 0, getattr(winreg, value_type), value)
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+        
+    @staticmethod
+    def query_key(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1] + r'\\' + value_list[2], 0, winreg.KEY_READ)
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+
+
+  #  @staticmethod
+  #  def delete_value(full_path):
+  #      value_list = WindowsRegistry.__parse_data(full_path)
+  #      try:
+  #          opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_WRITE)
+  #          winreg.DeleteValue(opened_key, value_list[2])
+  #          winreg.CloseKey(opened_key)
+  #          return True
+  #      except WindowsError:
+  #          return False
+
+
+  # @staticmethod
+  # def delete_key(full_path):
+  #     value_list = WindowsRegistry.__parse_data(full_path)
+  #     try:
+  #         winreg.DeleteKey(getattr(winreg, value_list[0]), value_list[1] + r'\\' + value_list[2])
+  #         return True
+  #     except WindowsError:
+  #         return False
+        
+        
+ 
+magpath = r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\\"
+is_on=WindowsRegistry.get_value(magpath+"\RunningState")
+
+def mag_on():
+    is_on=WindowsRegistry.get_value(magpath+"\RunningState")
+    if is_on:
+        return True
+    if not is_on:
+        out('magnify')
+        return True
     
+    
+def mag_mode(mode=3):
+    """ 1= Docked
+        2= Full Screen
+        3= Lens
+    """
+    exists = WindowsRegistry.query_value(magpath + "MagnificationMode")
+    if exists:
+        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\MagnificationMode", mode, value_type='REG_DWORD')
+
+
+def mag_invert(switch):
+    if switch == "On":
+        exists = WindowsRegistry.query_value(magpath + "Invert")
+        if exists:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 1, value_type='REG_DWORD')
+    elif switch == "Off":
+        exists = WindowsRegistry.query_value(magpath + "Invert")
+        if exists:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 0, value_type='REG_DWORD')
+            
+
+def mag_increments(amount):
+    """Setting Zoom Increments - MAX 400%, MIN 5%"""
+    exists = WindowsRegistry.query_value(magpath + "ZoomIncrement")
+    if exists:
+        if amount:
+            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\ZoomIncrement", amount, value_type='REG_DWORD')
+    
+def mag_level(amount):
+    """Set Zoom Levels - 1600 is MAX"""
+    exists = WindowsRegistry.query_value(magpath + "Magnification")
+    if exists:
+        if amount:
+                mag_on()
+                WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", amount, value_type='REG_DWORD')
+            
+def text_smoothing(switch):
+    exists = WindowsRegistry.query_value(magpath + "UseBitmapSmoothing")
+    if exists:
+        if switch =="On":
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\UseBitmapSmoothing", 1, value_type='REG_DWORD')
+        elif switch == "Off":
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\UseBitmapSmoothing", 0, value_type='REG_DWORD')
+
+def magnifer_dimensions(x=None, y=None):
+    """Can set a MIN/MAX Value to avoid this"""
+    exists = WindowsRegistry.query_value(magpath + "LensWidth")
+  #if exists:
+  #    if x == 0:
+  #        print("WORD")
+  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 5, value_type='REG_DWORD')
+  #    if y == 0:
+  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 5, value_type='REG_DWORD')
+  #    if x >100:
+  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 100, value_type='REG_DWORD')
+  #    if y >100:
+  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 100, value_type='REG_DWORD')
+
+    if x:
+        exists = WindowsRegistry.query_value(magpath + "LensWidth")
+        if exists:
+            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", x, value_type='REG_DWORD')
+    if y:
+        exists = WindowsRegistry.query_value(magpath + "LensHeight")
+        if exists:
+            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", y, value_type='REG_DWORD')
+        
+            
