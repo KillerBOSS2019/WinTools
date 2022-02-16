@@ -1,12 +1,13 @@
 import ctypes
 import json
 import os
-import subprocess
 import time
+import requests 
 from ctypes import POINTER, cast, windll
 from datetime import datetime
 from io import BytesIO
-
+from subprocess import PIPE, run
+import subprocess
 import dateutil.relativedelta
 import psutil
 import pyautogui
@@ -20,16 +21,25 @@ import win32api
 from comtypes import CLSCTX_ALL
 from PIL import Image
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from pycaw.magic import MagicManager, MagicSession  # isort:skip
-from pycaw.constants import AudioSessionState  # isort:skip
+from pycaw.magic import MagicManager, MagicSession   ### These are used in main.py
+from pycaw.constants import AudioSessionState   ### These are used in main.py
 from winotify import Notification, audio, Registry, PY_EXE, Notifier
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
+from string import ascii_uppercase
+import pyttsx3
 import re
 import pywintypes
 import pythoncom
 import winreg
+import base64
+import sounddevice as sd
+import audio2numpy as a2n
+from PIL import Image
+from win32com.client import GetObject
+import TouchPortalAPI
 
-
-
+TPClient = TouchPortalAPI.Client('Windows-Tools')
 #####################################################
 #                                                   #
 #             Audio Stuff...                        #          
@@ -225,7 +235,7 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
 
     
     
-from win32com.client import GetObject
+
 def get_monitors2():
     objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
     count = 0
@@ -349,10 +359,11 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 #             Other                                 #          
 #                                                   #
 ######################################################
-import mss
-import base64
-from PIL import Image
+#import mss
+#import base64
+#from PIL import Image
 
+"""THIS IS NOT IMPLEMENTED.. SAVING TEMP TP FILE BAD IDEA FOR THIS"""
 def getFrame_base64(frame_image):
  #  # Get frame (only rgb - smaller size)
  #  frame_rgb     = mss.mss().grab(mss.mss().monitors[2]).rgb 
@@ -371,17 +382,14 @@ def getFrame_base64(frame_image):
     frame_image.save("testimage.png", format='PNG')
     b64_str = base64.standard_b64encode(buffer.getvalue())
     
-    
     frame_image.close()
-
-
     #pyperclip3.copy(b64_str)
     return b64_str
     
 
 
-import sounddevice as sd
-import audio2numpy as a2n
+#import sounddevice as sd
+#import audio2numpy as a2n
 ### Getting all audio outputs available for use with TTS
 def getAllOutput_TTS2():
     audio_dict = {}
@@ -421,21 +429,24 @@ def rotate_display(display_num, rotate_choice):
 
 def magnifier(action, amount=None):
     if action == "Zoom In":
-        #pyautogui.hotkey('win', '+')
-        #out("magnify") #always making sure its open if we zoom in
-        #time.sleep(0.5)
         mag_level(amount)
     if action == "Zoom Out":
         mag_level(amount)
-        #pyautogui.hotkey('win', '-')
     if action == "Dock":
-        pyautogui.hotkey('ctrl', 'alt', 'd')
+        mag_mode(1)
+    if action == "Full Screen":
+        mag_mode(2)
     if action == "Lens":
-        pyautogui.hotkey('ctrl', 'alt', 'l')
+        mag_mode(3)
     if action == "Invert Colors":
-        pyautogui.hotkey('ctrl', 'alt', 'i')
+        mag_invert(switch="On")
+       # pyautogui.hotkey('ctrl', 'alt', 'i')
     if action == "Exit":
-        pyautogui.hotkey('win', 'escape')
+        try:
+            out("""wmic process where "name='magnify.exe'" delete""")
+        except:
+            pass
+      #  pyautogui.hotkey('win', 'escape')
     
     
     ### used mostly for checking numlock status
@@ -491,8 +502,7 @@ def win_shutdown(time, cancel=False):
             pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
         
 
-from subprocess import PIPE, run
-import subprocess
+
 def out(command):
     systemencoding = windll.kernel32.GetConsoleOutputCP()
     systemencoding= f"cp{systemencoding}"
@@ -554,7 +564,7 @@ def ping_ip(the_ip):
     return ip_dict
 
 
-import requests 
+#import requests 
 
 def get_ip_details(choice):
 	if choice == "choice1":
@@ -635,12 +645,13 @@ def get_app_icon():
             print(err)
             time.sleep(5)
 
-from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+#from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
 
 def current_vd():
-    current_desktop = VirtualDesktop.current()
-    return current_desktop
+    current_d = VirtualDesktop.current()
+    TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.virtualdesktop.current_vd", f"[{current_d.number}] {current_d.name}")
+    return current_d
 
 def vd_pinn_app(pinned=True):
     if pinned:
@@ -650,6 +661,7 @@ def vd_pinn_app(pinned=True):
         current_window = AppView.current()
         target_desktop = VirtualDesktop(current_vd().number)
         current_window.move(target_desktop)
+        
     
 
 def virtual_desktop(target_desktop=None, move=False, pinned=False):
@@ -697,7 +709,8 @@ def virtual_desktop(target_desktop=None, move=False, pinned=False):
                 VirtualDesktop(target_desktop).go()
                 if pinned:
                     vd_pinn_app()
-
+    current_vd()
+    
 def rename_vd(name, number=None):
     number_of_active_desktops = len(get_virtual_desktops())
     new_vd = VirtualDesktop(number_of_active_desktops)
@@ -730,6 +743,7 @@ def remove_vd(remove, fallbacknum=None):
             VirtualDesktop.remove(remove_vd)
         except ValueError as err:
             return err
+    current_vd()
 #remove_vd(remove=5,fallbacknum=2)
 
 
@@ -756,8 +770,8 @@ def get_size(bytes, suffix="B"):
         bytes /= factor
 
 
-from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
-from string import ascii_uppercase
+#from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
+#from string import ascii_uppercase
 def get_win_drive_names2():
     volumeNameBuffer = create_unicode_buffer(1024)
     fileSystemNameBuffer = create_unicode_buffer(1024)
@@ -913,10 +927,12 @@ def AudioDeviceCmdlets(command, output=True):
         return json.loads(proc_stdout) 
 
 
-
-import sounddevice as sd
-import audio2numpy as a2n
-import pyttsx3
+#
+#from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
+#from string import ascii_uppercase
+#import sounddevice as sd
+#import audio2numpy as a2n
+#import pyttsx3
 
 def getAllVoices():
     engine = pyttsx3.init()
@@ -1227,26 +1243,30 @@ def mag_on():
     
     
 def mag_mode(mode=3):
-    """ 1= Docked
-        2= Full Screen
-        3= Lens
+    """ 
+    -   1 = Docked
+    -   2 = Full Screen
+    -   3 = Lens
     """
     exists = WindowsRegistry.query_value(magpath + "MagnificationMode")
     if exists:
         WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\MagnificationMode", mode, value_type='REG_DWORD')
 
 
-def mag_invert(switch):
-    if switch == "On":
-        exists = WindowsRegistry.query_value(magpath + "Invert")
-        if exists:
-            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 1, value_type='REG_DWORD')
-    elif switch == "Off":
-        exists = WindowsRegistry.query_value(magpath + "Invert")
-        if exists:
-            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 0, value_type='REG_DWORD')
-            
 
+def mag_invert():
+    """ Magnifier Invert
+    - Toggles On / Off
+    """
+    exists = WindowsRegistry.query_value(magpath + "Invert")
+    if exists:
+        current = WindowsRegistry.get_value(magpath + "Invert")
+        if current == 1:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 0, value_type='REG_DWORD')
+        if current ==0:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 1, value_type='REG_DWORD')
+
+            
 def mag_increments(amount):
     """Setting Zoom Increments - MAX 400%, MIN 5%"""
     exists = WindowsRegistry.query_value(magpath + "ZoomIncrement")
@@ -1255,7 +1275,8 @@ def mag_increments(amount):
             WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\ZoomIncrement", amount, value_type='REG_DWORD')
     
 def mag_level(amount):
-    """Set Zoom Levels - 1600 is MAX"""
+    """Set Zoom Levels 
+    - 1600 is MAX"""
     exists = WindowsRegistry.query_value(magpath + "Magnification")
     if exists:
         if amount:
@@ -1263,6 +1284,9 @@ def mag_level(amount):
                 WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", amount, value_type='REG_DWORD')
             
 def text_smoothing(switch):
+    """Text Smoothing
+    - Switch = On / Off
+    """
     exists = WindowsRegistry.query_value(magpath + "UseBitmapSmoothing")
     if exists:
         if switch =="On":
