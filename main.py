@@ -19,7 +19,7 @@ from PIL import Image
 from TouchPortalAPI import TYPES
 from screeninfo import get_monitors
 import logging
-
+import TouchPortalAPI
 
 def debug_activate():
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
@@ -31,7 +31,7 @@ def debug_activate():
 
 
 ##########################################################################
-"""                   THE START OF WIN CALLBACK THINGS               """ 
+#____________________THE START OF WIN CALLBACK THINGS____________________# 
 global_states = []
 first_time=True
 class WinAudioCallBack(MagicSession):
@@ -52,7 +52,6 @@ class WinAudioCallBack(MagicSession):
             
         # set initial:
         self.update_mute(self.mute)
-        # set initial:
         self.update_state(self.state)
         self.update_volume(self.volume)
     
@@ -95,7 +94,7 @@ class WinAudioCallBack(MagicSession):
     def update_mute(self, muted):
         """ when mute state is changed by user or through other app """
         check_states(self.app_name)
-        time.sleep(0.5)
+        time.sleep(0.1)
         if muted:
             print(f"{self.app_name} is unmuted")
             TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Muted")
@@ -105,7 +104,7 @@ class WinAudioCallBack(MagicSession):
             TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
           #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
 
-"""                     THE END OF CALLBACK                            """
+#____________________________THE END OF CALLBACK_________________________#
 ##########################################################################
 
 def run_continuously(interval=1):
@@ -123,7 +122,6 @@ def run_continuously(interval=1):
     continuous_thread.start()
     return cease_continuous_run
         
-
 
 
 def check_states(app_name, remove=False):
@@ -154,7 +152,7 @@ def check_states(app_name, remove=False):
     TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', global_states)
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", global_states)
     print("new State Added")
-    time.sleep(0.2)
+    time.sleep(0.1)
     
     if remove:
         """     Deleting Volume States As Needed     """
@@ -398,8 +396,8 @@ def get_default_input_output(powershell=True):
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.default_outputdevice", "False")
             prev_output = default_output
 
-
-TPClient = TouchPortalAPI.Client('Windows-Tools')
+"""Imported from Util.py instead"""
+#TPClient = TouchPortalAPI.Client('Windows-Tools')
 
 global Timer
 running = False
@@ -437,20 +435,19 @@ def updateStates():
                 print('canceled the Timer')
 
 
-
-"""============         ON START             ==========="""
+##################################################
+#____________________ON START____________________#
 running = False
-#updateStates()
 @TPClient.on('info')
 def onStart(data):
     if settings := data.get('settings'):
         handleSettings(settings, False)
     
-    """Updating Monitor and Audio Details for Choices"""
+    """Updating Monitor/VD's and Audio Details for Choices"""
     check_number_of_monitors()
     get_default_input_output(powershell=False)
+    vd_check()
     
-    #run_callback()
     """ Getting Powerplans and Updating Choice List + Current Power Plan State"""
     pplans = get_powerplans()
     pplans_list =[]
@@ -519,11 +516,14 @@ def handleSettings(settings, on_connect=False):
           print(f"{scheduleFunc[1]} is TURNED OFF")
 
 
-    """IF wanting Disk Usage we are Firing it First
-      So Audio States Don't Mix Later"""
+    """     IF Disk Usage we are Firing it ONE TIME First
+                        So Audio States Don't Mix Later"""
     if int(newsettings['Update Interval: Hard Drive']) > 0:
         disk_usage()
-
+    #print(type(int(newsettings['Update Interval: Active Virtual Desktops'])))
+    if int(newsettings['Update Interval: Active Virtual Desktops']) >0:
+        schedule.every(5).seconds.do(current_vd)
+        
     """Scheduling Loop to Get Default Input and Output Devices"""
     schedule.every(3).minutes.do(get_default_input_output)
 
@@ -540,7 +540,6 @@ def handleSettings(settings, on_connect=False):
         debug_activate()
     """Starting Windows Audio Callback """
     pythoncom.CoInitialize()
-   # run_callback()
     return settings
 
 
