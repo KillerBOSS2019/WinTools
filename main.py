@@ -176,15 +176,22 @@ def timebooted_loop():
         TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted(boot_time)))
         time.sleep(1)
 
-
+old_vd = []
 def vd_check():
+    global old_vd
     vdlist=[]
-    virtual_desk_count = len(get_virtual_desktops())
     vdlist.append("Next")
     vdlist.append("Previous")
-    for i in range (virtual_desk_count):
-        vdlist.append(str(i))
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
+    virtual_desks = get_virtual_desktops()
+    for item in virtual_desks:
+        if not item.name:
+            vdlist.append(f"[{item.number}] Desktop {item.number}")
+        else:
+            vdlist.append(f"[{item.number}] {item.name}")
+    
+    if vdlist != old_vd:
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
+        old_vd = vdlist
 
 ## should we bother checking old IP info to new to see if its different before we update states?
 def get_ip_loop():
@@ -764,6 +771,8 @@ def listChangeAction(data):
             updateDeviceOutput(data['value'])
         except KeyError:
             pass
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window':
+        vd_check()
 
 
 @TPClient.on(TYPES.onConnectorChange)
