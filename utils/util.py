@@ -638,54 +638,65 @@ def get_app_icon():
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
 
+def current_vd():
+    current_desktop = VirtualDesktop.current()
+    return current_desktop
+
+def vd_pinn_app(pinned=True):
+    if pinned:
+        AppView.current()
+        AppView.current().pin()
+    if not pinned:
+        current_window = AppView.current()
+        target_desktop = VirtualDesktop(current_vd().number)
+        current_window.move(target_desktop)
+    
+
 def virtual_desktop(target_desktop=None, move=False, pinned=False):
     number_of_active_desktops = len(get_virtual_desktops())
-    print(f"There are {number_of_active_desktops} active desktops")
+    """Retrieving VD Number from name"""
+    target_desktop = int(target_desktop[target_desktop.find("[") + 1: target_desktop.find("]")])
 
-    current_desktop = VirtualDesktop.current()
-    
     if target_desktop == "Next":
         if move:
-            target_desktop2 = current_desktop.number + 1
             current_window = AppView.current()
-            target_desktop = VirtualDesktop(target_desktop2)
+            target_desktop = VirtualDesktop(target_desktop)
             current_window.move(target_desktop) 
-            print(f"did it move to {target_desktop2} ?")
             if pinned:
                 AppView.current().pin()
-        
         elif not move:
-            target_desktop2 = current_desktop.number + 1
-            if target_desktop2 <= number_of_active_desktops:
-                VirtualDesktop(target_desktop2).go()
+            if target_desktop <= number_of_active_desktops:
+                VirtualDesktop(target_desktop).go()
             else:
                 print("too many")
         
     elif target_desktop == "Previous":
         if move:
-            target_desktop2 = current_desktop.number - 1
-            current_window = AppView.current()
-            target_desktop = VirtualDesktop(target_desktop2)
-            current_window.move(target_desktop)
+            AppView.current().move(VirtualDesktop(target_desktop)) 
             if pinned:
                 AppView.current().pin()
-        
+                
         elif not move:
-            target_desktop2 = current_desktop.number - 1
-            if target_desktop2 > 0:
-                VirtualDesktop(target_desktop2).go()
+            if target_desktop > 0:
+                if pinned:
+                    AppView.current().pin()
+                VirtualDesktop(target_desktop).go()
             else:
                 pass
             
-    elif target_desktop != "Previous" or "Next":  ## else if 0, 1, 2 3, etc.. anything but next or previous
-        print("THE TARGETED DESKTOP IS", target_desktop)
+    elif target_desktop != "Previous" or "Next":  
         if move:
-            target_desktop2 = int(target_desktop)
-            print("The Target desktop secondary thing is", target_desktop2)
-            current_window = AppView.current()
-            target_desktop = VirtualDesktop(int(target_desktop2))
-            current_window.move(target_desktop)
-
+            if pinned:
+                AppView.current().move(VirtualDesktop(target_desktop)) 
+                vd_pinn_app()
+                VirtualDesktop(target_desktop).go()
+            else:
+                AppView.current().move(VirtualDesktop(target_desktop)) 
+        elif not move:
+            if target_desktop > 0:
+                VirtualDesktop(target_desktop).go()
+                if pinned:
+                    vd_pinn_app()
 
 def rename_vd(name, number=None):
     number_of_active_desktops = len(get_virtual_desktops())
@@ -1262,23 +1273,11 @@ def text_smoothing(switch):
 def magnifer_dimensions(x=None, y=None):
     """Can set a MIN/MAX Value to avoid this"""
     exists = WindowsRegistry.query_value(magpath + "LensWidth")
-  #if exists:
-  #    if x == 0:
-  #        print("WORD")
-  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 5, value_type='REG_DWORD')
-  #    if y == 0:
-  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 5, value_type='REG_DWORD')
-  #    if x >100:
-  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 100, value_type='REG_DWORD')
-  #    if y >100:
-  #        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 100, value_type='REG_DWORD')
 
     if x:
-        exists = WindowsRegistry.query_value(magpath + "LensWidth")
         if exists:
             WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", x, value_type='REG_DWORD')
     if y:
-        exists = WindowsRegistry.query_value(magpath + "LensHeight")
         if exists:
             WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", y, value_type='REG_DWORD')
         
