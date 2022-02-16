@@ -1,7 +1,6 @@
-from cmath import e
-from gc import callbacks
-import json
-import os
+#from cmath import e
+#from gc import callbacks
+#import os
 import sys
 import threading
 import time
@@ -19,8 +18,16 @@ import TouchPortalAPI
 from PIL import Image
 from TouchPortalAPI import TYPES
 from screeninfo import get_monitors
+import logging
 
 
+def debug_activate():
+    Log_Format = "%(levelname)s %(asctime)s - %(message)s"
+    logging.basicConfig(filename = "logfile.log",
+                        filemode = "w",
+                        format = Log_Format, 
+                        level = logging.DEBUG)
+    logger = logging.getLogger()
 
 
 ##########################################################################
@@ -33,43 +40,38 @@ class WinAudioCallBack(MagicSession):
         super().__init__(volume_callback=self.update_volume,
                          mute_callback=self.update_mute,
                          state_callback=self.update_state)
-        if first_time:
-            global_states.append("Master Volume")
-            global_states.append("Current app")
-            first_time = False
-        
+
         # ______________ DISPLAY NAME ______________
         self.app_name = self.magic_root_session.app_exec
         print(f":: new session: {self.app_name}")
         
+        if first_time:
+            global_states.append("Master Volume")
+            global_states.append("Current app")
+            first_time = False
+            
         # set initial:
         self.update_mute(self.mute)
         # set initial:
         self.update_state(self.state)
         self.update_volume(self.volume)
-        
-        check_states(self.app_name)
-     #   time.sleep(0.5)
+    
 
     def update_state(self, new_state):
         """
         when status changed
         (see callback -> AudioSessionEvents -> OnStateChanged)
         """
-        
         if new_state == AudioSessionState.Inactive:
             # AudioSessionStateInactive
-            """Sesssion Has Expired"""
+            """Sesssion is Inactive"""
             print(f"{self.app_name} not active")
-            check_states(self.app_name)
+            TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"False")
     
         elif new_state == AudioSessionState.Active:
-            """Check if created, if not it will create"""
-            ## We could create an event for 'When Active Session'  typically this means When audio is actively playing thru the source
-            ## Inactive means it COULD play sound, but isnt right now
-            ## Able to get 'Origin Alerts' Like this.. So if a friend invites me on Origin, Origin will make sound, which makes it active session..
+            """Session Active"""
             print(f"{self.app_name} is an Active Session")
-            check_states(self.app_name)
+            TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"True")
     
         elif new_state == AudioSessionState.Expired:
             """Removing Expired States"""
@@ -87,7 +89,7 @@ class WinAudioCallBack(MagicSession):
             "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
             "value": new_volume*100
         })
-        print("[{}] 🔈:{}".format(self.app_name.split(".")[0], new_volume*100))
+       
 
         
     def update_mute(self, muted):
@@ -138,7 +140,12 @@ def check_states(app_name, remove=False):
                     "id": f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}',
                     "desc": f"{app_name} Volume",
                     "value": ""
-                }
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.active',
+                    "desc": f"{app_name} Active",
+                    "value": ""
+                },
                 ])
         global_states.append(app_name)
 
@@ -147,7 +154,7 @@ def check_states(app_name, remove=False):
     TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', global_states)
     TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", global_states)
     print("new State Added")
-    time.sleep(0.5)
+    time.sleep(0.2)
     
     if remove:
         """     Deleting Volume States As Needed     """
@@ -431,11 +438,12 @@ running = False
 def onStart(data):
     if settings := data.get('settings'):
         handleSettings(settings, False)
-
+    
     """Updating Monitor and Audio Details for Choices"""
     check_number_of_monitors()
     get_default_input_output(powershell=False)
     
+    #run_callback()
     """ Getting Powerplans and Updating Choice List + Current Power Plan State"""
     pplans = get_powerplans()
     pplans_list =[]
@@ -467,7 +475,8 @@ def onStart(data):
 
     global running
     running = True
-    updateStates() 
+    updateStates()
+    run_callback() 
     
 
 def run_callback():
@@ -484,11 +493,10 @@ stop_run_continuously = run_continuously()
 settings = {}
 def handleSettings(settings, on_connect=False):
     newsettings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
-    global stop_run_continuously
+    global stop_run_continuously, debugmode
     ###Stopping Scheduled Tasks and Clearing List
     stop_run_continuously.set()
     schedule.clear()
-    
     time.sleep(2)
     for scheduleFunc in [(disk_usage, "Update Interval: Hard Drive"),
                           (get_ip_loop, "Update Interval: Public IP"),
@@ -520,9 +528,12 @@ def handleSettings(settings, on_connect=False):
     """Starting Schedule Again"""
     stop_run_continuously = run_continuously()
 
+
+    if newsettings['DEBUG MODE / LOGGING']=="ON":
+        debug_activate()
     """Starting Windows Audio Callback """
     pythoncom.CoInitialize()
-    run_callback()
+   # run_callback()
     return settings
 
 
@@ -668,6 +679,14 @@ def Actions(data):
             virtual_desktop(move=True, target_desktop=choice)
         if data['data'][1]['value'] == "True":
             virtual_desktop(move=True, target_desktop=choice, pinned=True)
+
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.create':
+        create_vd(data['data'][0]['value'])
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.remove':
+        remove_vd(data['data'][0]['value'])
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.rename':
+        rename_vd(name=data['data'][0]['value'], number=data['data'][1]['value'])
+        
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.actions":
         magnifier(data['data'][0]['value'])
@@ -693,8 +712,8 @@ def Actions(data):
         if TTSThread.is_alive():
             sd.stop()
             pass
-        
 
+        
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
     print(data)
@@ -763,6 +782,17 @@ def connectors(data):
                 volumeChanger(data['data'][0]['value'], "Set", data['value'])
             except:
                 pass
+            
+    if data['connectorId'] == "KillerBOSS.TP.Plugins.Magnifier.connectors.ZoomControl":
+        if data['data'][0]['value'] == "Zoom" :
+             mag_level(data['value']*16)
+             
+        if data['data'][0]['value'] == "Lens X" :
+            magnifer_dimensions(x=data['value'])
+        
+        if data['data'][0]['value'] == "Lens Y" :
+            magnifer_dimensions(y=data['value'])
+            
 
 
 @TPClient.on('closePlugin')
