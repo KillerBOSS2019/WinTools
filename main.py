@@ -8,7 +8,7 @@ from time import sleep
 from utils.util import *
 
 ### Gitago Imports
-import mss
+#import mss
 import mss.tools
 import psutil
 import pyautogui
@@ -34,6 +34,8 @@ def debug_activate():
 #____________________THE START OF WIN CALLBACK THINGS____________________# 
 global_states = []
 first_time=True
+
+
 class WinAudioCallBack(MagicSession):
     def __init__(self):
         global global_states, first_time
@@ -146,6 +148,18 @@ def check_states(app_name, remove=False):
                 },
                 ])
         global_states.append(app_name)
+    #################
+    """We are gonna get ALL Sessions, even if no callback is available..."""
+    """                        This is Temporary                         """
+  #  global_states = []
+  #  sessions = AudioUtilities.GetAllSessions()
+  #  for s in sessions:
+  #      if s not in global_states:
+  #          try:
+  #              global_states.append(s.Process.name())
+  #          except AttributeError:
+  #              pass
+      #####################################          
 
     """UPDATING CHOICES WITH GLOBALS"""
     TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', global_states)
@@ -379,8 +393,16 @@ def get_default_input_output(powershell=True):
         sd._terminate()
         sd._initialize()
         default_devices = sd.default.device
-        default_input = sd.query_devices(device=default_devices[0])['name']
-        default_output = sd.query_devices(device=default_devices[1])['name']
+        try:
+            default_input = sd.query_devices(device=default_devices[0])['name']
+        except AttributeError as err:
+            default_input = "No Default Output Device"
+            print("No Default Device Set")
+        try:
+            default_output = sd.query_devices(device=default_devices[0])['name']
+        except AttributeError as err:
+            print("No Default Device Set")
+            default_output = "No Default Input Device"
         ## Input
         if prev_input != default_input:
             print("Updated default Input")
@@ -487,6 +509,7 @@ def run_callback():
     """This is how we are starting the CallBack, Why? Because it works..."""
     try:
         MagicManager.magic_session(WinAudioCallBack)
+        #MagicManager.add_magic_app
     except NotImplementedError as err:
         print(f"--------- Magic already in session!! ---------\n------{err}------")
 
@@ -697,6 +720,10 @@ def Actions(data):
     if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.actions":
         magnifier(data['data'][0]['value'])
         
+    if data['actionId'] == "KillerBOSS.TP.Plugins.magnifier.onHold.actions":
+        if data['data'][0]['value'] == "Zoom":
+            mag_level(int(data['data'][1]['value']))
+        
     if data['actionId'] == "KillerBOSS.TP.Plugins.toast.create":
         win_toast(atitle=data['data'][0]['value'], amsg=data['data'][1]['value'], aduration=data['data'][2]['value'], icon=data['data'][5]['value'], buttonText=data['data'][3]['value'], buttonlink=data['data'][4]['value'], sound=data['data'][6]['value'])
         
@@ -718,8 +745,32 @@ def Actions(data):
         if TTSThread.is_alive():
             sd.stop()
             pass
+    
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture":
+        if data['data'][0]['value'] =="ON":
+            global th1
+            global cap_stop
+            cap_stop = True
+            th1 = threading.Thread(turn_on_cap(int(data['data'][1]['value']), int(data['data'][2]['value']), True))
+            th1.setDaemon(True)
+            th1.start()
 
+            
+        elif data['data'][0]['value'] == "OFF":
+            cap_stop=False
+            pass
         
+      
+def turn_on_cap(height=None, width=None, livecap=False):
+    while cap_stop:
+        img = capture_around_mouse(height, width, livecap=True)
+        TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
+        time.sleep(0.08)
+        if not cap_stop:
+            break
+    
+    
+    
 @TPClient.on(TouchPortalAPI.TYPES.onHold_down)
 def heldingButton(data):
     print(data)
@@ -738,6 +789,22 @@ def heldingButton(data):
             elif data['data'][1]['value'] == "Increase":
                 volumeChanger(data['data'][0]['value'], 'Increase', data['data'][2]['value'])
                 sleep(0.05)
+        elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.magnifier.onHold.actions'):
+            if data['data'][0]['value'] == "Lens X":
+                magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
+                sleep(0.05)
+            if data['data'][0]['value'] == "Lens Y":
+                print("uh hi?")
+                magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
+                sleep(0.05)
+            if data['data'][0]['value'] == "Zoom":
+                mag_level(int(data['data'][1]['value']), onhold=True)
+                sleep(0.05)
+        elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.winsettings.active.mouseCapture'):
+            img=capture_around_mouse(int(data['data'][1]['value']),int(data['data'][2]['value']))
+            TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
+            sleep(0.05)
+            
         else:
             break
 
