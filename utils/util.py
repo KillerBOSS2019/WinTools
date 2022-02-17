@@ -37,6 +37,7 @@ import sounddevice as sd
 import audio2numpy as a2n
 from PIL import Image
 from win32com.client import GetObject
+import mss
 import TouchPortalAPI
 
 TPClient = TouchPortalAPI.Client('Windows-Tools')
@@ -166,11 +167,11 @@ def AdvancedMouseFunction(x, y, delay, look):
             pass
 
 
-#####################################################
-#                                                   #
-#             Windows Notification                  #          
-#                                                   #
 ######################################################
+##                                                   #
+##             Windows Notification                  #          
+##                                                   #
+#######################################################
 app_id = "WinTools-Notify"
 app_path = os.path.abspath(__file__)
 r = Registry(app_id, PY_EXE, app_path, force_override=True)
@@ -370,7 +371,7 @@ def getFrame_base64(frame_image):
 
  #  # Convert it from bytes to resize
  #  frame_image   = Image.frombytes("RGB", (1920, 1080), frame_rgb, "raw", "RGB") 
-    
+     
     #### RESIZING THE IMAGE
    #size = 256,256
    #frame_image.thumbnail(size, Image.LANCZOS)
@@ -379,13 +380,48 @@ def getFrame_base64(frame_image):
     ### TEMP SAVING IMAGE TO BUFFER THEN TO BASE 64
     buffer = BytesIO()
     frame_image.save(buffer, format='PNG')
-    frame_image.save("testimage.png", format='PNG')
+    #frame_image.save("testimage.png", format='PNG')
     b64_str = base64.standard_b64encode(buffer.getvalue())
     
     frame_image.close()
     #pyperclip3.copy(b64_str)
     return b64_str
     
+    
+    
+def capture_around_mouse(height, width, livecap=False):
+    m_position = pyautogui.position()
+    """ Not Sure if 'monitor number' matters at all, but for now lets keep at 1..."""
+    if livecap:
+        monitor_number=1
+        with mss.mss() as sct:
+            screenshot_size = [height, width]
+            monitor = {
+            "top": m_position.y - screenshot_size[0] // 2,
+            "left": m_position.x - screenshot_size[1] // 2,
+            "width": screenshot_size[0],
+            "height": screenshot_size[1],
+            "mon": monitor_number,
+            }
+            sct_img = sct.grab(monitor)
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
+            return img
+             
+    else:
+        monitor_number=1
+        with mss.mss() as sct:
+            screenshot_size = [height, width]
+            monitor = {
+              "top": m_position.y - screenshot_size[0] // 2,
+              "left": m_position.x - screenshot_size[1] // 2,
+              "width": screenshot_size[0],
+              "height": screenshot_size[1],
+              "mon": monitor_number,
+            }
+            sct_img = sct.grab(monitor)
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
+            #copy_im_to_clipboard(img)
+            return img
 
 
 #import sounddevice as sd
@@ -1234,6 +1270,10 @@ magpath = r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\\"
 is_on=WindowsRegistry.get_value(magpath+"\RunningState")
 
 def mag_on():
+    """Check if Magnify is on
+    - If magnify is off, this turns it on. 
+       Always returns True
+    """
     is_on=WindowsRegistry.get_value(magpath+"\RunningState")
     if is_on:
         return True
@@ -1274,14 +1314,41 @@ def mag_increments(amount):
         if amount:
             WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\ZoomIncrement", amount, value_type='REG_DWORD')
     
-def mag_level(amount):
+def mag_level(amount, onhold=False):
     """Set Zoom Levels 
-    - 1600 is MAX"""
+    - 1600 is MAX (overriden to 1000)
+    - Amount = Zoom Set
+    - On Hold Amount = Increment Zoom
+    """
+    print("we in..", amount)
+    themin=20
+    themax=1000
+    current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification")
     exists = WindowsRegistry.query_value(magpath + "Magnification")
-    if exists:
-        if amount:
-                mag_on()
-                WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", amount, value_type='REG_DWORD')
+    if not onhold:
+         if exists:
+             if amount:
+                    if amount >themax:
+                        mag_on()
+                        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", themax, value_type='REG_DWORD')
+                    else:
+                         mag_on()
+                         WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", amount, value_type='REG_DWORD')
+    if onhold:
+        if exists:
+            if current < themin:
+                 print("less than 20")
+                 WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", 20, value_type='REG_DWORD')
+            elif current > themax:
+                try:
+                    WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", 1600, value_type='REG_DWORD')
+                except:
+                    pass
+            else:
+                try:
+                    WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", current + amount, value_type='REG_DWORD')
+                except:
+                    pass
             
 def text_smoothing(switch):
     """Text Smoothing
@@ -1294,15 +1361,57 @@ def text_smoothing(switch):
         elif switch == "Off":
             WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\UseBitmapSmoothing", 0, value_type='REG_DWORD')
 
-def magnifer_dimensions(x=None, y=None):
-    """Can set a MIN/MAX Value to avoid this"""
-    exists = WindowsRegistry.query_value(magpath + "LensWidth")
 
-    if x:
+def magnifer_dimensions(x=None, y=None, onhold=False):
+    """Can set a MIN/MAX Value to avoid this
+    -  onhold = int value increment
+    """
+    exists = WindowsRegistry.query_value(magpath + "LensWidth")
+    themax=95
+    themin=20
+    if not onhold:
+        if x:
+            if exists:
+                WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", x, value_type='REG_DWORD')
+        if y:
+            if exists:
+                WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", y, value_type='REG_DWORD')
+                
+    if onhold:
         if exists:
-            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", x, value_type='REG_DWORD')
-    if y:
-        if exists:
-            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", y, value_type='REG_DWORD')
+            if x:
+                 current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth")
+                 if current < themin:
+                     print("less than 20")
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 20, value_type='REG_DWORD')
+                 elif current > themax:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 95, value_type='REG_DWORD')
+                 else:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
+            if y:
+                 current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight")
+                 if current < themin:
+                     print("less than 20")
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 20, value_type='REG_DWORD')
+                 elif current > themax:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 95, value_type='REG_DWORD')
+                 else:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", current + onhold, value_type='REG_DWORD')
+
+        #    if current > themax:
+        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 95, value_type='REG_DWORD')
+        #        print("We hit the max")
+        #    #  else:
+        #    #      try:
+        #    #           WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
+        #    #      except:
+        #    #          pass
+    #
+        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", themax, value_type='REG_DWORD')
+        #    else:
+        #        print(current)
+        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
+
+
         
             
