@@ -1,21 +1,10 @@
-#from cmath import e
-#from gc import callbacks
-#import os
+
 from asyncio.log import logger
-#import sys
-#import threading
-#import time
 from time import sleep
 from utils.util import *
-
-### Gitago Imports
-#import mss
 import mss.tools
-#import psutil
-#import pyautogui
 import pygetwindow
 import schedule
-#from PIL import Image
 import TouchPortalAPI
 from TouchPortalAPI import TYPES
 from screeninfo import get_monitors
