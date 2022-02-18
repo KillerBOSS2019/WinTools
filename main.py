@@ -403,12 +403,12 @@ def get_default_input_output(powershell=True):
         default_devices = sd.default.device
         try:
             default_input = sd.query_devices(device=default_devices[0])['name']
-        except AttributeError as err:
+        except sd.PortAudioError as err:
             default_input = "No Default Output Device"
             print("No Default Device Set")
         try:
             default_output = sd.query_devices(device=default_devices[0])['name']
-        except AttributeError as err:
+        except sd.PortAudioError as err:
             print("No Default Device Set")
             default_output = "No Default Input Device"
         ## Input
@@ -760,13 +760,53 @@ def Actions(data):
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture":
         if data['data'][0]['value'] =="ON":
             global cap_live
-            th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value'])))
-            if not cap_live:
-                print("Starting the Mouse Capture")
+            print("DATA 3", data['data'][3]['value'],"-"*30)
+            if data['data'][3]['value'] == "None":
+                print("NO OVERLAY WANTED")
+                th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), None))
                 cap_live = True
                 th1.setDaemon(True)
                 th1.start()
                 
+            if data['data'][3]['value']:
+                if ".png" in data['data'][3]['value']:
+                    print("*"*20, "OVERLAY REQUESTED", "*"*20)
+                    path = os.getcwd()
+                    print(path)
+                    path = path+ f"\mouse_overlays\\" + data['data'][3]['value']
+                    print(path)
+                    img = Image.open(path)
+                    
+                    if img.size[0] == int(data['data'][1]['value']) and img.size[1] == int(data['data'][2]['value']): 
+                        print("sized properly")
+                        th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), img))
+                        cap_live = True
+                        th1.setDaemon(True)
+                        th1.start()
+                        
+                    elif img.size[0] != int(data['data'][1]['value']):
+                        print("NOT EQUAL WE AHVE TO RESIZE IT")
+                        print(int(data['data'][1]['value']), int(data['data'][2]['value']))
+                        resized =resize_image(img, int(data['data'][1]['value']), int(data['data'][2]['value']))
+                        th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), resized))
+                        cap_live = True
+                        th1.setDaemon(True)
+                        th1.start()
+                        
+                        
+                 #   th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value'])))
+                 #   cap_live = True
+                 #   th1.setDaemon(True)
+                 #   th1.start()
+                    
+            if not cap_live:
+                """If cap is not live(global state) then start"""
+                print("Starting the Mouse Capture")
+                cap_live = True
+                th1.setDaemon(True)
+                th1.start()
+        
+        
         elif data['data'][0]['value'] == "OFF":
             cap_live=False
             global if_running
@@ -774,9 +814,11 @@ def Actions(data):
             pass
         
 
-def turn_on_cap(height=None, width=None):
+def turn_on_cap(height=None, width=None, overlayimage=None):
     while cap_live:
-        img = capture_around_mouse(height, width, livecap=True)
+        if overlayimage:
+            print("*"*80)
+        img = capture_around_mouse(height, width, livecap=True, overlay=overlayimage)
         TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
         time.sleep(0.10)
         if not cap_live:
@@ -841,10 +883,11 @@ def updateDeviceOutput(options):
         TPClient.choiceUpdate('KillerBOSS.TP.Plugins.ChangeAudioOutput.Device', inputDevice)
         print('updating input', outPutDevice)
 
-
+oldcursors = []
 @TPClient.on(TYPES.onListChange)
 def listChangeAction(data):
     print(data)
+    global oldcursors
     if data['actionId'] == 'KillerBOSS.TP.Plugins.ChangeAudioOutput':
         try:
             updateDeviceOutput(data['value'])
@@ -852,7 +895,15 @@ def listChangeAction(data):
             pass
     if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window':
         vd_check()
-
+        
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.winsettings.active.mouseCapture':
+        thecursors = get_cursor_choices()
+        thecursors.append("None")
+        thecursors.append("LOAD MORE")
+        if oldcursors != thecursors:
+            print("not the same mmmk")
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.overlay_file", thecursors)
+            oldcursors = thecursors
 
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
