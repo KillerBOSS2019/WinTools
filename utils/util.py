@@ -1,8 +1,8 @@
 import ctypes
 import json
 import os
-from threading import Thread
-import queue
+import sys
+#from threading import Thread
 import threading
 import time
 import requests 
@@ -28,8 +28,8 @@ from pycaw.magic import MagicManager, MagicSession   ### These are used in main.
 from pycaw.constants import AudioSessionState   ### These are used in main.py
 from winotify import Notification, audio, Registry, PY_EXE, Notifier
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
-from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
-from string import ascii_uppercase
+from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof  # drive details
+from string import ascii_uppercase   # used for getting drive details
 import pyttsx3
 import re
 import pywintypes
@@ -237,7 +237,6 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
     toast.build()
     toast.show()
 
-
     
     
 
@@ -294,7 +293,19 @@ def send_to_clipboard(clip_type, data):
         win32clipboard.SetClipboardData(clip_type, data)
         win32clipboard.CloseClipboard()
 
-## potentially not needed anymore
+def get_clipboard_data():
+    try:
+        win32clipboard.OpenClipboard()
+        data = win32clipboard.GetClipboardData()
+        win32clipboard.CloseClipboard()
+        print("HELLO?")
+        return data
+    except TypeError as err:
+        print("BROKEN")
+        return "Invalid Clipboard Data"
+
+
+## Image to Bytes
 def file_to_bytes(filepath):
     ## Take image into bytes and onto clipboard
     image = Image.open(filepath)
@@ -350,11 +361,6 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
                 print("Copied to Clipboard")
             elif clipboard == False:
                 im.save(save_location+".png")
-                ### very bad and ugly compression
-               ### im.save(save_location+"_Compressed_.png", 
-               ###     "JPEG", 
-               ###     optimize = True, 
-               ###     quality = 10)
                 print("Saved to Folder")
     except Exception as e:
         print("error screenshot" + e )
@@ -364,9 +370,7 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 #             Other                                 #          
 #                                                   #
 ######################################################
-#import mss
-#import base64
-#from PIL import Image
+
 
 """THIS IS NOT IMPLEMENTED.. SAVING TEMP TP FILE BAD IDEA FOR THIS"""
 def getFrame_base64(frame_image):
@@ -384,6 +388,8 @@ def getFrame_base64(frame_image):
     
     frame_image.close()
     return b64_str
+
+
 
 """We have to make this only fire one time when the function is"""
 def resize_image(im, height, width):
@@ -486,9 +492,7 @@ def get_cursor_choices():
         cursor_list.append(item)
     return cursor_list
 
-#import sounddevice as sd
-#import audio2numpy as a2n
-### Getting all audio outputs available for use with TTS
+
 def getAllOutput_TTS2():
     audio_dict = {}
     for outputDevice in sd.query_hostapis(0)['devices']:
@@ -499,8 +503,6 @@ def getAllOutput_TTS2():
 
 
 def rotate_display(display_num, rotate_choice):
-    ### display num is gonna need add or subtractin to match other things..  cause 0 is monitor 1 here, and in other spots 0 is ALL monitors..
-    ## so display 0 would actually be display 1 in "settings"
     display_num = display_num.split(":")[0]
     display_num = display_num -1
     rotation_val=""
@@ -544,7 +546,7 @@ def magnifier(action, amount=None):
             out("""wmic process where "name='magnify.exe'" delete""")
         except:
             pass
-      #  pyautogui.hotkey('win', 'escape')
+
     
     
     ### used mostly for checking numlock status
@@ -626,43 +628,6 @@ def get_powerplans(currentcheck=False):
                 pplans[plan_name]=the_data
     return pplans
 
-    
-
-################### THIS NEEDS IMPLEMENTED ###################
-### Should we let the user 'schedule' a ping that goes every X seconds to give results?
-### Should we just have it on press only so they can make a custom repeat rate, or spam issues with that maybe?
-def ping_ip(the_ip):
-
-    ping_result = subprocess.check_output('ping -n 3 ' + the_ip,  universal_newlines=True)
-
-    ping_pattern = re.compile("time[<, =, >](?P<ms>\d+)ms")
-    ttl_pattern = re.compile("TTL[<, =, >](?P<ms>\d+)")
-    ip_pattern = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-
-
-    pings = re.findall(ping_pattern, ping_result)
-    ttl =  re.findall(ttl_pattern, ping_result)
-    pinged_ip = ip_pattern.search(ping_result)[0]
-
-    for i in range(0, len(pings)):
-        pings[i] = int(pings[i])
-
-    for i in range(0, len(ttl)):
-        ttl[i] = int(ttl[i])
-
-    ip_dict = {
-        "The IP": pinged_ip,
-        "Average": f'{round(sum(pings) / len(pings))}ms',
-        "TTL": f'{round(sum(ttl) / len(ttl))}'
-    }
-
-    print(f"The average ping for {the_ip} was {round(sum(pings) / len(pings), 2)}ms")
-    print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
-    
-    return ip_dict
-
-
-#import requests 
 
 def get_ip_details(choice):
 	if choice == "choice1":
@@ -743,7 +708,7 @@ def get_app_icon():
             print(err)
             time.sleep(5)
 
-#from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+
 
 
 def current_vd():
@@ -817,11 +782,8 @@ def rename_vd(name, number=None):
 
 def create_vd(name=None):
     if name:
-        VirtualDesktop.create()  ## Ability to name the desktop upon creation
+        VirtualDesktop.create()
         rename_vd(name)
-       #number_of_active_desktops = len(get_virtual_desktops())
-       #new_vd = VirtualDesktop(number_of_active_desktops)
-       #VirtualDesktop.rename(new_vd, name)
     else:
         VirtualDesktop.create()
         
@@ -842,7 +804,7 @@ def remove_vd(remove, fallbacknum=None):
         except ValueError as err:
             return err
     current_vd()
-#remove_vd(remove=5,fallbacknum=2)
+
 
 
 def get_vd_name(number):
@@ -868,8 +830,6 @@ def get_size(bytes, suffix="B"):
         bytes /= factor
 
 
-#from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
-#from string import ascii_uppercase
 def get_win_drive_names2():
     volumeNameBuffer = create_unicode_buffer(1024)
     fileSystemNameBuffer = create_unicode_buffer(1024)
@@ -892,30 +852,6 @@ def get_win_drive_names2():
                 drive_names[d[:2].upper()] = "No Name"
 
     return drive_names
-
-
-
-
-
-###  from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
-###  from string import ascii_uppercase
-###  
-###  def getDriveName(driveletter):
-###      driveletter1 = driveletter+":/"
-###      volumeNameBuffer = create_unicode_buffer(1024)
-###      fileSystemNameBuffer = create_unicode_buffer(1024)
-###      serial_number = None
-###      max_component_length = None
-###      file_system_flags = None
-###      rc = windll.kernel32.GetVolumeInformationW(c_wchar_p(driveletter1), volumeNameBuffer, sizeof(volumeNameBuffer),
-###                                                  serial_number, max_component_length, file_system_flags,
-###                                                  fileSystemNameBuffer, sizeof(fileSystemNameBuffer))
-###      if rc:
-###    #     drive_names.append(f'{volumeNameBuffer.value}({driveletter1[:2]})')  # disk_name(C:)
-###          if volumeNameBuffer.value:
-###              return volumeNameBuffer.value
-###          else:
-###              return "No Name"
 
 
 
@@ -950,11 +886,9 @@ def time_booted(booted_time_timestamp):
         if int(hours) <10:
             hours = "0" + str(hours)
             print(f"{rd.days}:{hours}:{minutes}:{seconds}")
-            #print(f"{rd.days} DAY | HOURS:{hours}  |  MINUTES: {minutes}  |  SECONDS:{seconds}")
             return f"{rd.days}:{hours}:{minutes}:{seconds}"
         else:
             print(f"{rd.days}:{hours}:{minutes}:{seconds}")
-            #print(f"DAYS:{rd.days} | HOURS:{hours}  |  MINUTES: {minutes}  |  SECONDS:{seconds}")
             return f"{rd.days}:{hours}:{minutes}:{seconds}"
     else:
         print(f"{hours}:{minutes}:{seconds}")
@@ -1025,12 +959,7 @@ def AudioDeviceCmdlets(command, output=True):
         return json.loads(proc_stdout) 
 
 
-#
-#from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof
-#from string import ascii_uppercase
-#import sounddevice as sd
-#import audio2numpy as a2n
-#import pyttsx3
+
 
 def getAllVoices():
     engine = pyttsx3.init()
@@ -1460,5 +1389,143 @@ def magnifer_dimensions(x=None, y=None, onhold=False):
                  else:
                      WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", current + onhold, value_type='REG_DWORD')
 
-        
+
+
+
+
+
+
+""" CLIPBOARD LISTENER STARTS IN MAIN.py onstart func"""
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Union, List, Optional
+
+class Clipboard:
+    @dataclass
+    class Clip:
+        type: str
+        value: Union[str, List[Path]]
+
+    def __init__(
+            self,
+            trigger_at_start: bool = False,
+            on_text: Callable[[str], None] = None,
+            on_update: Callable[[Clip], None] = None,
+            on_files: Callable[[str], None] = None,
+    ):
+        self._trigger_at_start = trigger_at_start
+        self._on_update = on_update
+        self._on_files = on_files
+        self._on_text = on_text
+
+    def _create_window(self) -> int:
+        """
+        Create a window for listening to messages
+        :return: window hwnd
+        """
+        wc = win32gui.WNDCLASS()
+        wc.lpfnWndProc = self._process_message
+        wc.lpszClassName = self.__class__.__name__
+        wc.hInstance = win32api.GetModuleHandle(None)
+        class_atom = win32gui.RegisterClass(wc)
+        return win32gui.CreateWindow(class_atom, self.__class__.__name__, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
+
+    def _process_message(self, hwnd: int, msg: int, wparam: int, lparam: int):
+        WM_CLIPBOARDUPDATE = 0x031D
+        if msg == WM_CLIPBOARDUPDATE:
+            self._process_clip()
+        return 0
+
+    def _process_clip(self):
+        clip = self.read_clipboard()
+        if not clip:
+            return
+
+        if self._on_update:
+            self._on_update(clip)
+        if clip.type == 'text' and self._on_text:
+            self._on_text(clip.value)
+        elif clip.type == 'files' and self._on_text:
+            self._on_files(clip.value)
+    
+    @staticmethod
+    def read_clipboard() -> Optional[Clip]:
+        try:
+            win32clipboard.OpenClipboard()
+            def get_formatted(fmt):
+                if win32clipboard.IsClipboardFormatAvailable(fmt):
+                    return win32clipboard.GetClipboardData(fmt)
+                return None
+            if files := get_formatted(win32con.CF_HDROP):
+                return Clipboard.Clip('files', [Path(f) for f in files])
+            elif text := get_formatted(win32con.CF_UNICODETEXT):
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", "TRUE")
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", Clipboard.Clip('text', text).value)
+            elif text_bytes := get_formatted(win32con.CF_TEXT):
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", "TRUE")
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", Clipboard.Clip('text', text_bytes.decode()).value)
+            elif bitmap_handle := get_formatted(win32con.CF_BITMAP):
+                # TODO: handle screenshots
+                pass
+            return None
+        finally:
+            try:
+                win32clipboard.CloseClipboard()
+            except:
+                pass
+
+    def listen(self):
+        if self._trigger_at_start:
+            self._process_clip()
+
+        def runner():
+            hwnd = self._create_window()
+            ctypes.windll.user32.AddClipboardFormatListener(hwnd)
+            win32gui.PumpMessages()
+
+        th = threading.Thread(target=runner, daemon=True)
+        th.start()
+        while th.is_alive():
+            th.join(0.25)
             
+            
+
+def clipboard_listener():
+   clipboard = Clipboard(on_update=print, trigger_at_start=False)
+   clipboard.listen()
+   
+
+
+
+################### THIS NEEDS IMPLEMENTED ###################
+### Should we let the user 'schedule' a ping that goes every X seconds to give results?
+### Should we just have it on press only so they can make a custom repeat rate, or spam issues with that maybe?
+def ping_ip(the_ip):
+
+    ping_result = subprocess.check_output('ping -n 3 ' + the_ip,  universal_newlines=True)
+
+    ping_pattern = re.compile("time[<, =, >](?P<ms>\d+)ms")
+    ttl_pattern = re.compile("TTL[<, =, >](?P<ms>\d+)")
+    ip_pattern = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+
+
+    pings = re.findall(ping_pattern, ping_result)
+    ttl =  re.findall(ttl_pattern, ping_result)
+    pinged_ip = ip_pattern.search(ping_result)[0]
+
+    for i in range(0, len(pings)):
+        pings[i] = int(pings[i])
+
+    for i in range(0, len(ttl)):
+        ttl[i] = int(ttl[i])
+
+    ip_dict = {
+        "The IP": pinged_ip,
+        "Average": f'{round(sum(pings) / len(pings))}ms',
+        "TTL": f'{round(sum(ttl) / len(ttl))}'
+    }
+
+    print(f"The average ping for {the_ip} was {round(sum(pings) / len(pings), 2)}ms")
+    print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
+    
+    return ip_dict
