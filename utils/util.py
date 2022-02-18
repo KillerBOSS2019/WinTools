@@ -1,6 +1,7 @@
 import ctypes
 import json
 import os
+from threading import Thread
 import time
 import requests 
 from ctypes import POINTER, cast, windll
@@ -35,6 +36,7 @@ import winreg
 import base64
 import sounddevice as sd
 import audio2numpy as a2n
+import numpy as np
 from PIL import Image
 from win32com.client import GetObject
 import mss
@@ -371,42 +373,98 @@ def getFrame_base64(frame_image):
 
  #  # Convert it from bytes to resize
  #  frame_image   = Image.frombytes("RGB", (1920, 1080), frame_rgb, "raw", "RGB") 
-     
-    #### RESIZING THE IMAGE
-   #size = 256,256
-   #frame_image.thumbnail(size, Image.LANCZOS)
-    #frame_image.save("resized.jpg", "JPEG")   ## SAVE THE IMAGE?
     
     ### TEMP SAVING IMAGE TO BUFFER THEN TO BASE 64
     buffer = BytesIO()
     frame_image.save(buffer, format='PNG')
-    #frame_image.save("testimage.png", format='PNG')
+    #### Save it to File #####
     b64_str = base64.standard_b64encode(buffer.getvalue())
     
     frame_image.close()
-    #pyperclip3.copy(b64_str)
     return b64_str
-    
-    
-    
-def capture_around_mouse(height, width, livecap=False):
+
+"""We have to make this only fire one time when the function is"""
+def resize_image(dafile, height, width):
+    im = Image.open(dafile)
+    if im.size[0] == height and im.size[1] == width: 
+        return im
+    else:
+        print("We are actually resizing")
+        size = (height,width)
+        im.load()
+        bands = list(im.split())
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 1
+        bands[-1] = Image.fromarray(a)
+        bands = [b.resize(size, Image.LINEAR) for b in bands]
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 255
+        bands[-1] = Image.fromarray(a)
+        im = Image.merge('RGBA', bands)
+        return im
+ 
+
+def bgra_to_rgba(sct_img):
+    img = Image.frombytes('RGB', sct_img.size, sct_img.rgb,'raw')
+    img = img.convert("RGBA")
+    return img
+
+
+def capture_around_mouse(height, width, livecap=False, overlay=True):
     m_position = pyautogui.position()
-    """ Not Sure if 'monitor number' matters at all, but for now lets keep at 1..."""
     if livecap:
-        monitor_number=1
-        with mss.mss() as sct:
-            screenshot_size = [height, width]
-            monitor = {
-            "top": m_position.y - screenshot_size[0] // 2,
-            "left": m_position.x - screenshot_size[1] // 2,
-            "width": screenshot_size[0],
-            "height": screenshot_size[1],
-            "mon": monitor_number,
-            }
-            sct_img = sct.grab(monitor)
-            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
-            return img
-             
+        if overlay:
+            """ check if it needs resized first... then keep it in memory.. somehow.."""
+            dafile=rf"C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\mouse_overlays\Finger_Small.png"  ### this should be the overlay directory in plugin folder.. 
+            global resize_it
+            resize_it = True
+            print("Check if Image Needs resized")
+            daimage=resize_image(dafile, height, width)
+            monitor_number=1
+            with mss.mss() as sct:
+                screenshot_size = [height, width]
+                monitor = {
+                "top": m_position.y - screenshot_size[0] // 2,
+                "left": m_position.x - screenshot_size[1] // 2,
+                "width": screenshot_size[0],
+                "height": screenshot_size[1],
+                "mon": monitor_number,
+                }
+                sct_img = sct.grab(monitor)
+
+                img = bgra_to_rgba(sct_img)
+                finalresult = Image.alpha_composite(img, daimage)
+            return finalresult
+        
+        
+        elif not overlay:
+            print("NO OVERLAY REQUESTED")
+            monitor_number=1
+            with mss.mss() as sct:
+                screenshot_size = [height, width]
+                monitor = {
+                "top": m_position.y - screenshot_size[0] // 2,
+                "left": m_position.x - screenshot_size[1] // 2,
+                "width": screenshot_size[0],
+                "height": screenshot_size[1],
+                "mon": monitor_number,
+                }
+                sct_img = sct.grab(monitor)
+
+              #  """Orignal Screen cap with NO overlay"""
+                # good one  img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
+               # """ For use WITH Overlay"""
+                #### ATTEMPT 1  works but results in blue instead of orange?
+                #img = Image.frombytes("RGBA", (600,600), sct_img.bgra)  ##   Instead of making a temp file we get it direct from raw to clipboard
+               # """ Correcting Colors """
+               # img = bgra_to_rgba(sct_img)
+                #finalresult = Image.alpha_composite(img, daimage)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                return img
+            
+    #""" Else if not live cap"""       
     else:
         monitor_number=1
         with mss.mss() as sct:
