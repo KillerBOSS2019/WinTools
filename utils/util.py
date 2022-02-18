@@ -2,6 +2,8 @@ import ctypes
 import json
 import os
 from threading import Thread
+import queue
+import threading
 import time
 import requests 
 from ctypes import POINTER, cast, windll
@@ -384,8 +386,7 @@ def getFrame_base64(frame_image):
     return b64_str
 
 """We have to make this only fire one time when the function is"""
-def resize_image(dafile, height, width):
-    im = Image.open(dafile)
+def resize_image(im, height, width):
     if im.size[0] == height and im.size[1] == width: 
         return im
     else:
@@ -405,23 +406,16 @@ def resize_image(dafile, height, width):
         im = Image.merge('RGBA', bands)
         return im
  
-
 def bgra_to_rgba(sct_img):
     img = Image.frombytes('RGB', sct_img.size, sct_img.rgb,'raw')
     img = img.convert("RGBA")
     return img
 
-
-def capture_around_mouse(height, width, livecap=False, overlay=True):
+def capture_around_mouse(height, width, livecap=True, overlay=False):
+   # start = time.time()
     m_position = pyautogui.position()
     if livecap:
         if overlay:
-            """ check if it needs resized first... then keep it in memory.. somehow.."""
-            dafile=rf"C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\mouse_overlays\Finger_Small.png"  ### this should be the overlay directory in plugin folder.. 
-            global resize_it
-            resize_it = True
-            print("Check if Image Needs resized")
-            daimage=resize_image(dafile, height, width)
             monitor_number=1
             with mss.mss() as sct:
                 screenshot_size = [height, width]
@@ -433,14 +427,25 @@ def capture_around_mouse(height, width, livecap=False, overlay=True):
                 "mon": monitor_number,
                 }
                 sct_img = sct.grab(monitor)
-
+                
+              #  que = queue.Queue()
+              #  thr = threading.Thread(target = lambda q, arg : q.put(bgra_to_rgba(sct_img)), args = (que, 2))
+               # thr = threading.Thread(target = lambda q, arg : q.put(dosomething(arg)), args = (que, 2))
+              #  thr.start()
+              #  thr.join()
+              #  while not que.empty():
+              #      img=que.get()
+              #      print("Whats this though?")
+                
+                
                 img = bgra_to_rgba(sct_img)
-                finalresult = Image.alpha_composite(img, daimage)
+                finalresult = Image.alpha_composite(img, overlay)
+              #  end = time.time()
+              #  print("Runtime of the program is", round(end - start, 4))
             return finalresult
         
         
         elif not overlay:
-            print("NO OVERLAY REQUESTED")
             monitor_number=1
             with mss.mss() as sct:
                 screenshot_size = [height, width]
@@ -452,15 +457,6 @@ def capture_around_mouse(height, width, livecap=False, overlay=True):
                 "mon": monitor_number,
                 }
                 sct_img = sct.grab(monitor)
-
-              #  """Orignal Screen cap with NO overlay"""
-                # good one  img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
-               # """ For use WITH Overlay"""
-                #### ATTEMPT 1  works but results in blue instead of orange?
-                #img = Image.frombytes("RGBA", (600,600), sct_img.bgra)  ##   Instead of making a temp file we get it direct from raw to clipboard
-               # """ Correcting Colors """
-               # img = bgra_to_rgba(sct_img)
-                #finalresult = Image.alpha_composite(img, daimage)
                 img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
                 return img
             
@@ -478,9 +474,17 @@ def capture_around_mouse(height, width, livecap=False, overlay=True):
             }
             sct_img = sct.grab(monitor)
             img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
-            #copy_im_to_clipboard(img)
             return img
 
+def get_cursor_choices():
+    path = rf"C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\mouse_overlays"
+    dirs = os.listdir( path )
+    cursor_list=[]
+    for item in dirs:
+      #  if item.endswith(".png"):
+        #    cursor_list.append(item.split(".")[0])
+        cursor_list.append(item)
+    return cursor_list
 
 #import sounddevice as sd
 #import audio2numpy as a2n
@@ -1455,21 +1459,6 @@ def magnifer_dimensions(x=None, y=None, onhold=False):
                      WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 95, value_type='REG_DWORD')
                  else:
                      WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", current + onhold, value_type='REG_DWORD')
-
-        #    if current > themax:
-        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 95, value_type='REG_DWORD')
-        #        print("We hit the max")
-        #    #  else:
-        #    #      try:
-        #    #           WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
-        #    #      except:
-        #    #          pass
-    #
-        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", themax, value_type='REG_DWORD')
-        #    else:
-        #        print(current)
-        #        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
-
 
         
             
