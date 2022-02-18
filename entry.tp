@@ -60,7 +60,7 @@
       "name": "Windows-Tool",
 	    "imagepath": "%TP_PLUGIN_FOLDER%WinTools\\icon.png",
       "connectors": [
-        {
+        {       
           "id": "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol",
           "name": "APP Volume slider",
           "format": "Control volume for {$KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol$}",
@@ -527,7 +527,7 @@
           "type": "communicate",
           "tryInline": true,
           "hasHoldFunctionality": true,
-          "description": "Capture an area around your mouse and project to an icon.",
+          "description": "Capture an area around your mouse and project to an icon. (600x600 MAX)",
           "format": "Switch Live Mouse Capture :{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.Switch$} -> X:{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.xSize$}  Y:{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.ySize$}",
           "data": [
             {
@@ -541,15 +541,19 @@
               "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.xSize",
               "type": "number",
               "label": "number",
+              "minValue":128,
+              "maxValue":600,
               "allowDecimals": false,
-              "default": "250"
+              "default": "256"
             },
             {
               "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.ySize",
               "type": "number",
               "label": "number",
+              "minValue":128,
+              "maxValue":600,
               "allowDecimals": false,
-              "default": "250"
+              "default": "256"
             }
           ]
         },
@@ -1061,7 +1065,7 @@
             "default": "0"
         },
         {
-          "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture",
+          "id": "KillerBOSS.TP.Plugins.winsettings.state.active.mouseCapture",
           "type": "text",
           "desc": "Active Mouse Capture",
           "default": ""
