@@ -1,6 +1,7 @@
 #from cmath import e
 #from gc import callbacks
 #import os
+from asyncio.log import logger
 import sys
 import threading
 import time
@@ -22,6 +23,7 @@ import logging
 import TouchPortalAPI
 
 def debug_activate():
+    print("-"*30, "DEBUG MODE ON", "-"*30)
     Log_Format = "%(levelname)s %(asctime)s - %(message)s"
     logging.basicConfig(filename = "logfile.log",
                         filemode = "w",
@@ -84,11 +86,17 @@ class WinAudioCallBack(MagicSession):
         when volume is changed externally - Updating Sliders and Volume States
         (see callback -> AudioSessionEvents -> OnSimpleVolumeChanged )
         """
-        TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',new_volume*100)
+        TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',str(round(new_volume*100)))
+        print("NEW VOLUME", str(round(new_volume*100)))
         TPClient.send({
             "type":"connectorUpdate",
             "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
-            "value": new_volume*100
+            "value": round(new_volume*100)
+        })
+        TPClient.send({
+            "type":"connectorUpdate",
+            "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
+            "value": round(new_volume*100)
         })
        
 
@@ -574,6 +582,9 @@ def onSettingUpdate(data):
         handleSettings(settings, False)
 
 
+
+""" Used to assure only one mouse capture runs at a time """
+cap_live = False
 """               ACTIONS               """
 @TPClient.on(TouchPortalAPI.TYPES.onAction)
 def Actions(data):
@@ -748,25 +759,27 @@ def Actions(data):
     
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture":
         if data['data'][0]['value'] =="ON":
-            global th1
-            global cap_stop
-            cap_stop = True
-            th1 = threading.Thread(turn_on_cap(int(data['data'][1]['value']), int(data['data'][2]['value']), True))
-            th1.setDaemon(True)
-            th1.start()
-
-            
+            global cap_live
+            th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value'])))
+            if not cap_live:
+                print("Starting the Mouse Capture")
+                cap_live = True
+                th1.setDaemon(True)
+                th1.start()
+                
         elif data['data'][0]['value'] == "OFF":
-            cap_stop=False
+            cap_live=False
+            global if_running
+            if_running = False
             pass
         
-      
-def turn_on_cap(height=None, width=None, livecap=False):
-    while cap_stop:
+
+def turn_on_cap(height=None, width=None):
+    while cap_live:
         img = capture_around_mouse(height, width, livecap=True)
         TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
-        time.sleep(0.08)
-        if not cap_stop:
+        time.sleep(0.10)
+        if not cap_live:
             break
     
     
