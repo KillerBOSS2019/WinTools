@@ -2,25 +2,24 @@
 #from gc import callbacks
 #import os
 from asyncio.log import logger
-import sys
-import threading
-import time
+#import sys
+#import threading
+#import time
 from time import sleep
 from utils.util import *
 
 ### Gitago Imports
 #import mss
 import mss.tools
-import psutil
-import pyautogui
+#import psutil
+#import pyautogui
 import pygetwindow
 import schedule
+#from PIL import Image
 import TouchPortalAPI
-from PIL import Image
 from TouchPortalAPI import TYPES
 from screeninfo import get_monitors
 import logging
-import TouchPortalAPI
 
 def debug_activate():
     print("-"*30, "DEBUG MODE ON", "-"*30)
@@ -32,12 +31,12 @@ def debug_activate():
     logger = logging.getLogger()
 
 
+
+
 ##########################################################################
 #____________________THE START OF WIN CALLBACK THINGS____________________# 
 global_states = []
 first_time=True
-
-
 class WinAudioCallBack(MagicSession):
     def __init__(self):
         global global_states, first_time
@@ -113,9 +112,10 @@ class WinAudioCallBack(MagicSession):
             print(f"{self.app_name} is muted")
             TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
           #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
-
 #____________________________THE END OF CALLBACK_________________________#
 ##########################################################################
+
+
 
 def run_continuously(interval=1):
     cease_continuous_run = threading.Event()
@@ -156,18 +156,6 @@ def check_states(app_name, remove=False):
                 },
                 ])
         global_states.append(app_name)
-    #################
-    """We are gonna get ALL Sessions, even if no callback is available..."""
-    """                        This is Temporary                         """
-  #  global_states = []
-  #  sessions = AudioUtilities.GetAllSessions()
-  #  for s in sessions:
-  #      if s not in global_states:
-  #          try:
-  #              global_states.append(s.Process.name())
-  #          except AttributeError:
-  #              pass
-      #####################################          
 
     """UPDATING CHOICES WITH GLOBALS"""
     TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', global_states)
@@ -196,6 +184,7 @@ def timebooted_loop():
         TPClient.stateUpdate("KillerBOSS.TP.Plugins.Windows.livetime", str(time_booted(boot_time)))
         time.sleep(1)
 
+
 old_vd = []
 def vd_check():
     global old_vd
@@ -213,6 +202,7 @@ def vd_check():
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
         old_vd = vdlist
 
+
 ## should we bother checking old IP info to new to see if its different before we update states?
 def get_ip_loop():
     try:
@@ -221,6 +211,7 @@ def get_ip_loop():
             TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.publicip.{item}", pub_ip[item])
     except:
         pass
+
 
 global count
 count = 0
@@ -512,6 +503,10 @@ def onStart(data):
     updateStates()
     run_callback() 
     
+    """Starting Clipboard listener from util.py"""
+   # clip_list_thread = threading.Thread(target=clipboard_listener, daemon=True)
+   # clip_list_thread.start()
+    
 
 def run_callback():
     """This is how we are starting the CallBack, Why? Because it works..."""
@@ -528,7 +523,7 @@ stop_run_continuously = run_continuously()
 settings = {}
 def handleSettings(settings, on_connect=False):
     newsettings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
-    global stop_run_continuously, debugmode
+    global stop_run_continuously
     ###Stopping Scheduled Tasks and Clearing List
     stop_run_continuously.set()
     schedule.clear()
@@ -545,7 +540,11 @@ def handleSettings(settings, on_connect=False):
           print(f"{scheduleFunc[1]} is now {interval}")
       else:
           print(f"{scheduleFunc[1]} is TURNED OFF")
-
+          
+    if newsettings['Clipboard Listener (ON / OFF)'] == "ON":
+        print("WUT WHY")
+        clip_list_thread = threading.Thread(target=clipboard_listener, daemon=True)
+        clip_list_thread.start()
 
     """     IF Disk Usage we are Firing it ONE TIME First
                         So Audio States Don't Mix Later"""
@@ -559,8 +558,8 @@ def handleSettings(settings, on_connect=False):
     schedule.every(3).minutes.do(get_default_input_output)
 
     """Threading Timebooted Loop"""
-    th=threading.Thread(target=timebooted_loop)
-    th.setDaemon(True)
+    th=threading.Thread(target=timebooted_loop, daemon=True)
+   # th.setDaemon(True)
     th.start()
 
     """Starting Schedule Again"""
@@ -688,7 +687,11 @@ def Actions(data):
         
     if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
         send_to_clipboard("text", data['data'][0]['value'] )
-        
+    
+    if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard.toValue":
+        """Save Clipboard Data to a Custom TP Value"""
+        TPClient.stateUpdate(stateId=data['data'][0]['value'], stateValue=str(get_clipboard_data()))
+    
     if data['actionId'] == "KillerBOSS.TP.Plugins.virtualdesktop.actions":
         choice = data['data'][0]['value']
         virtual_desktop(target_desktop=choice)
@@ -748,8 +751,8 @@ def Actions(data):
         activate_windows_setting(data['data'][0]['value'])
 
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
-        TTSThread = threading.Thread(target=TextToSpeech, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
-        TTSThread.setDaemon(True)
+        TTSThread = threading.Thread(target=TextToSpeech,daemon=True, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
+        #TTSThread.setDaemon(True)
         TTSThread.start()
             
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
@@ -763,9 +766,9 @@ def Actions(data):
             print("DATA 3", data['data'][3]['value'],"-"*30)
             if data['data'][3]['value'] == "None":
                 print("NO OVERLAY WANTED")
-                th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), None))
+                th1 = threading.Thread(target=turn_on_cap, daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), None))
                 cap_live = True
-                th1.setDaemon(True)
+               # th1.setDaemon(True)
                 th1.start()
                 
             if data['data'][3]['value']:
@@ -779,17 +782,17 @@ def Actions(data):
                     
                     if img.size[0] == int(data['data'][1]['value']) and img.size[1] == int(data['data'][2]['value']): 
                         print("sized properly")
-                        th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), img))
+                        th1 = threading.Thread(target=turn_on_cap,daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), img))
                         cap_live = True
-                        th1.setDaemon(True)
+                     #   th1.setDaemon(True)
                         th1.start()
                         
                     elif img.size[0] != int(data['data'][1]['value']):
                         print("NOT EQUAL WE AHVE TO RESIZE IT")
                         print(int(data['data'][1]['value']), int(data['data'][2]['value']))
                         resized =resize_image(img, int(data['data'][1]['value']), int(data['data'][2]['value']))
-                        th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), resized))
-                        cap_live = True
+                        th1 = threading.Thread(target=turn_on_cap,daemon=True,  args=(int(data['data'][1]['value']), int(data['data'][2]['value']), resized))
+                       # cap_live = True
                         th1.setDaemon(True)
                         th1.start()
                         
