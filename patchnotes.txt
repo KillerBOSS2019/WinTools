@@ -1,6 +1,0 @@
-WinTools Update 2.4 
-
-Download the newest update to get the following fixes/features:
-- Fixed this
-- Fixed That thing
-- Testing another
