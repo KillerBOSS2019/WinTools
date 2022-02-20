@@ -1,12 +1,25 @@
-
+#from cmath import e
+#from gc import callbacks
+#import os
 from asyncio.log import logger
+#import sys
+#import threading
+#import time
 from time import sleep
+from turtle import title
+from urllib.request import urlopen
 from utils.util import *
+
+### Gitago Imports
+#import mss
 import mss.tools
+#import psutil
+#import pyautogui
 import pygetwindow
 import schedule
+#from PIL import Image
 import TouchPortalAPI
-from TouchPortalAPI import TYPES
+from TouchPortalAPI import TYPES, Tools
 from screeninfo import get_monitors
 import logging
 
@@ -18,6 +31,7 @@ def debug_activate():
                         format = Log_Format, 
                         level = logging.DEBUG)
     logger = logging.getLogger()
+
 
 
 
@@ -41,28 +55,29 @@ class WinAudioCallBack(MagicSession):
             global_states.append("Master Volume")
             global_states.append("Current app")
             first_time = False
-            
-        # set initial:
-        self.update_mute(self.mute)
-        self.update_state(self.state)
-        self.update_volume(self.volume)
-    
+        if self.app_name not in audio_exempt_list:
+            # set initial:
+            self.update_mute(self.mute)
+            self.update_state(self.state)
+            self.update_volume(self.volume)
+        
 
     def update_state(self, new_state):
         """
         when status changed
         (see callback -> AudioSessionEvents -> OnStateChanged)
         """
-        if new_state == AudioSessionState.Inactive:
-            # AudioSessionStateInactive
-            """Sesssion is Inactive"""
-            print(f"{self.app_name} not active")
-            TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"False")
+        if self.app_name not in audio_exempt_list:
+            if new_state == AudioSessionState.Inactive:
+                # AudioSessionStateInactive
+                """Sesssion is Inactive"""
+                print(f"{self.app_name} not active")
+                TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"False")
     
-        elif new_state == AudioSessionState.Active:
-            """Session Active"""
-            print(f"{self.app_name} is an Active Session")
-            TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"True")
+            elif new_state == AudioSessionState.Active:
+                """Session Active"""
+                print(f"{self.app_name} is an Active Session")
+                TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"True")
     
         elif new_state == AudioSessionState.Expired:
             """Removing Expired States"""
@@ -74,34 +89,43 @@ class WinAudioCallBack(MagicSession):
         when volume is changed externally - Updating Sliders and Volume States
         (see callback -> AudioSessionEvents -> OnSimpleVolumeChanged )
         """
-        TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',str(round(new_volume*100)))
-        print("NEW VOLUME", str(round(new_volume*100)))
-        TPClient.send({
-            "type":"connectorUpdate",
-            "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
-            "value": round(new_volume*100)
-        })
-        TPClient.send({
-            "type":"connectorUpdate",
-            "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
-            "value": round(new_volume*100)
-        })
-       
+        if self.app_name not in audio_exempt_list:
+            TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',str(round(new_volume*100)))
+            print("NEW VOLUME", str(round(new_volume*100)))
+            TPClient.send({
+                "type":"connectorUpdate",
+                "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
+                "value": round(new_volume*100)
+            })
+            
+            """Checking for Current App If Its Active, Adjust it also"""
+            activeWindow = getActiveExecutablePath()
+            if activeWindow != "":
+                if os.path.basename(activeWindow) == self.app_name:
+                    TPClient.send({
+                        "type":"connectorUpdate",
+                        "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
+                        "value": round(new_volume*100)
+                    })
+            
 
         
     def update_mute(self, muted):
         """ when mute state is changed by user or through other app """
-        check_states(self.app_name)
-        time.sleep(0.1)
-        if muted:
-            print(f"{self.app_name} is unmuted")
-            TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Muted")
-           # TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "True")
-        else:
-            print(f"{self.app_name} is muted")
-            TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
-          #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
-#____________________________THE END OF CALLBACK_________________________#
+        
+        if self.app_name not in audio_exempt_list:
+            check_states(self.app_name)
+            time.sleep(0.1)
+            
+            if muted:
+                print(f"{self.app_name} is unmuted")
+                TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Muted")
+            # TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "True")
+            else:
+                print(f"{self.app_name} is muted")
+                TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
+            #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
+#______     ______________________THE END OF CALLBACK_________________________#
 ##########################################################################
 
 
@@ -125,6 +149,8 @@ def run_continuously(interval=1):
 
 def check_states(app_name, remove=False):
     global global_states
+    print("AUDIO EXEMPT LIST", audio_exempt_list)
+
     if app_name not in global_states:
         print("The Global States", global_states)
         TPClient.createStateMany([
@@ -146,16 +172,24 @@ def check_states(app_name, remove=False):
                 ])
         global_states.append(app_name)
 
-    """UPDATING CHOICES WITH GLOBALS"""
-    TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', global_states)
-    TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', global_states)
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", global_states)
-    print("new State Added")
-    time.sleep(0.1)
+
+
+        """UPDATING CHOICES WITH GLOBALS"""
+        TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', global_states)
+        TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute.process', global_states)
+        TPClient.choiceUpdate("KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol", global_states)
+        print("new State Added")
+        time.sleep(0.1)
+
+    """ Checking for Exempt Audio"""
+    if app_name in audio_exempt_list:
+        TPClient.removeStateMany([f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.muteState", f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}",f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.active"])
+        global_states.remove(app_name)
+        print("was in exempt list, so we are removing its state")
     
     if remove:
         """     Deleting Volume States As Needed     """
-        TPClient.removeStateMany([f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.muteState", f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}"])
+        TPClient.removeStateMany([f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.muteState", f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}",f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.active"])
         global_states.remove(app_name)
         
         TPClient.choiceUpdate('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process', global_states)
@@ -186,7 +220,6 @@ def vd_check():
             vdlist.append(f"[{item.number}] Desktop {item.number}")
         else:
             vdlist.append(f"[{item.number}] {item.name}")
-    
     if vdlist != old_vd:
         TPClient.choiceUpdate("KillerBOSS.TP.Plugins.virtualdesktop.actionchoice", vdlist)
         old_vd = vdlist
@@ -227,27 +260,27 @@ def disk_usage():
                     TPClient.createStateMany([
                     {
                         "id": f'KillerBOSS.TP.Plugins.Windows.drive.letter_{driveletter}',
-                        "desc": f"{driveletter} Drive: Name",
+                        "desc": f"Drive {driveletter}: Name",
                         "value": ""
                     },
                     {
                         "id": f'KillerBOSS.TP.Plugins.Windows.drive.size_{driveletter}',
-                        "desc": f"{driveletter} Drive: Total Space",
+                        "desc": f"Drive {driveletter}: Total Space",
                         "value": ""
                     },
                     {
                         "id": f'KillerBOSS.TP.Plugins.Windows.drive.free_{driveletter}',
-                        "desc": f"{driveletter} Drive: Free Space",
+                        "desc": f"Drive {driveletter}: Free Space",
                         "value": ""
                     },
                     {
                         "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
-                        "desc": f"{driveletter} Drive: Used",
+                        "desc": f"Drive {driveletter}: Used",
                         "value": ""
                     },
                     {
                         "id": f'KillerBOSS.TP.Plugins.Windows.drive.percent_{driveletter}',
-                        "desc": f"{driveletter} Drive: Percentage",
+                        "desc": f"Drive {driveletter}: Percentage",
                         "value": ""
                     },
                     ])
@@ -425,21 +458,34 @@ def updateStates():
             Updates every 5 loops 
             """
             TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
-            activeWindow = getActiveExecutablePath()
-            if activeWindow != None:
-                try:
-                    activeWindow = os.path.basename(getActiveExecutablePath())
-                except NameError as e:
-                    print("Name Error: Get Active Window Title")
-                    
+            
+        # """ Getting App Icon"""
+        # activeWindow = getActiveExecutablePath()
+        # TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP.icon", get_app_icon(activeWindow))
+        #
+        
+        #   if activeWindow != None:
+        #       try:
+        #           activeWindow = os.path.basename(getActiveExecutablePath())
+        #       except NameError as e:
+        #           print("Name Error: Get Active Window Title")
+        #           
             """Checking for Default Input/Output Devices"""
             if counter >= 35:
                 counter = 0
             
             """Advance Mouse"""
             if updateXY:
-                TPClient.stateUpdate('KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X', str(pyautogui.position()[0]))
-                TPClient.stateUpdate('KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.Y', str(pyautogui.position()[1]))
+                mp = pyautogui.position()  ## Making the call for mouse position once instead of twice.. cause performance :)
+                TPClient.stateUpdateMany([
+                {
+                    "id": f'KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X',
+                    "value": str(mp[0])
+                },
+                {
+                    "id": f'KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.Y',
+                    "value": str(mp[1])
+                }])
             else:
                 Timer.cancel()
                 print('canceled the Timer')
@@ -447,11 +493,42 @@ def updateStates():
 
 ##################################################
 #____________________ON START____________________#
+audio_exempt_list = []
 running = False
 @TPClient.on('info')
 def onStart(data):
+    print(data)
     if settings := data.get('settings'):
         handleSettings(settings, False)
+        
+   # audio_exempt_settings = data['settings']['Audio State Exemption List']
+   # global audio_exempt_list
+   # a_split = audio_exempt_settings.split(",")
+   # for x in a_split:
+   #     if ".exe" in x:
+   #         audio_exempt_list.append(x)
+   
+        """Threading Timebooted Loop"""
+    th=threading.Thread(target=timebooted_loop, daemon=True)
+    th.start()
+    
+    """Checking if Plugin needs updated"""
+    try:
+        github_check = TouchPortalAPI.Tools.updateCheck("KillerBOSS2019", "WinTools")
+        plugin_version = str(data['pluginVersion'])
+        plugin_version = plugin_version[:1] + "." + plugin_version[1:]
+        if github_check[1:4] != plugin_version[0:3]:
+            TPClient.showNotification(
+                    notificationId="KillerBOSS.TP.Plugins.Update_Check",
+                    title=f"WinTools v{github_check[1:4]} is available",
+                    msg="A new Wintools Version is available and ready to Download. This may include Bug Fixes and or New Features",
+                    options= [{
+                    "id":"Download Update",
+                    "title":"Click here to Update"
+                    }])
+    except:
+        print("Something went wrong checking update")
+        pass
     
     """Updating Monitor/VD's and Audio Details for Choices"""
     check_number_of_monitors()
@@ -509,14 +586,29 @@ def run_callback():
 ### Starting Schedule Thread ###
 stop_run_continuously = run_continuously()
 """============         SETTINGS          ==============="""
+audio_exempt_list = []
 settings = {}
 def handleSettings(settings, on_connect=False):
     newsettings = { list(settings[i])[0] : list(settings[i].values())[0] for i in range(len(settings)) }
     global stop_run_continuously
+    global audio_exempt_list
     ###Stopping Scheduled Tasks and Clearing List
     stop_run_continuously.set()
     schedule.clear()
     time.sleep(2)
+    
+    """Checking for any Exempt .Exe and building list to avoid making audio states"""
+    audio_exempt_settings=newsettings['Audio State Exemption List']
+    audio_exempt_list = []
+    a_split = audio_exempt_settings.split(",")
+    for x in a_split:
+        if ".exe" in x:
+            audio_exempt_list.append(x)
+    for x in audio_exempt_list:
+        if x in global_states:
+            TPClient.removeStateMany([f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}.muteState", f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}", f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{x}.active"])
+    ###################################
+    
     for scheduleFunc in [(disk_usage, "Update Interval: Hard Drive"),
                           (get_ip_loop, "Update Interval: Public IP"),
                           (check_number_of_monitors, "Update Interval: Active Monitors"),
@@ -530,26 +622,30 @@ def handleSettings(settings, on_connect=False):
       else:
           print(f"{scheduleFunc[1]} is TURNED OFF")
           
+          
     if newsettings['Clipboard Listener (ON / OFF)'] == "ON":
         print("WUT WHY")
-        clip_list_thread = threading.Thread(target=clipboard_listener, daemon=True)
-        clip_list_thread.start()
+        
+        try:
+            clip_list_thread = threading.Thread(target=clipboard_listener, daemon=True)
+            clip_list_thread.start()
+        except:
+            print("Error starting clipboard listener, already exists")
+            
 
     """     IF Disk Usage we are Firing it ONE TIME First
                         So Audio States Don't Mix Later"""
     if int(newsettings['Update Interval: Hard Drive']) > 0:
         disk_usage()
-    #print(type(int(newsettings['Update Interval: Active Virtual Desktops'])))
+
+
     if int(newsettings['Update Interval: Active Virtual Desktops']) >0:
         schedule.every(5).seconds.do(current_vd)
         
     """Scheduling Loop to Get Default Input and Output Devices"""
     schedule.every(3).minutes.do(get_default_input_output)
 
-    """Threading Timebooted Loop"""
-    th=threading.Thread(target=timebooted_loop, daemon=True)
-   # th.setDaemon(True)
-    th.start()
+
 
     """Starting Schedule Again"""
     stop_run_continuously = run_continuously()
@@ -562,6 +658,13 @@ def handleSettings(settings, on_connect=False):
     return settings
 
 
+@TPClient.on(TouchPortalAPI.TYPES.onNotificationOptionClicked)
+def check_noti(data):
+    print(data)
+    if data['optionId'] == 'Download Update':
+        print("ok lets open it")
+        github_check = TouchPortalAPI.Tools.updateCheck("KillerBOSS2019", "WinTools")
+        out(f"Start https://github.com/KillerBOSS2019/WinTools/releases/tag/{github_check}")
 
 """          Settings Handler         """
 @TPClient.on(TouchPortalAPI.TYPES.onSettingUpdate)
@@ -741,7 +844,6 @@ def Actions(data):
 
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
         TTSThread = threading.Thread(target=TextToSpeech,daemon=True, args=(data['data'][1]['value'], data['data'][0]['value'], int(data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
-        #TTSThread.setDaemon(True)
         TTSThread.start()
             
     if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.stop":
@@ -752,52 +854,35 @@ def Actions(data):
     if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture":
         if data['data'][0]['value'] =="ON":
             global cap_live
-            print("DATA 3", data['data'][3]['value'],"-"*30)
-            if data['data'][3]['value'] == "None":
-                print("NO OVERLAY WANTED")
-                th1 = threading.Thread(target=turn_on_cap, daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), None))
-                cap_live = True
-               # th1.setDaemon(True)
-                th1.start()
-                
-            if data['data'][3]['value']:
-                if ".png" in data['data'][3]['value']:
-                    print("*"*20, "OVERLAY REQUESTED", "*"*20)
-                    path = os.getcwd()
-                    print(path)
-                    path = path+ f"\mouse_overlays\\" + data['data'][3]['value']
-                    print(path)
-                    img = Image.open(path)
-                    
-                    if img.size[0] == int(data['data'][1]['value']) and img.size[1] == int(data['data'][2]['value']): 
-                        print("sized properly")
-                        th1 = threading.Thread(target=turn_on_cap,daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), img))
-                        cap_live = True
-                     #   th1.setDaemon(True)
-                        th1.start()
-                        
-                    elif img.size[0] != int(data['data'][1]['value']):
-                        print("NOT EQUAL WE AHVE TO RESIZE IT")
-                        print(int(data['data'][1]['value']), int(data['data'][2]['value']))
-                        resized =resize_image(img, int(data['data'][1]['value']), int(data['data'][2]['value']))
-                        th1 = threading.Thread(target=turn_on_cap,daemon=True,  args=(int(data['data'][1]['value']), int(data['data'][2]['value']), resized))
-                       # cap_live = True
-                        th1.setDaemon(True)
-                        th1.start()
-                        
-                        
-                 #   th1 = threading.Thread(target=turn_on_cap, args=(int(data['data'][1]['value']), int(data['data'][2]['value'])))
-                 #   cap_live = True
-                 #   th1.setDaemon(True)
-                 #   th1.start()
-                    
-            if not cap_live:
-                """If cap is not live(global state) then start"""
-                print("Starting the Mouse Capture")
-                cap_live = True
-                th1.setDaemon(True)
-                th1.start()
-        
+            if cap_live:
+                print("DENIED, ONLY ONE ALLOWED")
+            elif not cap_live:
+                 if data['data'][3]['value'] == "None":
+                     print("NO OVERLAY WANTED")
+                     th1 = threading.Thread(target=turn_on_cap, daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), None))
+                     cap_live = True
+                     th1.start()
+
+                 if data['data'][3]['value']:
+                     if ".png" in data['data'][3]['value']:
+                         print("*"*20, "OVERLAY REQUESTED", "*"*20)
+                         path = os.getcwd()
+                         path = path+ f"\mouse_overlays\\" + data['data'][3]['value']
+                         print(path)
+                         img = Image.open(path)
+                         if img.size[0] == int(data['data'][1]['value']) and img.size[1] == int(data['data'][2]['value']): 
+                             print("sized properly")
+                             th1 = threading.Thread(target=turn_on_cap,daemon=True, args=(int(data['data'][1]['value']), int(data['data'][2]['value']), img))
+                             cap_live = True
+                             th1.start()
+
+                         elif img.size[0] != int(data['data'][1]['value']):
+                             print("NOT EQUAL WE AHVE TO RESIZE IT")
+                             print(int(data['data'][1]['value']), int(data['data'][2]['value']))
+                             resized =resize_image(img, int(data['data'][1]['value']), int(data['data'][2]['value']))
+                             th1 = threading.Thread(target=turn_on_cap,daemon=True,  args=(int(data['data'][1]['value']), int(data['data'][2]['value']), resized))
+                             cap_live = True
+                             th1.start()
         
         elif data['data'][0]['value'] == "OFF":
             cap_live=False
@@ -807,13 +892,19 @@ def Actions(data):
         
 
 def turn_on_cap(height=None, width=None, overlayimage=None):
+    global cap_live
     while cap_live:
-        if overlayimage:
-            print("*"*80)
         img = capture_around_mouse(height, width, livecap=True, overlay=overlayimage)
-        TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
-        time.sleep(0.10)
+        if img != "NO RESULT":
+            TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
+            time.sleep(0.10)
+        elif img == "NO RESULT":
+            print("NO RESULT.. STOPPED")
+            cap_live = False
+            break
         if not cap_live:
+            print("Live Cap Stopped")
+            cap_live = False
             break
     
     
@@ -848,13 +939,15 @@ def heldingButton(data):
                 mag_level(int(data['data'][1]['value']), onhold=True)
                 sleep(0.05)
         elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.winsettings.active.mouseCapture'):
-            img=capture_around_mouse(int(data['data'][1]['value']),int(data['data'][2]['value']))
-            TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
-            sleep(0.05)
-            
+            if not cap_live:
+                img=capture_around_mouse(int(data['data'][1]['value']),int(data['data'][2]['value']))
+                TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
+                sleep(0.07)
+            else:
+                print("Attempted PUSH + HOLD CAP, but Capture is already live")
+                sleep(0.35)
         else:
             break
-
 
 
 """Getting Input and Output Devices and Updating Choices"""
@@ -897,6 +990,7 @@ def listChangeAction(data):
             TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.overlay_file", thecursors)
             oldcursors = thecursors
 
+
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
     print(data)
@@ -905,7 +999,7 @@ def connectors(data):
             setMasterVolume(data['value'])
         elif data['data'][0]['value'] == "Current app":
             activeWindow = getActiveExecutablePath()
-            print(activeWindow)
+          #  print(activeWindow)
             if activeWindow != "":
                 volumeChanger(os.path.basename(activeWindow), "Set", data['value'])
         else:
