@@ -45,6 +45,10 @@ import mss
 import TouchPortalAPI
 
 TPClient = TouchPortalAPI.Client('Windows-Tools')
+
+"""Current Working Directory"""
+cwd = os.path.join(os.getcwd())
+
 #####################################################
 #                                                   #
 #             Audio Stuff...                        #          
@@ -372,7 +376,6 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 ######################################################
 
 
-"""THIS IS NOT IMPLEMENTED.. SAVING TEMP TP FILE BAD IDEA FOR THIS"""
 def getFrame_base64(frame_image):
  #  # Get frame (only rgb - smaller size)
  #  frame_rgb     = mss.mss().grab(mss.mss().monitors[2]).rgb 
@@ -417,8 +420,7 @@ def bgra_to_rgba(sct_img):
     img = img.convert("RGBA")
     return img
 
-def capture_around_mouse(height, width, livecap=True, overlay=False):
-   # start = time.time()
+def capture_around_mouse(height, width, livecap=False, overlay=False):
     m_position = pyautogui.position()
     if livecap:
         if overlay:
@@ -443,13 +445,19 @@ def capture_around_mouse(height, width, livecap=True, overlay=False):
               #      img=que.get()
               #      print("Whats this though?")
                 
-                
+                finalresult = ""
                 img = bgra_to_rgba(sct_img)
-                finalresult = Image.alpha_composite(img, overlay)
-              #  end = time.time()
-              #  print("Runtime of the program is", round(end - start, 4))
-            return finalresult
-        
+                try:
+                    finalresult = Image.alpha_composite(img, overlay)
+                except ValueError as err:
+                    global cap_live
+                    cap_live = False
+                    print("Value Error", err)
+                    
+                if finalresult:
+                    return finalresult
+                else:
+                    return "NO RESULT"
         
         elif not overlay:
             monitor_number=1
@@ -468,6 +476,7 @@ def capture_around_mouse(height, width, livecap=True, overlay=False):
             
     #""" Else if not live cap"""       
     else:
+        print("PUSH TO HOLD CAPTURE ACTIVE")
         monitor_number=1
         with mss.mss() as sct:
             screenshot_size = [height, width]
@@ -483,7 +492,7 @@ def capture_around_mouse(height, width, livecap=True, overlay=False):
             return img
 
 def get_cursor_choices():
-    path = rf"C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\mouse_overlays"
+    path = cwd+"\mouse_overlays"
     dirs = os.listdir( path )
     cursor_list=[]
     for item in dirs:
@@ -680,34 +689,57 @@ def getActiveExecutablePath():
         _, pid = win32process.GetWindowThreadProcessId(hWnd)
         return psutil.Process(pid).exe()
 
-def get_app_icon():
-    
-    active_path = getActiveExecutablePath()
-    print(active_path)
- 
-    if active_path == "C:\Windows\System32\ApplicationFrameHost.exe" or None:
-       pass
-    else:
-       ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
-       ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
-       try:
-           large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
-           win32gui.DestroyIcon(small[0])
+###   def get_app_icon():
+###       
+###       active_path = getActiveExecutablePath()
+###       print(active_path)
+###    
+###       if active_path == "C:\Windows\System32\ApplicationFrameHost.exe" or None:
+###          pass
+###       else:
+###          ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+###          ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+###          try:
+###              large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
+###              win32gui.DestroyIcon(small[0])
+###   
+###              hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
+###              hbmp = win32ui.CreateBitmap()
+###              hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
+###              hdc = hdc.CreateCompatibleDC()
+###   
+###              hdc.SelectObject( hbmp )
+###              hdc.DrawIcon( (0,0), large[0] )
+###   
+###              hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\tmp\newwwwicon.bmp')  
+###              time.sleep(2)
+###          except IndexError as err:
+###               print(err)
+###               time.sleep(5)
+def get_app_icon(active_path):
+   # active_path = getActiveExecutablePath()
+    if active_path != "C:\Windows\System32\ApplicationFrameHost.exe" or None:
+        ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+        ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+        try:
+            large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
+            win32gui.DestroyIcon(small[0])
 
-           hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
-           hbmp = win32ui.CreateBitmap()
-           hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
-           hdc = hdc.CreateCompatibleDC()
+            hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
+            hbmp = win32ui.CreateBitmap()
+            hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
+            hdc = hdc.CreateCompatibleDC()
+            hdc.SelectObject( hbmp )
+            hdc.DrawIcon( (0,0), large[0] )
+            hbmp.SaveBitmapFile( hdc, cwd+"/tempicon.bmp") 
 
-           hdc.SelectObject( hbmp )
-           hdc.DrawIcon( (0,0), large[0] )
-
-           hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\tmp\newwwwicon.bmp')  
-           time.sleep(2)
-       except IndexError as err:
+            img = Image.open(cwd+"/tempicon.bmp")
+            #img=getFrame_base64(img).decode()
+            TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.Application.currentFocusedAPP.icon", stateValue=getFrame_base64(img).decode())
+            time.sleep(2)
+        except IndexError as err:
             print(err)
             time.sleep(5)
-
 
 
 
