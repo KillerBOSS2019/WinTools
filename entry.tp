@@ -1,6 +1,6 @@
 {
   "sdk": 4,
-  "version": 300,
+  "version": 230,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
   "configuration": {
@@ -968,7 +968,24 @@
           }
         ]
       },
-
+      
+      {
+        "id": "KillerBOSS.TP.Plugins.capture.clipboard.toValue",
+        "name": "UTILITY:  Paste Clipboard Contents to Value",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "description": "Usage Notes: Remove Brackets from Value Name EXAMPLE:  (${value:AD3_desc} -> AD3_desc",
+        "format": "Save Clipboard to value {$KillerBOSS.TP.Plugins.capture.clipboard.contents.toValue$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.capture.clipboard.contents.toValue",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
       {
         "id": "KillerBOSS.TP.Plugins.TextToSpeech.speak",
         "name": "UTILITY:  Text To Speech: Speak X",
@@ -1049,6 +1066,17 @@
             ],
             "valueType": "choice",
             "valueStateId": "KillerBOSS.TP.Plugins.state.default_inputdevice"
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.events.clipboard_contents",
+            "name": "When Clipboard Contents Change",
+            "format": "When Clipboard Contents Change $val",
+            "type": "communicate",
+            "valueChoices": [
+              "True"
+            ],
+            "valueType": "choice",
+            "valueStateId": "KillerBOSS.TP.Plugins.capture.clipboard.contents"
           }
       ],
       "states": [
@@ -1135,6 +1163,12 @@
           "type": "text",
           "desc": "Computer Uptime",
           "default": ""
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.capture.clipboard.contents",
+          "type": "text",
+          "desc": "Clipboard Contents",
+          "default": ""
         }
       ]
     }
@@ -1143,7 +1177,7 @@
     {
       "name": "Update Interval: Public IP",
       "type": "number",
-      "default": "0",
+      "default": "240",
       "maxValue": 1800,
       "minValue": 0,
       "allowDecimals": false,
@@ -1152,7 +1186,7 @@
     {
       "name": "Update Interval: Hard Drive",
       "type": "number",
-      "default": "30",
+      "default": "60",
       "maxValue": 1800,
       "minValue": 0,
       "allowDecimals": false,
@@ -1186,8 +1220,21 @@
       "readOnly": false
     },
     {
+      "name": "Clipboard Listener (ON / OFF)",
+      "type": "text",
+      "default": "ON",
+      "readOnly": false
+    },
+    {
+      "name": "Audio State Exemption List",
+      "type": "text",
+      "default": "Enter '.exe' name seperated by a comma for more than 1",
+      "readOnly": false
+    },
+    {
       "name": "DEBUG MODE / LOGGING",
       "type": "text",
+      "description": "Wish we could write descript here",
       "default": "OFF",
       "readOnly": false
     }
