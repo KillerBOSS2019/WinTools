@@ -1,6 +1,6 @@
 {
   "sdk": 4,
-  "version": 300,
+  "version": 240,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
   "configuration": {
@@ -60,7 +60,7 @@
       "name": "Windows-Tool",
 	    "imagepath": "%TP_PLUGIN_FOLDER%WinTools\\icon.png",
       "connectors": [
-        {
+        {       
           "id": "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol",
           "name": "APP Volume slider",
           "format": "Control volume for {$KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol$}",
@@ -73,7 +73,23 @@
               "valueChoices": []
             }
           ]
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.Magnifier.connectors.ZoomControl",
+          "name": "Magnify Zoom Slider",
+          "format": "Adjust Magnifier: {$KillerBOSS.TP.Plugins.Magnifier.ZoomControl$}",
+          "data": [
+            {
+              "id": "KillerBOSS.TP.Plugins.Magnifier.ZoomControl",
+              "description": "Manually adjust Lens Size and Zoom",
+              "type": "choice",
+              "label": "choice",
+              "default": "",
+              "valueChoices": ["Zoom", "Lens X", "Lens Y"]
+            }
+          ]
         }
+
       ],
       "actions": [
         {
@@ -141,6 +157,33 @@
               }
             ]
           },
+          {
+            "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput",
+            "name": "Sound: Change Input/Output Device",
+            "prefix": "plugin",
+            "type": "communicate",
+            "tryInline": true,
+            "format": "Change Audio{$KillerBOSS.TP.Plugins.ChangeAudioOutput.Choice$} to Device{$KillerBOSS.TP.Plugins.ChangeAudioOutput.Device$}",
+            "data": [
+              {
+                "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput.Choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "Pick One",
+                "valueChoices": [
+                    "Output",
+                    "Input"
+                ]
+              },
+              {
+                "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput.Device",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+              }
+            ]
+        },
           {
             "id": "KillerBOSS.TP.Plugins.AdvanceMouse.HoldDownToggle",
             "name": "Mouse: Toggle Mouse Down/Up",
@@ -301,73 +344,46 @@
                 }
             ]
         },
-                {
-            "id": "KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume",
-            "name": "Volume Mixer: Increase/Decrease process volume",
-            "prefix": "plugin",
-            "type": "communicate",
-            "tryInline": true,
-            "format": "{$KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.Ince/DecreChoice$}{$KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process$}Volume to {$KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.Volume$}",
-            "hasHoldFunctionality": true,
-            "data": [
-              {
-                "id": "KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.process",
-                "type": "choice",
-                "label": "choice",
-                "default": "",
-                "valueChoices": []
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.Ince/DecreChoice",
-                "type": "choice",
-                "label": "choice",
-                "default": "Increase",
-                "valueChoices": [
-                    "Increase",
-                    "Decrease",
-                    "Set"
-                ]
-              },
-              {
-                "id": "KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume.Volume",
-                "type": "number",
-                "label": "choice",
-                "allowDecimals": false,
-                "minValue": 0,
-                "maxValue": 100,
-                "default": 10
-              }
-            ]
-          },
-
         {
-          "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput",
-          "name": "Sound: Change Input/Output Device",
+          "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture",
+          "name": "Mouse: Capture Mouse To Live Icon",
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
-          "format": "Change Audio{$KillerBOSS.TP.Plugins.ChangeAudioOutput.Choice$} to Device{$KillerBOSS.TP.Plugins.ChangeAudioOutput.Device$}",
+          "hasHoldFunctionality": true,
+          "description": "Capture an area around your mouse and project to an icon.",
+          "format": "Switch Live Mouse Capture :{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.Switch$} -> X:{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.xSize$}  Y:{$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.ySize$} - Overlay: {$KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.overlay_file$}",
           "data": [
             {
-              "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput.Choice",
+              "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.Switch",
               "type": "choice",
               "label": "choice",
-              "default": "Pick One",
-              "valueChoices": [
-                  "Output",
-                  "Input"
-              ]
+              "default": "OFF",
+              "valueChoices": ["ON", "OFF"]
             },
             {
-              "id": "KillerBOSS.TP.Plugins.ChangeAudioOutput.Device",
+              "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.xSize",
+              "type": "number",
+              "label": "number",
+              "allowDecimals": false,
+              "default": "300"
+            },
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.ySize",
+              "type": "number",
+              "label": "number",
+              "allowDecimals": false,
+              "default": "300"
+            },
+            {
+              "id": "KillerBOSS.TP.Plugins.winsettings.active.mouseCapture.overlay_file",
               "type": "choice",
-              "label": "choice",
+              "label": "cursor choices",
               "default": "",
-              "valueChoices": []
+              "valueChoices": ["None", "LOAD MORE"]
             }
           ]
-      },
-
+        },
       {
         "id": "KillerBOSS.TP.Plugins.screencapture.full.file",
         "name": "CAPTURE:  Display to File / Clipboard",
@@ -546,7 +562,7 @@
 
         {
           "id": "KillerBOSS.TP.Plugins.winsettings.move_window",
-          "name": "UTILITY:  Move Application To Monitor Left/Right",
+          "name": "DISPLAY:  Move Current To Monitor Left/Right",
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
@@ -563,61 +579,8 @@
         },
 
         {
-          "id": "KillerBOSS.TP.Plugins.winsettings.shutdown",
-          "name": "UTILITY:  Shutdown Computer in (x)",
-          "prefix": "plugin",
-          "type": "communicate",
-          "tryInline": true,
-          "format": "Shutdown Computer in {$KillerBOSS.TP.Plugins.winsettings.shutdown_minutes$} MINUTES",
-          "data": [
-            {
-              "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_minutes",
-              "type": "text",
-              "label": "text",
-              "default": ""
-            }
-          ]
-        },
-  
-        {
-          "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
-          "name": "UTILITY:  Change Powerplan",
-          "prefix": "plugin",
-          "type": "communicate",
-          "tryInline": true,
-          "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
-          "data": [
-            {
-              "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
-              "type": "choice",
-              "label": "pplan choice",
-              "default": "",
-              "valueChoices": []
-            }
-          ]
-        },  
-
-      {
-        "id": "KillerBOSS.TP.Plugins.winsettings.action",
-        "name": "UTILITY:  System Settings",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Open: {$KillerBOSS.TP.Plugins.winsettings.choice$} settings section",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.winsettings.choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "SYSTEM:  Settings Home Page",
-            "valueChoices": []
-          }
-        ]
-      },
-
-        {
           "id": "KillerBOSS.TP.Plugins.winsettings.primary_monitor",
-          "name": "UTILITY:  Change Primary Monitor",
+          "name": "DISPLAY:  Change Primary Monitor",
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
@@ -636,7 +599,7 @@
 
       {
         "id": "KillerBOSS.TP.Plugins.winsettings.rotate_display",
-        "name": "UTILITY:  Rotate Display / Monitor",
+        "name": "DISPLAY:  Rotate Display / Monitor",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
@@ -658,7 +621,170 @@
           }
         ]
       },
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions",
+        "name": "DISPLAY:  Virtual Desktop: Switch/Change",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Go to {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} Virtual Desktop",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Next",
+              "Previous"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.create",
+        "name": "DISPLAY:  Virtual Desktop: Create New",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Create Virtual Desktop with name {$KillerBOSS.TP.Plugins.virtualdesktop.create.name$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.create.name",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.remove",
+        "name": "DISPLAY:  Virtual Desktop: Remove",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Remove Virtual Desktop {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.remove.fallback",
+            "type": "choice",
+            "label": "Fall Back Choice",
+            "default": "",
+            "valueChoices": []
+          }
+        ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.rename",
+        "name": "DISPLAY:  Virtual Desktop: Rename",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Rename {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} with name {$KillerBOSS.TP.Plugins.virtualdesktop.create.rename$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.create.rename",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          }
+        ]
+      },
+      {
+        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window",
+        "name": "DISPLAY:  Virtual Desktop: Move Current to #",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "description": "Move Current Active Window to Virtual Desktop desired",
+        "format": "{$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$}   Pin it -> {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned",
+            "type": "choice",
+            "label": "choice",
+            "default": "False",
+            "valueChoices": [
+              "True",
+              "False"
+            ]
+          }
+        ]
+      },
+      
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.shutdown",
+        "name": "UTILITY:  Shutdown Computer in (x)",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Shutdown Computer in {$KillerBOSS.TP.Plugins.winsettings.shutdown_minutes$} MINUTES",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.shutdown_minutes",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
 
+      {
+        "id": "KillerBOSS.TP.Plugins.winsettings.powerplan",
+        "name": "UTILITY:  Change Powerplan",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "format": "Change Windows Powerplan to {$KillerBOSS.TP.Plugins.winsettings.powerplan_choice$}",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.winsettings.powerplan_choice",
+            "type": "choice",
+            "label": "pplan choice",
+            "default": "",
+            "valueChoices": []
+          }
+        ]
+      },  
+
+      {
+      "id": "KillerBOSS.TP.Plugins.winsettings.action",
+      "name": "UTILITY:  System Settings",
+      "prefix": "plugin",
+      "type": "communicate",
+      "tryInline": true,
+      "format": "Open: {$KillerBOSS.TP.Plugins.winsettings.choice$} settings section",
+      "data": [
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.choice",
+          "type": "choice",
+          "label": "choice",
+          "default": "SYSTEM:  Settings Home Page",
+          "valueChoices": []
+        }
+      ]
+      },
 
       {
         "id": "KillerBOSS.TP.Plugins.toast.create",
@@ -760,12 +886,47 @@
             "valueChoices": [
               "Zoom In",
               "Zoom Out",
-              "Exit"
+              "Exit",
+              "Dock",
+              "Lens",
+              "Full Screen",
+              "Invert Colors"
             ]
           }
         ]
       },
-
+      {
+        "id": "KillerBOSS.TP.Plugins.magnifier.onHold.actions",
+        "name": "UTILITY:  Magnifier Glass Adjustment",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": true,
+        "hasHoldFunctionality": true,
+        "description": "IF ON HOLD -> Increment by X \nIF ON PRESS -> Set to X",
+        "format": "Select {$KillerBOSS.TP.Plugins.magnifier.lens.choice$} and set/adjust by {$KillerBOSS.TP.Plugins.magnifier.lensIncrement$}  ",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.magnifier.lens.choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Lens X",
+              "Lens Y",
+              "Zoom"
+            ]
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.magnifier.lensIncrement",
+            "type": "text",
+            "label": "text",
+            "allowDecimals": false,
+            "minValue":5,
+            "maxValue":1600,
+            "default": "5"
+          }
+        ]
+      },
       {
         "id": "KillerBOSS.TP.Plugins.winextra.keyboard",
         "name": "UTILITY:  On-Screen Keyboard",
@@ -807,50 +968,21 @@
           }
         ]
       },
+      
       {
-        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions",
-        "name": "UTILITY:  Virtual Desktop: Next / Previous",
+        "id": "KillerBOSS.TP.Plugins.capture.clipboard.toValue",
+        "name": "UTILITY:  Paste Clipboard Contents to Value",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": true,
-        "format": "Go to {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} Virtual Desktop",
+        "description": "Usage Notes: Remove Brackets from Value Name EXAMPLE:  (${value:AD3_desc} -> AD3_desc",
+        "format": "Save Clipboard to value {$KillerBOSS.TP.Plugins.capture.clipboard.contents.toValue$}",
         "data": [
           {
-            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": [
-              "Next",
-              "Previous"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window",
-        "name": "UTILITY:  Virtual Desktop: Move Current Window to #",
-        "prefix": "plugin",
-        "type": "communicate",
-        "tryInline": true,
-        "format": "Move Current Window to Virtual Desktop {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice$} Virtual Desktop, Pinned -> {$KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned$}",
-        "data": [
-          {
-            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": []
-          },
-          {
-            "id": "KillerBOSS.TP.Plugins.virtualdesktop.actionchoice.pinned",
-            "type": "choice",
-            "label": "choice",
-            "default": "False",
-            "valueChoices": [
-              "True",
-              "False"
-            ]
+            "id": "KillerBOSS.TP.Plugins.capture.clipboard.contents.toValue",
+            "type": "text",
+            "label": "text",
+            "default": ""
           }
         ]
       },
@@ -912,7 +1044,41 @@
         "format": "Stop TextToSpeech"
       }
     ],
-      "events": [],
+      "events": [
+          {
+            "id": "KillerBOSS.TP.Plugins.events.default_outputdevice",
+            "name": "When Default Output Device changes",
+            "format": "When Default Output Device changes $val",
+            "type": "communicate",
+            "valueChoices": [
+              "True"
+            ],
+            "valueType": "choice",
+            "valueStateId": "KillerBOSS.TP.Plugins.state.default_outputdevice"
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.events.default_inputdevice",
+            "name": "When Default Input Device changes",
+            "format": "When Default Input Device changes $val",
+            "type": "communicate",
+            "valueChoices": [
+              "True"
+            ],
+            "valueType": "choice",
+            "valueStateId": "KillerBOSS.TP.Plugins.state.default_inputdevice"
+          },
+          {
+            "id": "KillerBOSS.TP.Plugins.events.clipboard_contents",
+            "name": "When Clipboard Contents Change",
+            "format": "When Clipboard Contents Change $val",
+            "type": "communicate",
+            "valueChoices": [
+              "True"
+            ],
+            "valueType": "choice",
+            "valueStateId": "KillerBOSS.TP.Plugins.capture.clipboard.contents"
+          }
+      ],
       "states": [
         {
             "id": "KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X",
@@ -925,6 +1091,12 @@
             "type": "text",
             "desc": "Advance Mouse: Current Mouse Y pos",
             "default": "0"
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.winsettings.state.active.mouseCapture",
+          "type": "text",
+          "desc": "Active Mouse Capture",
+          "default": ""
         },
         {
           "id": "KillerBOSS.TP.Plugins.Sound.CurrentOutputDevice",
@@ -969,6 +1141,12 @@
           "default": ""
         },
         {
+          "id": "KillerBOSS.TP.Plugins.virtualdesktop.current_vd",
+          "type": "text",
+          "desc": "Curent Virtual Desktop",
+          "default": ""
+        },
+        {
           "id": "KillerBOSS.TP.Plugins.Windows.activeCOUNT",
           "type": "text",
           "desc": "Active Window Count",
@@ -985,24 +1163,30 @@
           "type": "text",
           "desc": "Computer Uptime",
           "default": ""
+        },
+        {
+          "id": "KillerBOSS.TP.Plugins.capture.clipboard.contents",
+          "type": "text",
+          "desc": "Clipboard Contents",
+          "default": ""
         }
       ]
     }
   ],
   "settings": [
     {
-      "name": "Update Interval: Network Up/Down(INCOMPLETE)",
+      "name": "Update Interval: Public IP",
       "type": "number",
-      "default": "0",
+      "default": "240",
       "maxValue": 1800,
       "minValue": 0,
       "allowDecimals": false,
-      "readOnly": true
+      "readOnly": false
     },
     {
       "name": "Update Interval: Hard Drive",
       "type": "number",
-      "default": "30",
+      "default": "60",
       "maxValue": 1800,
       "minValue": 0,
       "allowDecimals": false,
@@ -1033,6 +1217,25 @@
       "maxValue": 1800,
       "minValue": 5,
       "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Clipboard Listener (ON / OFF)",
+      "type": "text",
+      "default": "ON",
+      "readOnly": false
+    },
+    {
+      "name": "Audio State Exemption List",
+      "type": "text",
+      "default": "Enter '.exe' name seperated by a comma for more than 1",
+      "readOnly": false
+    },
+    {
+      "name": "DEBUG MODE / LOGGING",
+      "type": "text",
+      "description": "Wish we could write descript here",
+      "default": "OFF",
       "readOnly": false
     }
   ]

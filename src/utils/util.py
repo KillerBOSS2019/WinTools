@@ -1,12 +1,16 @@
 import ctypes
 import json
 import os
-import subprocess
+import sys
+#from threading import Thread
+import threading
 import time
+import requests 
 from ctypes import POINTER, cast, windll
 from datetime import datetime
 from io import BytesIO
-
+from subprocess import PIPE, run
+import subprocess
 import dateutil.relativedelta
 import psutil
 import pyautogui
@@ -20,9 +24,30 @@ import win32api
 from comtypes import CLSCTX_ALL
 from PIL import Image
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from winotify import Notification, audio
+from pycaw.magic import MagicManager, MagicSession   ### These are used in main.py
+from pycaw.constants import AudioSessionState   ### These are used in main.py
+from winotify import Notification, audio, Registry, PY_EXE, Notifier
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+from ctypes import windll, create_unicode_buffer, c_wchar_p, sizeof  # drive details
+from string import ascii_uppercase   # used for getting drive details
+import pyttsx3
 import re
 import pywintypes
+import pythoncom
+import winreg
+import base64
+import sounddevice as sd
+import audio2numpy as a2n
+import numpy as np
+from PIL import Image
+from win32com.client import GetObject
+import mss
+import TouchPortalAPI
+
+TPClient = TouchPortalAPI.Client('Windows-Tools')
+
+"""Current Working Directory"""
+cwd = os.path.join(os.getcwd())
 
 #####################################################
 #                                                   #
@@ -35,40 +60,18 @@ class AudioController(object):
         self.process_name = process_name
         self.volume = self.process_volume()
 
-    def mute(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                interface.SetMute(1, None)
-                print(self.process_name, 'has been muted.')  # debug
-
-    def unmute(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                interface.SetMute(0, None)
-                print(self.process_name, 'has been unmuted.')  # debug
-
     def process_volume(self):
+        pythoncom.CoInitialize() ### 3rd coinitilize...
         sessions = AudioUtilities.GetAllSessions()
         for session in sessions:
             interface = session.SimpleAudioVolume
             if session.Process and session.Process.name() == self.process_name:
                 #print('Volume:', interface.GetMasterVolume())  # debug
                 return interface.GetMasterVolume()
-    
-    def getMuteState(self):
-        sessions = AudioUtilities.GetAllSessions()
-        for session in sessions:
-            interface = session.SimpleAudioVolume
-            if session.Process and session.Process.name() == self.process_name:
-                #print('Volume:', interface.GetMasterVolume())  # debug
-                return interface.GetMute()
 
     def set_volume(self, decibels):
         sessions = AudioUtilities.GetAllSessions()
+        print(self.process_name)
         for session in sessions:
             interface = session.SimpleAudioVolume
             if session.Process and session.Process.name() == self.process_name:
@@ -90,6 +93,7 @@ class AudioController(object):
         for session in sessions:
             interface = session.SimpleAudioVolume
             if session.Process and session.Process.name() == self.process_name:
+            
                 # 1.0 is the max value, raise by decibels
                 self.volume = min(1.0, self.volume+decibels)
                 interface.SetMasterVolume(self.volume, None)
@@ -110,6 +114,7 @@ def volumeChanger(process, action, value):
         AudioController(str(process)).set_volume((int(value)*0.01))
     elif action == "Increase":
         AudioController(str(process)).increase_volume((int(value)*0.01))
+
     elif action == "Decrease":
         AudioController(str(process)).decrease_volume((int(value)*0.01))
 
@@ -170,26 +175,39 @@ def AdvancedMouseFunction(x, y, delay, look):
             pass
 
 
-#####################################################
-#                                                   #
-#             Windows Notification                  #          
-#                                                   #
 ######################################################
+##                                                   #
+##             Windows Notification                  #          
+##                                                   #
+#######################################################
+app_id = "WinTools-Notify"
+app_path = os.path.abspath(__file__)
+r = Registry(app_id, PY_EXE, app_path, force_override=True)
+notifier = Notifier(r)
+
+@notifier.register_callback
+def clear_notify():
+    notifier.clear()
+
 
 def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", aduration="short", icon=""):
     ### setting the base notification stuff
     if not os.path.exists(rf"{icon}") or icon == "": icon = os.path.join(os.getcwd(),"src\icon.png")
 
-    toast = Notification(app_id="WinTools",
+    toast = notifier.create_notification(
                          title=atitle,
                          msg=amsg,
                          icon=icon,
                          duration = aduration.lower(),
                          )
     
+    ### we can allow multiple links
     if buttonText != "" and buttonlink != "":
         toast.add_actions(label=buttonText, 
-                        link=buttonlink)
+                        launch=buttonlink)
+      # toast.add_actions("Open Github", "https://github.com/versa-syahptr/winotify")
+      # toast.add_actions("Quit app", "Kewl")
+      # toast.add_actions("spam", "sweet")
 
     audioDic = {
         "Default": audio.Default,
@@ -223,7 +241,9 @@ def win_toast(atitle="", amsg="", buttonText = "", buttonlink = "", sound = "", 
     toast.build()
     toast.show()
 
-from win32com.client import GetObject
+    
+    
+
 def get_monitors2():
     objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
     count = 0
@@ -277,7 +297,19 @@ def send_to_clipboard(clip_type, data):
         win32clipboard.SetClipboardData(clip_type, data)
         win32clipboard.CloseClipboard()
 
-## potentially not needed anymore
+def get_clipboard_data():
+    try:
+        win32clipboard.OpenClipboard()
+        data = win32clipboard.GetClipboardData()
+        win32clipboard.CloseClipboard()
+        print("HELLO?")
+        return data
+    except TypeError as err:
+        print("BROKEN")
+        return "Invalid Clipboard Data"
+
+
+## Image to Bytes
 def file_to_bytes(filepath):
     ## Take image into bytes and onto clipboard
     image = Image.open(filepath)
@@ -333,11 +365,6 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
                 print("Copied to Clipboard")
             elif clipboard == False:
                 im.save(save_location+".png")
-                ### very bad and ugly compression
-               ### im.save(save_location+"_Compressed_.png", 
-               ###     "JPEG", 
-               ###     optimize = True, 
-               ###     quality = 10)
                 print("Saved to Folder")
     except Exception as e:
         print("error screenshot" + e )
@@ -347,9 +374,7 @@ def screenshot_window(capture_type, window_title=None, clipboard=False, save_loc
 #             Other                                 #          
 #                                                   #
 ######################################################
-import mss
-import base64
-from PIL import Image
+
 
 def getFrame_base64(frame_image):
  #  # Get frame (only rgb - smaller size)
@@ -358,29 +383,125 @@ def getFrame_base64(frame_image):
  #  # Convert it from bytes to resize
  #  frame_image   = Image.frombytes("RGB", (1920, 1080), frame_rgb, "raw", "RGB") 
     
-    #### RESIZING THE IMAGE
-   #size = 256,256
-   #frame_image.thumbnail(size, Image.LANCZOS)
-    #frame_image.save("resized.jpg", "JPEG")   ## SAVE THE IMAGE?
-    
     ### TEMP SAVING IMAGE TO BUFFER THEN TO BASE 64
     buffer = BytesIO()
     frame_image.save(buffer, format='PNG')
-    frame_image.save("testimage.png", format='PNG')
+    #### Save it to File #####
     b64_str = base64.standard_b64encode(buffer.getvalue())
     
-    
     frame_image.close()
-
-
-    #pyperclip3.copy(b64_str)
     return b64_str
-    
 
 
-import sounddevice as sd
-import audio2numpy as a2n
-### Getting all audio outputs available for use with TTS
+
+"""We have to make this only fire one time when the function is"""
+def resize_image(im, height, width):
+    if im.size[0] == height and im.size[1] == width: 
+        return im
+    else:
+        print("We are actually resizing")
+        size = (height,width)
+        im.load()
+        bands = list(im.split())
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 1
+        bands[-1] = Image.fromarray(a)
+        bands = [b.resize(size, Image.LINEAR) for b in bands]
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 255
+        bands[-1] = Image.fromarray(a)
+        im = Image.merge('RGBA', bands)
+        return im
+ 
+def bgra_to_rgba(sct_img):
+    img = Image.frombytes('RGB', sct_img.size, sct_img.rgb,'raw')
+    img = img.convert("RGBA")
+    return img
+
+def capture_around_mouse(height, width, livecap=False, overlay=False):
+    m_position = pyautogui.position()
+    if livecap:
+        if overlay:
+            monitor_number=1
+            with mss.mss() as sct:
+                screenshot_size = [height, width]
+                monitor = {
+                "top": m_position.y - screenshot_size[0] // 2,
+                "left": m_position.x - screenshot_size[1] // 2,
+                "width": screenshot_size[0],
+                "height": screenshot_size[1],
+                "mon": monitor_number,
+                }
+                sct_img = sct.grab(monitor)
+                
+              #  que = queue.Queue()
+              #  thr = threading.Thread(target = lambda q, arg : q.put(bgra_to_rgba(sct_img)), args = (que, 2))
+               # thr = threading.Thread(target = lambda q, arg : q.put(dosomething(arg)), args = (que, 2))
+              #  thr.start()
+              #  thr.join()
+              #  while not que.empty():
+              #      img=que.get()
+              #      print("Whats this though?")
+                
+                finalresult = ""
+                img = bgra_to_rgba(sct_img)
+                try:
+                    finalresult = Image.alpha_composite(img, overlay)
+                except ValueError as err:
+                    global cap_live
+                    cap_live = False
+                    print("Value Error", err)
+                    
+                if finalresult:
+                    return finalresult
+                else:
+                    return "NO RESULT"
+        
+        elif not overlay:
+            monitor_number=1
+            with mss.mss() as sct:
+                screenshot_size = [height, width]
+                monitor = {
+                "top": m_position.y - screenshot_size[0] // 2,
+                "left": m_position.x - screenshot_size[1] // 2,
+                "width": screenshot_size[0],
+                "height": screenshot_size[1],
+                "mon": monitor_number,
+                }
+                sct_img = sct.grab(monitor)
+                img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                return img
+            
+    #""" Else if not live cap"""       
+    else:
+        print("PUSH TO HOLD CAPTURE ACTIVE")
+        monitor_number=1
+        with mss.mss() as sct:
+            screenshot_size = [height, width]
+            monitor = {
+              "top": m_position.y - screenshot_size[0] // 2,
+              "left": m_position.x - screenshot_size[1] // 2,
+              "width": screenshot_size[0],
+              "height": screenshot_size[1],
+              "mon": monitor_number,
+            }
+            sct_img = sct.grab(monitor)
+            img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")  ##   Instead of making a temp file we get it direct from raw to clipboard
+            return img
+
+def get_cursor_choices():
+    path = cwd+"\mouse_overlays"
+    dirs = os.listdir( path )
+    cursor_list=[]
+    for item in dirs:
+      #  if item.endswith(".png"):
+        #    cursor_list.append(item.split(".")[0])
+        cursor_list.append(item)
+    return cursor_list
+
+
 def getAllOutput_TTS2():
     audio_dict = {}
     for outputDevice in sd.query_hostapis(0)['devices']:
@@ -391,8 +512,6 @@ def getAllOutput_TTS2():
 
 
 def rotate_display(display_num, rotate_choice):
-    ### display num is gonna need add or subtractin to match other things..  cause 0 is monitor 1 here, and in other spots 0 is ALL monitors..
-    ## so display 0 would actually be display 1 in "settings"
     display_num = display_num.split(":")[0]
     display_num = display_num -1
     rotation_val=""
@@ -417,13 +536,26 @@ def rotate_display(display_num, rotate_choice):
     
 
 
-def magnifier(action):
+def magnifier(action, amount=None):
     if action == "Zoom In":
-        pyautogui.hotkey('win', '=')
+        mag_level(amount)
     if action == "Zoom Out":
-        pyautogui.hotkey('win', '-')
+        mag_level(amount)
+    if action == "Dock":
+        mag_mode(1)
+    if action == "Full Screen":
+        mag_mode(2)
+    if action == "Lens":
+        mag_mode(3)
+    if action == "Invert Colors":
+        mag_invert(switch="On")
+       # pyautogui.hotkey('ctrl', 'alt', 'i')
     if action == "Exit":
-        pyautogui.hotkey('win', 'escape')
+        try:
+            out("""wmic process where "name='magnify.exe'" delete""")
+        except:
+            pass
+
     
     
     ### used mostly for checking numlock status
@@ -479,8 +611,7 @@ def win_shutdown(time, cancel=False):
             pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
         
 
-from subprocess import PIPE, run
-import subprocess
+
 def out(command):
     systemencoding = windll.kernel32.GetConsoleOutputCP()
     systemencoding= f"cp{systemencoding}"
@@ -506,43 +637,6 @@ def get_powerplans(currentcheck=False):
                 pplans[plan_name]=the_data
     return pplans
 
-    
-
-################### THIS NEEDS IMPLEMENTED ###################
-### Should we let the user 'schedule' a ping that goes every X seconds to give results?
-### Should we just have it on press only so they can make a custom repeat rate, or spam issues with that maybe?
-def ping_ip(the_ip):
-
-    ping_result = subprocess.check_output('ping -n 3 ' + the_ip,  universal_newlines=True)
-
-    ping_pattern = re.compile("time[<, =, >](?P<ms>\d+)ms")
-    ttl_pattern = re.compile("TTL[<, =, >](?P<ms>\d+)")
-    ip_pattern = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
-
-
-    pings = re.findall(ping_pattern, ping_result)
-    ttl =  re.findall(ttl_pattern, ping_result)
-    pinged_ip = ip_pattern.search(ping_result)[0]
-
-    for i in range(0, len(pings)):
-        pings[i] = int(pings[i])
-
-    for i in range(0, len(ttl)):
-        ttl[i] = int(ttl[i])
-
-    ip_dict = {
-        "The IP": pinged_ip,
-        "Average": f'{round(sum(pings) / len(pings))}ms',
-        "TTL": f'{round(sum(ttl) / len(ttl))}'
-    }
-
-    print(f"The average ping for {the_ip} was {round(sum(pings) / len(pings), 2)}ms")
-    print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
-    
-    return ip_dict
-
-
-import requests 
 
 def get_ip_details(choice):
 	if choice == "choice1":
@@ -595,84 +689,164 @@ def getActiveExecutablePath():
         _, pid = win32process.GetWindowThreadProcessId(hWnd)
         return psutil.Process(pid).exe()
 
-def get_app_icon():
-    
-    active_path = getActiveExecutablePath()
-    print(active_path)
- 
-    if active_path == "C:\Windows\System32\ApplicationFrameHost.exe" or None:
-       pass
-    else:
-       ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
-       ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
-       try:
-           large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
-           win32gui.DestroyIcon(small[0])
+###   def get_app_icon():
+###       
+###       active_path = getActiveExecutablePath()
+###       print(active_path)
+###    
+###       if active_path == "C:\Windows\System32\ApplicationFrameHost.exe" or None:
+###          pass
+###       else:
+###          ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+###          ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+###          try:
+###              large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
+###              win32gui.DestroyIcon(small[0])
+###   
+###              hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
+###              hbmp = win32ui.CreateBitmap()
+###              hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
+###              hdc = hdc.CreateCompatibleDC()
+###   
+###              hdc.SelectObject( hbmp )
+###              hdc.DrawIcon( (0,0), large[0] )
+###   
+###              hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\tmp\newwwwicon.bmp')  
+###              time.sleep(2)
+###          except IndexError as err:
+###               print(err)
+###               time.sleep(5)
+def get_app_icon(active_path):
+   # active_path = getActiveExecutablePath()
+    if active_path != "C:\Windows\System32\ApplicationFrameHost.exe" or None:
+        ico_x = win32api.GetSystemMetrics(win32con.SM_CXICON)
+        ico_y = win32api.GetSystemMetrics(win32con.SM_CYICON)
+        try:
+            large, small = win32gui.ExtractIconEx(getActiveExecutablePath(),0)
+            win32gui.DestroyIcon(small[0])
 
-           hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
-           hbmp = win32ui.CreateBitmap()
-           hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
-           hdc = hdc.CreateCompatibleDC()
+            hdc = win32ui.CreateDCFromHandle( win32gui.GetDC(0) )
+            hbmp = win32ui.CreateBitmap()
+            hbmp.CreateCompatibleBitmap( hdc, ico_x, ico_x )
+            hdc = hdc.CreateCompatibleDC()
+            hdc.SelectObject( hbmp )
+            hdc.DrawIcon( (0,0), large[0] )
+            hbmp.SaveBitmapFile( hdc, cwd+"/tempicon.bmp") 
 
-           hdc.SelectObject( hbmp )
-           hdc.DrawIcon( (0,0), large[0] )
-
-           hbmp.SaveBitmapFile( hdc, r'C:\Users\dbcoo\AppData\Roaming\TouchPortal\plugins\WinTools\tmp\newwwwicon.bmp')  
-           time.sleep(2)
-       except IndexError as err:
+            img = Image.open(cwd+"/tempicon.bmp")
+            #img=getFrame_base64(img).decode()
+            TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.Application.currentFocusedAPP.icon", stateValue=getFrame_base64(img).decode())
+            time.sleep(2)
+        except IndexError as err:
             print(err)
             time.sleep(5)
 
-from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
+
+def current_vd():
+    current_d = VirtualDesktop.current()
+    TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.virtualdesktop.current_vd", f"[{current_d.number}] {current_d.name}")
+    return current_d
+
+def vd_pinn_app(pinned=True):
+    if pinned:
+        AppView.current()
+        AppView.current().pin()
+    if not pinned:
+        current_window = AppView.current()
+        target_desktop = VirtualDesktop(current_vd().number)
+        current_window.move(target_desktop)
+        
+    
 
 def virtual_desktop(target_desktop=None, move=False, pinned=False):
     number_of_active_desktops = len(get_virtual_desktops())
-    print(f"There are {number_of_active_desktops} active desktops")
+    """Retrieving VD Number from name"""
+    target_desktop = int(target_desktop[target_desktop.find("[") + 1: target_desktop.find("]")])
 
-    current_desktop = VirtualDesktop.current()
-    
     if target_desktop == "Next":
         if move:
-            target_desktop2 = current_desktop.number + 1
             current_window = AppView.current()
-            target_desktop = VirtualDesktop(target_desktop2)
+            target_desktop = VirtualDesktop(target_desktop)
             current_window.move(target_desktop) 
-            print(f"did it move to {target_desktop2} ?")
             if pinned:
                 AppView.current().pin()
-        
         elif not move:
-            target_desktop2 = current_desktop.number + 1
-            if target_desktop2 <= number_of_active_desktops:
-                VirtualDesktop(target_desktop2).go()
+            if target_desktop <= number_of_active_desktops:
+                VirtualDesktop(target_desktop).go()
             else:
                 print("too many")
         
     elif target_desktop == "Previous":
         if move:
-            target_desktop2 = current_desktop.number - 1
-            current_window = AppView.current()
-            target_desktop = VirtualDesktop(target_desktop2)
-            current_window.move(target_desktop)
+            AppView.current().move(VirtualDesktop(target_desktop)) 
             if pinned:
                 AppView.current().pin()
-        
+                
         elif not move:
-            target_desktop2 = current_desktop.number - 1
-            if target_desktop2 > 0:
-                VirtualDesktop(target_desktop2).go()
+            if target_desktop > 0:
+                if pinned:
+                    AppView.current().pin()
+                VirtualDesktop(target_desktop).go()
             else:
                 pass
             
-    elif target_desktop != "Previous" or "Next":  ## else if 0, 1, 2 3, etc.. anything but next or previous
-        print("THE TARGETED DESKTOP IS", target_desktop)
+    elif target_desktop != "Previous" or "Next":  
         if move:
-            target_desktop2 = int(target_desktop)
-            print("The Target desktop secondary thing is", target_desktop2)
-            current_window = AppView.current()
-            target_desktop = VirtualDesktop(int(target_desktop2))
-            current_window.move(target_desktop)
+            if pinned:
+                AppView.current().move(VirtualDesktop(target_desktop)) 
+                vd_pinn_app()
+                VirtualDesktop(target_desktop).go()
+            else:
+                AppView.current().move(VirtualDesktop(target_desktop)) 
+        elif not move:
+            if target_desktop > 0:
+                VirtualDesktop(target_desktop).go()
+                if pinned:
+                    vd_pinn_app()
+    current_vd()
+    
+def rename_vd(name, number=None):
+    number_of_active_desktops = len(get_virtual_desktops())
+    new_vd = VirtualDesktop(number_of_active_desktops)
+    VirtualDesktop.rename(new_vd, name)
+    
+
+def create_vd(name=None):
+    if name:
+        VirtualDesktop.create()
+        rename_vd(name)
+    else:
+        VirtualDesktop.create()
+        
+
+
+def remove_vd(remove, fallbacknum=None):
+    if fallbacknum:
+        try:
+            fall_back =VirtualDesktop(fallbacknum)
+            remove_vd = VirtualDesktop(remove) 
+            VirtualDesktop.remove(remove_vd, fall_back)
+        except ValueError as err:
+            return err
+    else:
+        try:
+            remove_vd=VirtualDesktop(remove)
+            VirtualDesktop.remove(remove_vd)
+        except ValueError as err:
+            return err
+    current_vd()
+
+
+
+def get_vd_name(number):
+    name = VirtualDesktop(number).name
+    if not name:
+        name = f"Desktop {number}"
+    return name
+
+#### END OF VD STUFF ####
+
 
 def get_size(bytes, suffix="B"):
     """
@@ -687,10 +861,32 @@ def get_size(bytes, suffix="B"):
             return f"{bytes:.2f}{unit}{suffix}"
         bytes /= factor
 
-def getDriveName(driveletter):
-    systemencoding = windll.kernel32.GetConsoleOutputCP()
-    systemencoding= f"cp{systemencoding}"
-    return subprocess.check_output(["cmd","/c vol "+driveletter]).decode(systemencoding).split("\r\n")[0]
+
+def get_win_drive_names2():
+    volumeNameBuffer = create_unicode_buffer(1024)
+    fileSystemNameBuffer = create_unicode_buffer(1024)
+    serial_number = None
+    max_component_length = None
+    file_system_flags = None
+    drive_names = {}
+    
+    #  Get the drive letters, then use the letters to get the drive names
+    bitmask = (bin(windll.kernel32.GetLogicalDrives())[2:])[::-1]  # strip off leading 0b and reverse
+    drive_letters = [ascii_uppercase[i] + ':/' for i, v in enumerate(bitmask) if v == '1']
+    for d in drive_letters:
+        rc = windll.kernel32.GetVolumeInformationW(c_wchar_p(d), volumeNameBuffer, sizeof(volumeNameBuffer),
+                                                   serial_number, max_component_length, file_system_flags,
+                                                   fileSystemNameBuffer, sizeof(fileSystemNameBuffer))
+        if rc:
+            if volumeNameBuffer.value:
+                drive_names[d[:2].upper()] = volumeNameBuffer.value
+            else:
+                drive_names[d[:2].upper()] = "No Name"
+
+    return drive_names
+
+
+
 
 ## NOT TO BE CONFUSED WITH UPLOAD / DOWNLOAD SPEED
 def network_usage():
@@ -703,31 +899,29 @@ def network_usage():
 
 ### Find when PC was booted
 previous_time = ""
-def time_booted():
+def time_booted(booted_time_timestamp):
     global previous_time
-    
-    ##instead of constantly grabbing psutil.boot_time could we just store that time permanantnly then keep checking current time doing such?
-    boot_time_timestamp = psutil.boot_time()
-    ##
-    # bt = datetime.fromtimestamp(boot_time_timestamp)
+
     current = time.time()
-    dt1 = datetime.fromtimestamp(boot_time_timestamp)
+    dt1 = datetime.fromtimestamp(booted_time_timestamp)
     dt2 = datetime.fromtimestamp(current) 
     rd = dateutil.relativedelta.relativedelta (dt2, dt1)
     hours = rd.hours
     minutes = rd.minutes
     seconds = rd.seconds
-    seconds = int(seconds)
-    minutes = int(minutes)
-    hours = int(hours)
-    if minutes <10:
+
+    if int(minutes) <10:
         minutes = "0" + str(minutes)
-    if seconds <10:
+    if int(seconds) <10:
         seconds = "0" + str(seconds)
-        
     if rd.days >0:
-        print(f"{rd.days}:{hours}:{minutes}:{seconds}")
-        return f"{rd.days}:{hours}:{minutes}:{seconds}"
+        if int(hours) <10:
+            hours = "0" + str(hours)
+            print(f"{rd.days}:{hours}:{minutes}:{seconds}")
+            return f"{rd.days}:{hours}:{minutes}:{seconds}"
+        else:
+            print(f"{rd.days}:{hours}:{minutes}:{seconds}")
+            return f"{rd.days}:{hours}:{minutes}:{seconds}"
     else:
         print(f"{hours}:{minutes}:{seconds}")
         return f"{hours}:{minutes}:{seconds}"
@@ -786,6 +980,8 @@ def get_windows():
 
 
 def AudioDeviceCmdlets(command, output=True):
+    ### add in another coinitilize???  
+    
     systemencoding = windll.kernel32.GetConsoleOutputCP()
     systemencoding= f"cp{systemencoding}"
     process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True, encoding=systemencoding)
@@ -796,9 +992,6 @@ def AudioDeviceCmdlets(command, output=True):
 
 
 
-import sounddevice as sd
-import audio2numpy as a2n
-import pyttsx3
 
 def getAllVoices():
     engine = pyttsx3.init()
@@ -833,7 +1026,7 @@ def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
             x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
             sd.play(x, sr, blocking=True)
         except Exception as e:
-            print("test", e)
+            print("EXCEPTION ERROR(Line:880)", e)
 
 def activate_windows_setting(choice=False):
     
@@ -892,8 +1085,7 @@ def activate_windows_setting(choice=False):
         os.system(f'explorer "{settings[choice]}"')
         
         
-#########PRIMARY DISPLAY##############
-
+"""      DISPLAY CHANGE STUFF       """
 #DISPLAY_DEVICE.StateFlags
 DISPLAY_DEVICE_ACTIVE = 0x1
 DISPLAY_DEVICE_MULTI_DRIVER = 0x2
@@ -974,4 +1166,398 @@ def change_primary(monitornum):
             
     ## Update the displays with the registry settings
     win32api.ChangeDisplaySettingsEx(None, None)
+
+
+"""MAGNIFIER STUFF"""
+
+
+class WindowsRegistry:
+    """Class WindowsRegistry is using for easy manipulating Windows registry.
+
+
+    Methods
+    -------
+    query_value(full_path : str)
+        Check value for existing.
+
+    get_value(full_path : str)
+        Get value's data.
+
+    set_value(full_path : str, value : str, value_type='REG_SZ' : str)
+        Create a new value with data or set data to an existing value.
+
+    delete_value(full_path : str)
+        Delete an existing value.
+
+    query_key(full_path : str)
+        Check key for existing.
+
+    delete_key(full_path : str)
+        Delete an existing key(only without subkeys).
+
+
+    Examples:
+        WindowsRegistry.set_value('HKCU/Software/Microsoft/Windows/CurrentVersion/Run', 'Program', r'"c:\Dir1\program.exe"')
+        WindowsRegistry.delete_value('HKEY_CURRENT_USER/Software/Microsoft/Windows/CurrentVersion/Run/Program')
+    """
+    @staticmethod
+    def __parse_data(full_path):
+        full_path = re.sub(r'/', r'\\', full_path)
+        hive = re.sub(r'\\.*$', '', full_path)
+        if not hive:
+            raise ValueError('Invalid \'full_path\' param.')
+        if len(hive) <= 4:
+            if hive == 'HKLM':
+                hive = 'HKEY_LOCAL_MACHINE'
+            elif hive == 'HKCU':
+                hive = 'HKEY_CURRENT_USER'
+            elif hive == 'HKCR':
+                hive = 'HKEY_CLASSES_ROOT'
+            elif hive == 'HKU':
+                hive = 'HKEY_USERS'
+        reg_key = re.sub(r'^[A-Z_]*\\', '', full_path)
+        reg_key = re.sub(r'\\[^\\]+$', '', reg_key)
+        reg_value = re.sub(r'^.*\\', '', full_path)
+
+        return hive, reg_key, reg_value
+
+    @staticmethod
+    def query_value(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_READ)
+            winreg.QueryValueEx(opened_key, value_list[2])
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+
+    @staticmethod
+    def get_value(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_READ)
+            value_of_value, value_type = winreg.QueryValueEx(opened_key, value_list[2])
+            winreg.CloseKey(opened_key)
+            return value_of_value
+        except WindowsError:
+            return None
+
+    @staticmethod
+    def set_value(full_path, value, value_type='REG_SZ'):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            winreg.CreateKey(getattr(winreg, value_list[0]), value_list[1])
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_WRITE)
+            winreg.SetValueEx(opened_key, value_list[2], 0, getattr(winreg, value_type), value)
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+        
+    @staticmethod
+    def query_key(full_path):
+        value_list = WindowsRegistry.__parse_data(full_path)
+        try:
+            opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1] + r'\\' + value_list[2], 0, winreg.KEY_READ)
+            winreg.CloseKey(opened_key)
+            return True
+        except WindowsError:
+            return False
+
+
+  #  @staticmethod
+  #  def delete_value(full_path):
+  #      value_list = WindowsRegistry.__parse_data(full_path)
+  #      try:
+  #          opened_key = winreg.OpenKey(getattr(winreg, value_list[0]), value_list[1], 0, winreg.KEY_WRITE)
+  #          winreg.DeleteValue(opened_key, value_list[2])
+  #          winreg.CloseKey(opened_key)
+  #          return True
+  #      except WindowsError:
+  #          return False
+
+
+  # @staticmethod
+  # def delete_key(full_path):
+  #     value_list = WindowsRegistry.__parse_data(full_path)
+  #     try:
+  #         winreg.DeleteKey(getattr(winreg, value_list[0]), value_list[1] + r'\\' + value_list[2])
+  #         return True
+  #     except WindowsError:
+  #         return False
+        
+        
+ 
+magpath = r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\\"
+is_on=WindowsRegistry.get_value(magpath+"\RunningState")
+
+def mag_on():
+    """Check if Magnify is on
+    - If magnify is off, this turns it on. 
+       Always returns True
+    """
+    is_on=WindowsRegistry.get_value(magpath+"\RunningState")
+    if is_on:
+        return True
+    if not is_on:
+        out('magnify')
+        return True
     
+    
+def mag_mode(mode=3):
+    """ 
+    -   1 = Docked
+    -   2 = Full Screen
+    -   3 = Lens
+    """
+    exists = WindowsRegistry.query_value(magpath + "MagnificationMode")
+    if exists:
+        WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\MagnificationMode", mode, value_type='REG_DWORD')
+
+
+
+def mag_invert():
+    """ Magnifier Invert
+    - Toggles On / Off
+    """
+    exists = WindowsRegistry.query_value(magpath + "Invert")
+    if exists:
+        current = WindowsRegistry.get_value(magpath + "Invert")
+        if current == 1:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 0, value_type='REG_DWORD')
+        if current ==0:
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Invert", 1, value_type='REG_DWORD')
+
+            
+def mag_increments(amount):
+    """Setting Zoom Increments - MAX 400%, MIN 5%"""
+    exists = WindowsRegistry.query_value(magpath + "ZoomIncrement")
+    if exists:
+        if amount:
+            WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\ZoomIncrement", amount, value_type='REG_DWORD')
+    
+def mag_level(amount, onhold=False):
+    """Set Zoom Levels 
+    - 1600 is MAX (overriden to 1000)
+    - Amount = Zoom Set
+    - On Hold Amount = Increment Zoom
+    """
+    print("we in..", amount)
+    themin=20
+    themax=1000
+    current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification")
+    exists = WindowsRegistry.query_value(magpath + "Magnification")
+    if not onhold:
+         if exists:
+             if amount:
+                    if amount >themax:
+                        mag_on()
+                        WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", themax, value_type='REG_DWORD')
+                    else:
+                         mag_on()
+                         WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", amount, value_type='REG_DWORD')
+    if onhold:
+        if exists:
+            if current < themin:
+                 print("less than 20")
+                 WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", 20, value_type='REG_DWORD')
+            elif current > themax:
+                try:
+                    WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", 1600, value_type='REG_DWORD')
+                except:
+                    pass
+            else:
+                try:
+                    WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\Magnification", current + amount, value_type='REG_DWORD')
+                except:
+                    pass
+            
+def text_smoothing(switch):
+    """Text Smoothing
+    - Switch = On / Off
+    """
+    exists = WindowsRegistry.query_value(magpath + "UseBitmapSmoothing")
+    if exists:
+        if switch =="On":
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\UseBitmapSmoothing", 1, value_type='REG_DWORD')
+        elif switch == "Off":
+            WindowsRegistry.set_value(r"HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\UseBitmapSmoothing", 0, value_type='REG_DWORD')
+
+
+def magnifer_dimensions(x=None, y=None, onhold=False):
+    """Can set a MIN/MAX Value to avoid this
+    -  onhold = int value increment
+    """
+    exists = WindowsRegistry.query_value(magpath + "LensWidth")
+    themax=95
+    themin=20
+    if not onhold:
+        if x:
+            if exists:
+                WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", x, value_type='REG_DWORD')
+        if y:
+            if exists:
+                WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", y, value_type='REG_DWORD')
+                
+    if onhold:
+        if exists:
+            if x:
+                 current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth")
+                 if current < themin:
+                     print("less than 20")
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 20, value_type='REG_DWORD')
+                 elif current > themax:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", 95, value_type='REG_DWORD')
+                 else:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensWidth", current + onhold, value_type='REG_DWORD')
+            if y:
+                 current = WindowsRegistry.get_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight")
+                 if current < themin:
+                     print("less than 20")
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 20, value_type='REG_DWORD')
+                 elif current > themax:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", 95, value_type='REG_DWORD')
+                 else:
+                     WindowsRegistry.set_value("HKEY_CURRENT_USER\SOFTWARE\Microsoft\ScreenMagnifier\LensHeight", current + onhold, value_type='REG_DWORD')
+
+
+
+
+
+
+
+""" CLIPBOARD LISTENER STARTS IN MAIN.py onstart func"""
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Callable, Union, List, Optional
+
+class Clipboard:
+    @dataclass
+    class Clip:
+        type: str
+        value: Union[str, List[Path]]
+
+    def __init__(
+            self,
+            trigger_at_start: bool = False,
+            on_text: Callable[[str], None] = None,
+            on_update: Callable[[Clip], None] = None,
+            on_files: Callable[[str], None] = None,
+    ):
+        self._trigger_at_start = trigger_at_start
+        self._on_update = on_update
+        self._on_files = on_files
+        self._on_text = on_text
+
+    def _create_window(self) -> int:
+        """
+        Create a window for listening to messages
+        :return: window hwnd
+        """
+        wc = win32gui.WNDCLASS()
+        wc.lpfnWndProc = self._process_message
+        wc.lpszClassName = self.__class__.__name__
+        wc.hInstance = win32api.GetModuleHandle(None)
+        class_atom = win32gui.RegisterClass(wc)
+        return win32gui.CreateWindow(class_atom, self.__class__.__name__, 0, 0, 0, 0, 0, 0, 0, wc.hInstance, None)
+
+    def _process_message(self, hwnd: int, msg: int, wparam: int, lparam: int):
+        WM_CLIPBOARDUPDATE = 0x031D
+        if msg == WM_CLIPBOARDUPDATE:
+            self._process_clip()
+        return 0
+
+    def _process_clip(self):
+        clip = self.read_clipboard()
+        if not clip:
+            return
+
+        if self._on_update:
+            self._on_update(clip)
+        if clip.type == 'text' and self._on_text:
+            self._on_text(clip.value)
+        elif clip.type == 'files' and self._on_text:
+            self._on_files(clip.value)
+    
+    @staticmethod
+    def read_clipboard() -> Optional[Clip]:
+        try:
+            win32clipboard.OpenClipboard()
+            def get_formatted(fmt):
+                if win32clipboard.IsClipboardFormatAvailable(fmt):
+                    return win32clipboard.GetClipboardData(fmt)
+                return None
+            if files := get_formatted(win32con.CF_HDROP):
+                return Clipboard.Clip('files', [Path(f) for f in files])
+            elif text := get_formatted(win32con.CF_UNICODETEXT):
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", "TRUE")
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", Clipboard.Clip('text', text).value)
+            elif text_bytes := get_formatted(win32con.CF_TEXT):
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", "TRUE")
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.capture.clipboard.contents", Clipboard.Clip('text', text_bytes.decode()).value)
+            elif bitmap_handle := get_formatted(win32con.CF_BITMAP):
+                # TODO: handle screenshots
+                pass
+            return None
+        finally:
+            try:
+                win32clipboard.CloseClipboard()
+            except:
+                pass
+
+    def listen(self):
+        if self._trigger_at_start:
+            self._process_clip()
+
+        def runner():
+            hwnd = self._create_window()
+            ctypes.windll.user32.AddClipboardFormatListener(hwnd)
+            win32gui.PumpMessages()
+
+        th = threading.Thread(target=runner, daemon=True)
+        th.start()
+        while th.is_alive():
+            th.join(0.25)
+            
+            
+
+def clipboard_listener():
+   clipboard = Clipboard(on_update=print, trigger_at_start=False)
+   clipboard.listen()
+   
+
+
+
+################### THIS NEEDS IMPLEMENTED ###################
+### Should we let the user 'schedule' a ping that goes every X seconds to give results?
+### Should we just have it on press only so they can make a custom repeat rate, or spam issues with that maybe?
+def ping_ip(the_ip):
+
+    ping_result = subprocess.check_output('ping -n 3 ' + the_ip,  universal_newlines=True)
+
+    ping_pattern = re.compile("time[<, =, >](?P<ms>\d+)ms")
+    ttl_pattern = re.compile("TTL[<, =, >](?P<ms>\d+)")
+    ip_pattern = re.compile("(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})")
+
+
+    pings = re.findall(ping_pattern, ping_result)
+    ttl =  re.findall(ttl_pattern, ping_result)
+    pinged_ip = ip_pattern.search(ping_result)[0]
+
+    for i in range(0, len(pings)):
+        pings[i] = int(pings[i])
+
+    for i in range(0, len(ttl)):
+        ttl[i] = int(ttl[i])
+
+    ip_dict = {
+        "The IP": pinged_ip,
+        "Average": f'{round(sum(pings) / len(pings))}ms',
+        "TTL": f'{round(sum(ttl) / len(ttl))}'
+    }
+
+    print(f"The average ping for {the_ip} was {round(sum(pings) / len(pings), 2)}ms")
+    print(f"The average TTL for {the_ip} was {round(sum(ttl) / len(ttl))}")
+    
+    return ip_dict

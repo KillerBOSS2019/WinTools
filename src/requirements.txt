@@ -17,7 +17,7 @@ PyAutoGUI==0.9.53
 pycaw==20181226
 pycparser==2.21
 pyee==8.2.2
-PyGetWindow==0.0.9
+https://github.com/Kalmat/PyGetWindow/archive/refs/heads/master.zip
 pyinstaller==4.7
 pyinstaller-hooks-contrib==2021.4
 PyMsgBox==1.0.9
