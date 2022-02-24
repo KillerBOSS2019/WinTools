@@ -1,23 +1,12 @@
-#from cmath import e
-#from gc import callbacks
-#import os
 from asyncio.log import logger
-#import sys
-#import threading
-#import time
 from time import sleep
 from turtle import title
 from urllib.request import urlopen
 from utils.util import *
 
-### Gitago Imports
-#import mss
 import mss.tools
-#import psutil
-#import pyautogui
-import pygetwindow
+import pygetwindowmp as pygetwindow
 import schedule
-#from PIL import Image
 import TouchPortalAPI
 from TouchPortalAPI import TYPES, Tools
 from screeninfo import get_monitors
@@ -442,6 +431,10 @@ def get_default_input_output(powershell=True):
 """Imported from Util.py instead"""
 #TPClient = TouchPortalAPI.Client('Windows-Tools')
 
+
+
+
+
 global Timer
 running = False
 updateXY = True
@@ -457,7 +450,11 @@ def updateStates():
             """
             Updates every 5 loops 
             """
-            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
+            
+            try:
+                TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
+            except:
+                pass
             
         # """ Getting App Icon"""
         # activeWindow = getActiveExecutablePath()
