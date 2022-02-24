@@ -32,7 +32,7 @@ python-dateutil==2.8.2
 pyttsx3==2.90
 pytweening==1.0.4
 pyvda==0.2.4
-pywin32==302
+pywin32==30*
 pywin32-ctypes==0.2.0
 requests==2.27.0
 schedule==1.1.0
