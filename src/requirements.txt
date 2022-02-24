@@ -14,10 +14,12 @@ pefile==2021.9.3
 Pillow==9.0.0
 psutil==5.9.0
 PyAutoGUI==0.9.53
-pycaw==20181226
+PyBluez==0.30
+pycaw==20190904
 pycparser==2.21
 pyee==8.2.2
-https://github.com/Kalmat/PyGetWindow/archive/refs/heads/master.zip
+PyGetWindow==0.0.9
+PyGetWindowMP @ https://github.com/Kalmat/PyGetWindow/archive/refs/heads/master.zip
 pyinstaller==4.7
 pyinstaller-hooks-contrib==2021.4
 PyMsgBox==1.0.9
@@ -29,8 +31,8 @@ PyScreeze==0.1.28
 python-dateutil==2.8.2
 pyttsx3==2.90
 pytweening==1.0.4
-pyvda==0.2.0
-pywin32==303
+pyvda==0.2.4
+pywin32==302
 pywin32-ctypes==0.2.0
 requests==2.27.0
 schedule==1.1.0
@@ -40,5 +42,5 @@ six==1.16.0
 sounddevice==0.4.4
 TouchPortal-API==1.6
 urllib3==1.26.7
-winotify==1.0.4
+winotify==1.1.0
 wintoast==0.2
