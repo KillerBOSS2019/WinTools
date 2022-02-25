@@ -26,7 +26,7 @@ jobs:
     - name: build exe using pyinstaller
       run: |
         pip uninstall -y enum34
-        pyinstaller --onefile --icon=icon.ico Main.py
+        pyinstaller --onefile --icon=icon.ico main.py
     - name: packaging file
       run: |
         python compile.py
