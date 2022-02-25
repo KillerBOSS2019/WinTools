@@ -1,6 +1,5 @@
-WinTools Update 2.4 
+WinTools Update 2.3.2
 
-Download the newest update to get the following fixes/features:
-- Fixed this
-- Fixed That thing
-- Testing another
+
+- Fixed Default Output Device State displaying the wrong info
+- 
