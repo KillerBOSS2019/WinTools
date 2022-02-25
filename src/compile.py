@@ -16,7 +16,7 @@ else:
 
 
 for file in os.listdir("."):
-    if file not in ["compile.py", "utils", "requirements.txt", "build", "dist", "Main.py", "main.spec", "__pycache__", "temp"]:
+    if file not in ["compile.py", "utils", "requirements.txt", "build", "dist", "main.py", "main.spec", "__pycache__", "temp"]:
         print("copying", file)
         shutil.copy(os.path.join(os.getcwd(), file), os.path.join("temp", filedirectory))
         
