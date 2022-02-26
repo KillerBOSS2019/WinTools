@@ -3,3 +3,4 @@ WinTools Update 2.4
 
 - Fixed Default Output Device State displaying the wrong info
 - Fixed Rotate Display not working
+- Fixed Potential issue with active window title causing an error
