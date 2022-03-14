@@ -1,3 +1,2 @@
-- Fixed Default Output Device State displaying the wrong info
-- Fixed Rotate Display not working
-- Fixed Potential issue with active window title causing an error
+- Fixed issue with Notebook PC's actions not filling out properly
+- Re-added in Action to Check if a process is running, and if its not then open it and or if it is running then focus it.
