@@ -619,8 +619,9 @@ def out(command):
     result = str(output.stdout.decode(systemencoding))
     return result
 
-def get_powerplans(currentcheck=False):
+def get_powerplans():
     pplans={}
+    current = None
     for powerplan in out("powercfg -List").split("\n"):
         if ":" in powerplan:
             ParsedData = powerplan.split(":")[1].split()
@@ -630,12 +631,11 @@ def get_powerplans(currentcheck=False):
             if "*" in plan_name:
                 plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                 pplans[plan_name]=the_data
-                if currentcheck==True:
-                    return plan_name
+                current = plan_name
             else:
                 plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                 pplans[plan_name]=the_data
-    return pplans
+    return (pplans, current)
 
 
 def get_ip_details(choice):
