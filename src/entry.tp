@@ -1,5 +1,5 @@
 {
-  "sdk": 4,
+  "sdk": 6,
   "version": 231,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
@@ -229,6 +229,7 @@
                 "default": "Left",
                 "valueChoices": [
                     "Left",
+                    "middle",
                     "Right"
                 ]
               }

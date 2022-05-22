@@ -1,4 +1,8 @@
 import os
+import subprocess
+from ctypes import windll
+import win32gui
+import pyautogui
 
 def windowsSettings(choice=False):
     
@@ -52,3 +56,55 @@ def windowsSettings(choice=False):
         return list(settings.keys())
     else:
         os.system(f'explorer "{settings[choice]}"')
+
+def runCommandLine(command):
+    systemencoding = windll.kernel32.GetConsoleOutputCP()
+    systemencoding= f"cp{systemencoding}"
+    output = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
+    result = str(output.stdout.decode(systemencoding))
+    return result
+
+def get_windows():
+    results = []
+    def winEnumHandler(hwnd, ctx):
+        if win32gui.IsWindowVisible(hwnd):
+            if win32gui.GetWindowText(hwnd):
+    
+                results.append(win32gui.GetWindowText(hwnd))
+                
+    win32gui.EnumWindows(winEnumHandler, None)
+    return results
+
+def AdvancedMouseFunction(x, y, delay, look):
+    if look == 0:
+        look = None
+    if look == "None":
+        try:
+            pyautogui.moveTo(x, y, delay)
+        except:
+            pass
+    elif look == "Start slow, end fast":
+        try:
+            pyautogui.moveTo(x, y, delay, pyautogui.easeInQuad)
+        except:
+            pass
+    elif look == "Start fast, end slow":
+        try:
+            pyautogui.moveTo(x, y, delay, pyautogui.easeOutQuad)
+        except:
+            pass
+    elif look == "Start and end fast, slow in middle":
+        try:
+            pyautogui.moveTo(x, y, delay, pyautogui.easeInOutQuad)
+        except:
+            pass
+    elif look == "bounce at the end":
+        try:
+            pyautogui.moveTo(x, y, delay, pyautogui.easeInBounce)
+        except:
+            pass
+    elif look == "rubber band at the end":
+        try:
+            pyautogui.moveTo(x, y, delay, pyautogui.easeInElastic)
+        except:
+            pass

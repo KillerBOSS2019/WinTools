@@ -1,15 +1,22 @@
-import TouchPortalAPI
-from TouchPortalAPI import TYPES
-from utils import util
 import os
-from pycaw.magic import MagicManager, MagicSession   ### These are used in main.py
-from pycaw.constants import AudioSessionState
 from time import sleep
+
+import pygetwindowmp as pygetwindow
+import pythoncom
+import TouchPortalAPI
+from pycaw.constants import AudioSessionState
+from pycaw.magic import MagicManager  # ## These are used in main.py
+from pycaw.magic import MagicSession
+from TouchPortalAPI import TYPES
+
+from utils import audioController, clipboard, util
+import threading
 
 TPClient = TouchPortalAPI.Client('Windows-Tools')
 
 volumeprocess = ["Master Volume", "Current app"]
 audio_exempt_list = []
+running = False
 
 
 def updateVolumeMixerChoicelist():
@@ -35,16 +42,19 @@ def audioStateManager(app_name):
                 {
                     "id": f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.muteState',
                     "desc": f"{app_name} Mute State",
+                    "parentGroup": "Audio process state",
                     "value": ""
                 },
                 {
                     "id": f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}',
                     "desc": f"{app_name} Volume",
+                    "parentGroup": "Audio process state",
                     "value": ""
                 },
                 {
                     "id": f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{app_name}.active',
                     "desc": f"{app_name} Active",
+                    "parentGroup": "Audio process state",
                     "value": ""
                 },
                 ])
@@ -52,11 +62,26 @@ def audioStateManager(app_name):
 
         """UPDATING CHOICES WITH GLOBALS"""
         updateVolumeMixerChoicelist()
-        print("new State Added")
+        print(f"{app_name} State Added")
 
     """ Checking for Exempt Audio"""
     if app_name in audio_exempt_list:
         removeAudioState(app_name)
+
+import ctypes
+
+import psutil
+import win32process
+import pyautogui
+
+
+def getActiveExecutablePath():
+    hWnd = ctypes.windll.user32.GetForegroundWindow()
+    if hWnd == 0:
+        return None # Note that this function doesn't use GetLastError().
+    else:
+        _, pid = win32process.GetWindowThreadProcessId(hWnd)
+        return psutil.Process(pid).exe()
 
 class WinAudioCallBack(MagicSession):
     def __init__(self):
@@ -104,7 +129,7 @@ class WinAudioCallBack(MagicSession):
         """
         if self.app_name not in audio_exempt_list:
             TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',str(round(new_volume*100)))
-            print("NEW VOLUME", str(round(new_volume*100)))
+            print(f"{self.app_name} NEW VOLUME", str(round(new_volume*100)))
             TPClient.send({
                 "type":"connectorUpdate",
                 "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
@@ -112,14 +137,18 @@ class WinAudioCallBack(MagicSession):
             })
             
             """Checking for Current App If Its Active, Adjust it also"""
-            #activeWindow = getActiveExecutablePath()
-            activeWindow = ""
-            if activeWindow != "":
+            if (activeWindow := getActiveExecutablePath()) != "":
                 if os.path.basename(activeWindow) == self.app_name:
                     TPClient.send({
                         "type":"connectorUpdate",
                         "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
                         "value": round(new_volume*100)
+                    })
+                else:
+                    TPClient.send({
+                        "type":"connectorUpdate",
+                        "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Current app",
+                        "value": 0
                     })
 
     def update_mute(self, muted):
@@ -137,8 +166,40 @@ class WinAudioCallBack(MagicSession):
                 TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
             #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
 
+def stateUpdate():
+    counter = 0
+    while running:
+        sleep(0.1)
+        counter += 1
+        if counter%2 == 0:
+            """
+            Update every 2 seconds
+            """
+            TPClient.stateUpdate("KillerBOSS.TP.Plugins.Application.currentFocusedAPP", pygetwindow.getActiveWindowTitle())
+
+        if counter%5 == 0:
+            TPClient.send({
+                "type":"connectorUpdate",
+                "connectorId":"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol=Master Volume",
+                "value": str(audioController.getMasterVolume())
+                })
+
+        mp = pyautogui.position()  ## Making the call for mouse position once instead of twice.. cause performance :)
+        TPClient.stateUpdateMany([
+        {
+            "id": f'KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.X',
+            "value": str(mp[0])
+        },
+        {
+            "id": f'KillerBOSS.TP.Plugins.AdvanceMouse.MousePos.Y',
+            "value": str(mp[1])
+        }])
+    
+    if counter >= 40: counter = 0
+
 @TPClient.on(TYPES.onConnect)
 def startManager(data):
+    global running
     """Checking if Plugin needs updated"""
     github_check = TouchPortalAPI.Tools.updateCheck("KillerBOSS2019", "WinTools")
     plugin_version = str(data['pluginVersion'])
@@ -155,15 +216,145 @@ def startManager(data):
                     }
                 ])
 
-    """Updating Choices for Windows Settings options from util.py"""
-    print(util.windowsSettings())
-    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", util.windowsSettings())
-    MagicManager.magic_session(WinAudioCallBack)
+    running = True
 
+    """Updating Choices for Windows Settings options from util.py"""
+    TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.choice", util.windowsSettings())
+    pythoncom.CoInitialize() # This somehow solves OSError: [WinError -2147221008] CoInitialize has not been called
+    try:
+        MagicManager.magic_session(WinAudioCallBack)
+    except NotImplementedError as err:
+        print(f"--------- Magic already in session!! ---------\n------{err}------")
+
+    thread1 = threading.Thread(target=stateUpdate())
+    thread1.start()
 
 @TPClient.on(TYPES.onSettingUpdate)
 def settingHandler(data):
-    pass
+    global audio_exempt_list
+
+    audio_exempt_list = data['values'][6]['Audio State Exemption List']
+    if audio_exempt_list == "Enter '.exe' name seperated by a comma for more than 1": audio_exempt_list = []
+
+@TPClient.on(TouchPortalAPI.TYPES.onNotificationOptionClicked)
+def notificationEvent(data):
+    print(data)
+    if data['optionId'] == 'Download Update':
+        print("Directing user to download url")
+        github_check = TouchPortalAPI.Tools.updateCheck("KillerBOSS2019", "WinTools")
+        util.runCommandLine(f"Start https://github.com/KillerBOSS2019/WinTools/releases/tag/{github_check}")
+
+@TPClient.on(TYPES.onAction)
+def actionManager(data):
+
+    # Audio action manager
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Mute/Unmute':
+        if data['data'][0]['value'] is not '':
+            audioController.muteAndUnMute(data['data'][0]['value'], data['data'][1]['value'])
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume':
+        audioController.volumeChanger(data['data'][0]['value'], data['data'][1]['value'], data['data'][2]['value'])
+    
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.VolumeMixer.SetmasterVolume':
+        audioController.setMasterVolume(data['data'][0]['value'])
+
+    # clipboard action manager
+    if data['actionId'] == "KillerBOSS.TP.Plugins.window.current":
+        if data['data'][0]['value'] == "Clipboard":
+            current_window = pygetwindow.getActiveWindowTitle()
+            clipboard.screenshot_window(capture_type=3, window_title=current_window, clipboard=True)
+            
+        elif data['data'][0]['value'] == "File":
+            current_window = pygetwindow.getActiveWindowTitle()
+            afile_name = (data['data'][1]['value']) +"/" +(data['data'][2]['value']) 
+            clipboard.screenshot_window(capture_type=3, window_title=current_window, clipboard=False, save_location=afile_name)
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file.wildcard":
+        global windows_active
+        windows_active = util.get_windows()
+        for thing in windows_active:
+            if data['data'][0]['value'].lower() in thing.lower():
+                print("We found", thing)
+                if data['data'][4]['value'] == "Clipboard":
+                    clipboard.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=True)
+                    
+                elif data['data'][4]['value'] == "File":
+                    print("File stuf")
+                    afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value']) 
+                    clipboard.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=thing, clipboard=False, save_location=afile_name)
+                break
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.full.file":   
+        if data['data'][1]['value'] == "Clipboard":
+            try:
+                clipboard.screenshot_monitor(monitor_number=(data['data'][0]['value']), clipboard=True)
+            except:
+                pass
+        elif data['data'][1]['value'] == "File":
+            try:
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                clipboard.screenshot_monitor(monitor_number=(data['data'][0]['value']), filename=afile_name, clipboard=False)
+            except:
+                pass
+    
+    if data['actionId'] == "KillerBOSS.TP.Plugins.screencapture.window.file":
+        if (data['data'][0]['value']):
+            if data['data'][4]['value'] == "Clipboard":
+                clipboard.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
+            if data['data'][4]['value'] == "File":
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                clipboard.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+
+    # Mouse action manager
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.AdvanceMouse.HoldDownToggle':
+        if data['data'][0]['value'] == 'Down':
+            pyautogui.mouseDown(button=(data['data'][1]['value']).lower())
+        elif data['data'][0]['value'] == "Up":
+            pyautogui.mouseUp(button=(data['data'][1]['value']).lower())
+    if data['actionId'] == "KillerBOSS.TP.Plugins.AdvanceMouse.teleport":
+        util.AdvancedMouseFunction(int(data['data'][0]['value']),int(data['data'][1]['value']), int(data['data'][3]['value']), data['data'][2]['value'])
+    if data['actionId'] == "KillerBOSS.TP.Plugins.AdvanceMouse.MouseClick":
+        pyautogui.click(clicks=int(data['data'][0]['value']), button=data['data'][2]['value'], interval=float(data['data'][1]['value']))
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.AdvanceMouse.Function':
+        try:
+            pyautogui.move(int(data['data'][0]['value']), int(data['data'][1]['value']))
+        except Exception:
+            pass
+
+@TPClient.on(TYPES.onConnectorChange)
+def connectors(data):
+    if data['connectorId'] == "KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol":
+        if data['data'][0]['value'] == "Master Volume" :
+            audioController.setMasterVolume(data['value'])
+        elif data['data'][0]['value'] == "Current app":
+            activeWindow = getActiveExecutablePath()
+          #  print(activeWindow)
+            if activeWindow != "":
+                audioController.volumeChanger(os.path.basename(activeWindow), "Set", data['value'])
+        else:
+            try:
+                audioController.volumeChanger(data['data'][0]['value'], "Set", data['value'])
+            except:
+                pass
+            
+    # if data['connectorId'] == "KillerBOSS.TP.Plugins.Magnifier.connectors.ZoomControl":
+    #     if data['data'][0]['value'] == "Zoom" :
+    #          mag_level(data['value']*16)
+             
+    #     if data['data'][0]['value'] == "Lens X" :
+    #         magnifer_dimensions(x=data['value'])
+        
+    #     if data['data'][0]['value'] == "Lens Y" :
+    #         magnifer_dimensions(y=data['value'])
+
     
 
-TPClient.connect()
+try:
+    TPClient.connect()  # blocking
+except KeyboardInterrupt:
+    print("Caught keyboard interrupt, exiting.")
+except Exception:
+    from traceback import format_exc
+    print(f"Exception in TP Client:\n{format_exc()}")
+finally:
+    running = False
+    TPClient.disconnect() # make sure it's stopped, no-op if already stopped.
