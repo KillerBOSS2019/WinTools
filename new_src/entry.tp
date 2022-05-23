@@ -1,5 +1,5 @@
 {
-  "sdk": 4,
+  "sdk": 6,
   "version": 231,
   "name": "Windows-Tools",
   "id": "Windows-Tools",
@@ -7,54 +7,74 @@
     "colorDark": "#6c6f73",
     "colorLight": "#3d62ad"
   },
+  "settings": [
+    {
+      "name": "Update Interval: Public IP",
+      "type": "number",
+      "default": "240",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Hard Drive",
+      "type": "number",
+      "default": "60",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Active Monitors",
+      "type": "number",
+      "default": "240",
+      "maxValue": 1800,
+      "minValue": 0,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Active Windows",
+      "type": "number",
+      "default": "10",
+      "maxValue": 1800,
+      "minValue": 5,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Update Interval: Active Virtual Desktops",
+      "type": "number",
+      "default": "15",
+      "maxValue": 1800,
+      "minValue": 5,
+      "allowDecimals": false,
+      "readOnly": false
+    },
+    {
+      "name": "Clipboard Listener (ON / OFF)",
+      "type": "text",
+      "default": "ON",
+      "readOnly": false
+    },
+    {
+      "name": "Audio State Exemption List",
+      "type": "text",
+      "default": "Enter '.exe' name seperated by a comma for more than 1",
+      "readOnly": false
+    },
+    {
+      "name": "DEBUG MODE / LOGGING",
+      "type": "text",
+      "description": "Wish we could write descript here",
+      "default": "OFF",
+      "readOnly": false
+    }
+  ],
   "plugin_start_cmd": "%TP_PLUGIN_FOLDER%WinTools\\WinTools.exe",
   "categories": [
-
-    {
-        "id":"Public IP",
-        "name":"Public IP Info",
-        "events":[
-        ],
-        "states":[
-          {
-              "id":"KillerBOSS.TP.Plugins.publicip.ip",
-              "type":"text",
-              "desc":"Public IP: IP Address",
-              "default":""
-          },
-          {
-            "id":"KillerBOSS.TP.Plugins.publicip.city",
-            "type":"text",
-            "desc":"Pubic IP: City",
-            "default":""
-          },
-          {
-              "id":"KillerBOSS.TP.Plugins.publicip.country",
-              "type":"text",
-              "desc":"Public IP: Country",
-              "default":""
-          },
-          {
-            "id":"KillerBOSS.TP.Plugins.publicip.region",
-            "type":"text",
-            "desc":"Public IP: Region",
-            "default":""
-        },
-          {
-              "id":"KillerBOSS.TP.Plugins.publicip.timezone",
-              "type":"text",
-              "desc":"Pubic IP: Timezone",
-              "default":""
-          },
-          {
-            "id":"KillerBOSS.TP.Plugins.publicip.organization",
-            "type":"text",
-            "desc":"Pubic IP: Internet Provider",
-            "default":""
-        }
-        ]
-    },
-
     {
       "id": "main",
       "name": "Windows-Tool",
@@ -209,29 +229,39 @@
                 "default": "Left",
                 "valueChoices": [
                     "Left",
+                    "middle",
                     "Right"
                 ]
               }
             ]
         },
         {
-          "id": "KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate",
-          "name": "Mouse: Stop X, Y Update (Togglable)",
+          "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll",
+          "name": "Mouse: Mouse scroll",
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
-          "hasHoldFunctionality": false,
-          "format": "Turn {$KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate.TogglePick$} Update X, Y",
+          "hasHoldFunctionality": true,
+          "format": "Mouse: Scroll {$KillerBOSS.TP.Plugins.AdvanceMouse.scroll.choices$} at {$KillerBOSS.TP.Plugins.AdvanceMouse.scroll.XSpeed$}",
           "data": [
               {
-              "id": "KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate.TogglePick",
+              "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll.choices",
               "type": "choice",
-              "label": "choice",
+              "label": "scroll option",
               "default": "OFF",
               "valueChoices": [
-                  "OFF",
-                  "ON"
+                  "TOP",
+                  "DOWN",
+                  "LEFT",
+                  "RIGHT"
                 ]
+              },
+              {
+                "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll.XSpeed",
+                "type": "number",
+                "label": "number",
+                "default": 10,
+                "allowDecimals": false
               }
             ]
         },
@@ -1171,72 +1201,48 @@
           "default": ""
         }
       ]
-    }
-  ],
-  "settings": [
-    {
-      "name": "Update Interval: Public IP",
-      "type": "number",
-      "default": "240",
-      "maxValue": 1800,
-      "minValue": 0,
-      "allowDecimals": false,
-      "readOnly": false
     },
     {
-      "name": "Update Interval: Hard Drive",
-      "type": "number",
-      "default": "60",
-      "maxValue": 1800,
-      "minValue": 0,
-      "allowDecimals": false,
-      "readOnly": false
-    },
-    {
-      "name": "Update Interval: Active Monitors",
-      "type": "number",
-      "default": "240",
-      "maxValue": 1800,
-      "minValue": 0,
-      "allowDecimals": false,
-      "readOnly": false
-    },
-    {
-      "name": "Update Interval: Active Windows",
-      "type": "number",
-      "default": "10",
-      "maxValue": 1800,
-      "minValue": 5,
-      "allowDecimals": false,
-      "readOnly": false
-    },
-    {
-      "name": "Update Interval: Active Virtual Desktops",
-      "type": "number",
-      "default": "15",
-      "maxValue": 1800,
-      "minValue": 5,
-      "allowDecimals": false,
-      "readOnly": false
-    },
-    {
-      "name": "Clipboard Listener (ON / OFF)",
-      "type": "text",
-      "default": "ON",
-      "readOnly": false
-    },
-    {
-      "name": "Audio State Exemption List",
-      "type": "text",
-      "default": "Enter '.exe' name seperated by a comma for more than 1",
-      "readOnly": false
-    },
-    {
-      "name": "DEBUG MODE / LOGGING",
-      "type": "text",
-      "description": "Wish we could write descript here",
-      "default": "OFF",
-      "readOnly": false
+      "id":"Public IP",
+      "name":"Public IP Info",
+      "states":[
+        {
+            "id":"KillerBOSS.TP.Plugins.publicip.ip",
+            "type":"text",
+            "desc":"Public IP: IP Address",
+            "default":""
+        },
+        {
+          "id":"KillerBOSS.TP.Plugins.publicip.city",
+          "type":"text",
+          "desc":"Pubic IP: City",
+          "default":""
+        },
+        {
+            "id":"KillerBOSS.TP.Plugins.publicip.country",
+            "type":"text",
+            "desc":"Public IP: Country",
+            "default":""
+        },
+        {
+          "id":"KillerBOSS.TP.Plugins.publicip.region",
+          "type":"text",
+          "desc":"Public IP: Region",
+          "default":""
+      },
+        {
+            "id":"KillerBOSS.TP.Plugins.publicip.timezone",
+            "type":"text",
+            "desc":"Pubic IP: Timezone",
+            "default":""
+        },
+        {
+          "id":"KillerBOSS.TP.Plugins.publicip.organization",
+          "type":"text",
+          "desc":"Pubic IP: Internet Provider",
+          "default":""
+      }
+      ]
     }
   ]
 }
