@@ -236,23 +236,32 @@
             ]
         },
         {
-          "id": "KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate",
-          "name": "Mouse: Stop X, Y Update (Togglable)",
+          "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll",
+          "name": "Mouse: Mouse scroll",
           "prefix": "plugin",
           "type": "communicate",
           "tryInline": true,
-          "hasHoldFunctionality": false,
-          "format": "Turn {$KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate.TogglePick$} Update X, Y",
+          "hasHoldFunctionality": true,
+          "format": "Mouse: Scroll {$KillerBOSS.TP.Plugins.AdvanceMouse.scroll.choices$} at {$KillerBOSS.TP.Plugins.AdvanceMouse.scroll.XSpeed$}",
           "data": [
               {
-              "id": "KillerBOSS.TP.Plugins.AdvanceMouse.StopMouseUpdate.TogglePick",
+              "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll.choices",
               "type": "choice",
-              "label": "choice",
+              "label": "scroll option",
               "default": "OFF",
               "valueChoices": [
-                  "OFF",
-                  "ON"
+                  "TOP",
+                  "DOWN",
+                  "LEFT",
+                  "RIGHT"
                 ]
+              },
+              {
+                "id": "KillerBOSS.TP.Plugins.AdvanceMouse.scroll.XSpeed",
+                "type": "number",
+                "label": "number",
+                "default": 10,
+                "allowDecimals": false
               }
             ]
         },

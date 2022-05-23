@@ -11,6 +11,10 @@ from TouchPortalAPI import TYPES
 
 from utils import audioController, clipboard, util
 import threading
+from utils.magnifier import *
+from utils.virtualDesktop import *
+from utils.TextToSpeech import *
+from utils.util import winextra, windowsSettings
 
 TPClient = TouchPortalAPI.Client('Windows-Tools')
 
@@ -91,7 +95,7 @@ class WinAudioCallBack(MagicSession):
 
         # ______________ DISPLAY NAME ______________
         self.app_name = self.magic_root_session.app_exec
-        print(f":: new session: {self.app_name}")
+        #print(f":: new session: {self.app_name}")
         
         if self.app_name not in audio_exempt_list:
             # set initial:
@@ -109,12 +113,12 @@ class WinAudioCallBack(MagicSession):
             if new_state == AudioSessionState.Inactive:
                 # AudioSessionStateInactive
                 """Sesssion is Inactive"""
-                print(f"{self.app_name} not active")
+                #print(f"{self.app_name} not active")
                 TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"False")
     
             elif new_state == AudioSessionState.Active:
                 """Session Active"""
-                print(f"{self.app_name} is an Active Session")
+                #print(f"{self.app_name} is an Active Session")
                 TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.active',"True")
     
         elif new_state == AudioSessionState.Expired:
@@ -129,7 +133,7 @@ class WinAudioCallBack(MagicSession):
         """
         if self.app_name not in audio_exempt_list:
             TPClient.stateUpdate(f'KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}',str(round(new_volume*100)))
-            print(f"{self.app_name} NEW VOLUME", str(round(new_volume*100)))
+            #print(f"{self.app_name} NEW VOLUME", str(round(new_volume*100)))
             TPClient.send({
                 "type":"connectorUpdate",
                 "connectorId":f"pc_Windows-Tools_KillerBOSS.TP.Plugins.VolumeMixer.connectors.APPcontrol|KillerBOSS.TP.Plugins.VolumeMixer.slidercontrol={self.app_name}",
@@ -158,11 +162,11 @@ class WinAudioCallBack(MagicSession):
             audioStateManager(self.app_name)
             
             if muted:
-                print(f"{self.app_name} is unmuted")
+                #print(f"{self.app_name} is unmuted")
                 TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Muted")
             # TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "True")
             else:
-                print(f"{self.app_name} is muted")
+                #print(f"{self.app_name} is muted")
                 TPClient.stateUpdate(f"KillerBOSS.TP.Plugins.VolumeMixer.CreateState.{self.app_name}.muteState", "Un-Muted")
             #  TPClient.stateUpdate("KillerBOSS.TP.Plugins.state.test", "False")
 
@@ -304,6 +308,13 @@ def actionManager(data):
                 afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
                 clipboard.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
 
+    if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard":
+        clipboard.send_to_clipboard("text", data['data'][0]['value'] )
+    
+    if data['actionId'] == "KillerBOSS.TP.Plugins.capture.clipboard.toValue":
+        """Save Clipboard Data to a Custom TP Value"""
+        TPClient.stateUpdate(stateId=data['data'][0]['value'], stateValue=str(clipboard.get_clipboard_data()))
+
     # Mouse action manager
     if data['actionId'] == 'KillerBOSS.TP.Plugins.AdvanceMouse.HoldDownToggle':
         if data['data'][0]['value'] == 'Down':
@@ -319,6 +330,60 @@ def actionManager(data):
             pyautogui.move(int(data['data'][0]['value']), int(data['data'][1]['value']))
         except Exception:
             pass
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.TextToSpeech.speak":
+        TTSThread = threading.Thread(target=TextToSpeech, daemon=True, args=(data['data'][1]['value'], data['data'][0]['value'], int(
+            data['data'][2]['value']), int(data['data'][3]['value']), data['data'][4]['value']))
+        TTSThread.start()
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.emojipanel":
+        winextra("Emoji")
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winextra.keyboard":
+        winextra("Keyboard")
+
+    if data['actionId'] == "KillerBOSS.TP.Plugins.winsettings.action":
+        windowsSettings(data['data'][0]['value'])
+
+@TPClient.on(TouchPortalAPI.TYPES.onHold_down)
+def heldingButton(data):
+    print(data)
+    while True:
+        if TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.AdvanceMouse.MouseClick'):
+            pyautogui.click(clicks=int(data['data'][0]['value']), button=(data['data'][2]['value']).lower(), interval=float(data['data'][1]['value']))
+        elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.AdvanceMouse.Function'):
+            try:
+                pyautogui.move(int(data['data'][0]['value']), int(data['data'][1]['value']))
+            except Exception:
+                pass
+        elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.VolumeMixer.Increase/DecreaseVolume'):
+            if data['data'][1]['value'] == "Decrease":
+                audioController.volumeChanger(data['data'][0]['value'], 'Decrease', data['data'][2]['value'])
+                sleep(0.05)
+            elif data['data'][1]['value'] == "Increase":
+                audioController.volumeChanger(data['data'][0]['value'], 'Increase', data['data'][2]['value'])
+                sleep(0.05)
+        elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.magnifier.onHold.actions'):
+            if data['data'][0]['value'] == "Lens X":
+                magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
+                sleep(0.05)
+            if data['data'][0]['value'] == "Lens Y":
+                print("uh hi?")
+                magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
+                sleep(0.05)
+            if data['data'][0]['value'] == "Zoom":
+                mag_level(int(data['data'][1]['value']), onhold=True)
+                sleep(0.05)
+        # elif TPClient.isActionBeingHeld('KillerBOSS.TP.Plugins.winsettings.active.mouseCapture'): # Do we really need this?
+        #     if not cap_live:
+        #         img=capture_around_mouse(int(data['data'][1]['value']),int(data['data'][2]['value']))
+        #         TPClient.stateUpdate(stateId="KillerBOSS.TP.Plugins.winsettings.active.mouseCapture", stateValue=getFrame_base64(img).decode())
+        #         sleep(0.07)
+        #     else:
+        #         print("Attempted PUSH + HOLD CAP, but Capture is already live")
+        #         sleep(0.35)
+        else:
+            break
 
 @TPClient.on(TYPES.onConnectorChange)
 def connectors(data):
@@ -336,17 +401,45 @@ def connectors(data):
             except:
                 pass
             
-    # if data['connectorId'] == "KillerBOSS.TP.Plugins.Magnifier.connectors.ZoomControl":
-    #     if data['data'][0]['value'] == "Zoom" :
-    #          mag_level(data['value']*16)
+    if data['connectorId'] == "KillerBOSS.TP.Plugins.Magnifier.connectors.ZoomControl":
+        if data['data'][0]['value'] == "Zoom" :
+             mag_level(data['value']*16)
              
-    #     if data['data'][0]['value'] == "Lens X" :
-    #         magnifer_dimensions(x=data['value'])
+        if data['data'][0]['value'] == "Lens X" :
+            magnifer_dimensions(x=data['value'])
         
-    #     if data['data'][0]['value'] == "Lens Y" :
-    #         magnifer_dimensions(y=data['value'])
+        if data['data'][0]['value'] == "Lens Y" :
+            magnifer_dimensions(y=data['value'])
 
-    
+def updateDeviceOutput(options):
+    from utils.util import AudioDeviceCmdlets
+    output = AudioDeviceCmdlets('Get-AudioDevice -List | ConvertTo-Json')
+    outPutDevice = []
+    inputDevice = []
+    for x in output:
+        if x['Type'] == "Playback":
+            outPutDevice.append(x['Name'])
+        elif x['Type'] == "Recording":
+            inputDevice.append(x['Name'])
+            
+    if options == "Output":
+        TPClient.choiceUpdate('KillerBOSS.TP.Plugins.ChangeAudioOutput.Device', outPutDevice)
+        print('updating Output', outPutDevice)
+    elif options == "Input":
+        TPClient.choiceUpdate('KillerBOSS.TP.Plugins.ChangeAudioOutput.Device', inputDevice)
+        print('updating input', outPutDevice)
+
+@TPClient.on(TYPES.onListChange)
+def listChangeAction(data):
+    print(data)
+    global oldcursors
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.ChangeAudioOutput':
+        try:
+            updateDeviceOutput(data['value'])
+        except KeyError:
+            pass
+    if data['actionId'] == 'KillerBOSS.TP.Plugins.virtualdesktop.actions.move_window':
+        vd_check()
 
 try:
     TPClient.connect()  # blocking

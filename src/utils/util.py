@@ -108,3 +108,106 @@ def AdvancedMouseFunction(x, y, delay, look):
             pyautogui.moveTo(x, y, delay, pyautogui.easeInElastic)
         except:
             pass
+
+import json
+
+def AudioDeviceCmdlets(command, output=True):
+    ### add in another coinitilize???  
+    
+    systemencoding = windll.kernel32.GetConsoleOutputCP()
+    systemencoding= f"cp{systemencoding}"
+    process = subprocess.Popen(["powershell", "-Command", "Import-Module .\AudioDeviceCmdlets.dll;", command],stdout=subprocess.PIPE, shell=True, encoding=systemencoding)
+    proc_stdout = process.communicate()[0]
+    if output:
+        proc_stdout = proc_stdout[proc_stdout.index("["):-1]
+        print(proc_stdout)
+        return json.loads(proc_stdout) 
+
+
+import pyttsx3
+import sounddevice as sd
+
+
+def getAllVoices():
+    engine = pyttsx3.init()
+    return engine.getProperty("voices")
+
+def getAllOutput_TTS2():
+    audio_dict = {}
+    for outputDevice in sd.query_hostapis(0)['devices']:
+        if sd.query_devices(outputDevice)['max_output_channels'] > 0:
+            audio_dict[sd.query_devices(device=outputDevice)['name']] = sd.query_devices(device=outputDevice)['default_samplerate']
+    return audio_dict
+
+
+import ctypes
+
+import numpy as np
+import pyautogui
+import win32gui
+from PIL import Image
+
+
+def get_windows():
+    results = []
+    def winEnumHandler(hwnd, ctx):
+        if win32gui.IsWindowVisible(hwnd):
+            if win32gui.GetWindowText(hwnd):
+    
+                results.append(win32gui.GetWindowText(hwnd))
+                
+    win32gui.EnumWindows(winEnumHandler, None)
+    return results
+
+def winextra(action):
+    
+  # if action == "Keep Active, Minimize All (Toggle)":
+  #     pyautogui.hotkey('win', 'home')
+  #    
+  # if action == "Minimize All (Toggle)":
+  #     pyautogui.hotkey('win', 'd')
+#         
+  #  if action =="Clipboard History":
+  #      pyautogui.hotkey('win', 'v')
+        
+    if action == "Emoji":
+        pyautogui.hotkey('win', '.')
+        
+    if action == "Keyboard":
+        pyautogui.hotkey('win', 'ctrl', "o")
+
+def get_key_state(key):
+    hllDll = ctypes.WinDLL ("User32.dll")
+    if key == "NUM LOCK":
+        return hllDll.GetKeyState(0x90)
+    if key == "CAPS LOCK":
+        return hllDll.GetKeyState(0x14)
+
+def move_win_button(direction):
+    check = get_key_state('NUM LOCK')
+    if not check:
+        pyautogui.hotkey('win', 'shift', direction)
+    elif check:
+        pyautogui.press('numlock')
+        pyautogui.hotkey('win', 'shift', direction)
+        pyautogui.press('numlock')
+
+def resize_image(im, height, width):
+    if im.size[0] == height and im.size[1] == width: 
+        return im
+    else:
+        print("We are actually resizing")
+        size = (height,width)
+        im.load()
+        bands = list(im.split())
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 1
+        bands[-1] = Image.fromarray(a)
+        bands = [b.resize(size, Image.LINEAR) for b in bands]
+        a = np.asarray(bands[-1])
+        a.flags.writeable = True
+        a[a != 0] = 255
+        bands[-1] = Image.fromarray(a)
+        im = Image.merge('RGBA', bands)
+        return im
