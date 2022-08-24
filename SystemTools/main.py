@@ -9,7 +9,7 @@ import TouchPortalAPI as TP
 from argparse import ArgumentParser
 from TouchPortalAPI.logger import Logger
 from TPPEntry import *
-from util import SystemPrograms, Powerplan
+from util import SystemPrograms, Powerplan, TextToSpeech, getAllOutput_TTS2, getAllVoices
 import Macro
 from threading import Thread
 
@@ -76,6 +76,16 @@ def updateStates():
         else:
             TPClient.stateUpdate(TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
             macro_playState = False
+
+        """Getting TTS Output Devices and Updating Choices"""
+        voices = [voice.name for voice in getAllVoices()]
+        tts_outputs = list(getAllOutput_TTS2().keys())
+
+        if platform == "win32":
+            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]) != tts_outputs:
+                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
+            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]) != voices:
+                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.voices", voices)
 
         # Update macro profile
         newProfileList = list(Macro.getMacroProfile().keys())
@@ -173,6 +183,15 @@ def onAction(data):
         if not macro_playState and action_data[0]['value'] in Macro.getMacroProfile():
             macroPlayThread = Thread(target=Macro.play, args=(action_data[0]['value'],))
             macroPlayThread.start()
+            
+    if aid == TP_PLUGIN_ACTIONS["TTS"]['id']:
+        Thread(target=TextToSpeech, args=(
+            action_data[0]['value'],
+            action_data[1]['value'],
+            action_data[2]['value'],
+            action_data[3]['value'],
+            action_data[4]['value']
+        )).start()
 
 def mouseScroll(mousescroll, speed, reverse=False):
     if mousescroll in ["DOWN", "LEFT"]: # Set direction
@@ -192,8 +211,6 @@ def mouseScroll(mousescroll, speed, reverse=False):
             pyautogui.hscroll(speed)
         elif mousescroll == "scroll":
             pyautogui.scroll(speed)
-
-calltime = 0
 
 # Connector handler
 @TPClient.on(TP.TYPES.onConnectorChange)

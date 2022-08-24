@@ -32,13 +32,17 @@ else:
 TP_PLUGIN_INFO = {
     'sdk': 6,
     'version': int(float(__version__) * 100),  # TP only recognizes integer version numbers
-    'name': plugin_name,
+    'name': plugin_name + " Tools",
     'id': PLUGIN_ID,
     # Startup command, with default logging options read from configuration file (see main() for details)
     "plugin_start_cmd": "%TP_PLUGIN_FOLDER%SystemTools\\SystemTools.exe",
     'configuration': {
         'colorDark': "#25274c",
         'colorLight': "#707ab5"
+    },
+    "doc": {
+        "repository": "KillerBOSS2019:WinTools",
+        "Install": "1. Download latest version of plugin for your system.\n2. Import downloaded tpp by click the gear button next to email/notification icon.\n3. If this is first plugin, you will need to restart TouchPortal for it to work."
     }
 }
 
@@ -430,6 +434,55 @@ if platform == "win32": # add windows specific stuff
                 'label': "pplan choices",
                 'default': "Balanced",
                 'valueChoices': []
+            }
+        }
+    }
+    TP_PLUGIN_ACTIONS["TTS"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.TTS",
+        "prefix": TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "description": "Play Text to Speech thru a specific Audio Output",
+        "tryInline": True,
+        "format": "Text[1] Voice[2] Volume[3] Speech Rate[4] Audio Output[5]",
+        "data": {
+            'voices': {
+                "id": PLUGIN_ID + "act.TSS.voices",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            'text': {
+                "id": PLUGIN_ID + "act.TSS.text",
+                "type": "text",
+                "label": "text",
+                "default": "Hello!"
+            },
+            'volume': {
+                "id": PLUGIN_ID + "act.TSS.volume",
+                "type": "number",
+                "label": "tts volume",
+                "allowDecimals": False,
+                "default": "100", 
+                "minValue":0,
+                "maxValue":100
+            },
+            'rate': {
+                "id": PLUGIN_ID + "act.TSS.rate",
+                "type": "number",
+                "label": "tts rate",
+                "allowDecimals": False,
+                "default": "175",
+                "minValue":25,
+                "maxValue":600
+            },  
+            'output': {
+                "id": PLUGIN_ID + "act.TSS.output",
+                "type": "choice",
+                "label": "tts output choice",
+                "default": "",
+                "valueChoices":[]
             }
         }
     }
