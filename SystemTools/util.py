@@ -218,6 +218,40 @@ class ClipBoard:
             data = bio.getvalue()[14:] # removing some headers
             bio.close()
             ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
+            
+        
+        
+        ## these may not work just found some random details online need to test
+        if platform == "linux":
+            
+            ### Option # 1
+           # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
+           # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
+           
+           
+           
+           ### Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
+           ## might be able to use module called klemboard ??
+            memory = BytesIO()
+            image.save(memory, format="png")
+
+            output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"), 
+                                      stdin=subprocess.PIPE)
+            # write image to stdin
+            output.stdin.write(memory.getvalue())
+            output.stdin.close()
+
+
+        ## This needs tested/worked on...
+        if platform == "macOS":
+            # Option #1
+           # os.system(f"pbcopy < {path + '/image.png'}")
+            
+            # Option #2
+            import subprocess
+            subprocess.run(["osascript", "-e", 'set the clipboard to (read (POSIX file "image.jpg") as JPEG picture)']) 
+        
+        
         
         
     def send_to_clipboard(clip_type, data):
@@ -236,6 +270,20 @@ class ClipBoard:
                 
 
 
-ok = ScreenShot()
+# ok = ScreenShot()
+# 
+# ok.screenshot_monitor(monitor_number="0", filename="test", clipboard=True)
 
-ok.screenshot_monitor(monitor_number="0", filename="test", clipboard=True)
+
+import wx  ## apart of pyGUI ??  can this copy to clipboard on linux too ??  https://www.programcreek.com/python/?code=miloharper%2Fneural-network-animation%2Fneural-network-animation-master%2Fmatplotlib%2Fbackends%2Fbackend_wx.py
+def Copy_to_Clipboard(self, event=None):
+    "copy bitmap of canvas to system clipboard"
+    bmp_obj = wx.BitmapDataObject()
+    bmp_obj.SetBitmap(self.bitmap)
+
+    if not wx.TheClipboard.IsOpened():
+        open_success = wx.TheClipboard.Open()
+        if open_success:
+            wx.TheClipboard.SetData(bmp_obj)
+            wx.TheClipboard.Close()
+            wx.TheClipboard.Flush()
