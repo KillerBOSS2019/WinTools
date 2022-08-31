@@ -5,6 +5,23 @@ from ast import literal_eval
 import sounddevice as sd
 import pyttsx3
 
+
+
+"""
+Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
+need to double check this is fact
+"""
+### Screenshot Monitor Imports ###
+from screeninfo import get_monitors
+import mss.tools
+from PIL import Image
+from io import BytesIO
+import os
+
+## Clipboard Imports
+import win32clipboard
+
+
 if platform == "win32":
     from ctypes import windll
     import audio2numpy as a2n
@@ -44,6 +61,9 @@ class SystemPrograms:
     def start(self, appName, apptype):
         if self.programs[apptype].get(appName, False):
             runWindowsCMD("explorer shell:appsfolder\\" + self.programs[apptype][appName])
+
+
+
 
 class Powerplan:
     def __init__(self):
@@ -111,3 +131,102 @@ def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
         sd.default.device = output +", MME"
         x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
         sd.play(x, sr, blocking=True)
+        
+        
+
+
+
+
+class ScreenShot:
+    def screenshot_monitor(self, 
+                           monitor_number,
+                           filename=None,
+                           clipboard = False):
+        
+        ### Taking the User input of "Monitor:1 for example" and converting it to the correct monitor number
+        monitor_number = int(monitor_number.split(":")[0])
+        with mss.mss() as sct:
+            try:
+                mon = sct.monitors[monitor_number]  
+                monitor = {
+                    "top": mon["top"],
+                    "left": mon["left"],
+                    "width": mon["width"],
+                    "height": mon["height"],
+                    "mon": monitor_number,
+                }
+                
+                # Grab the Image
+                sct_img = sct.grab(monitor)     
+
+                if clipboard == True:
+                    
+                    if monitor_number == 0:
+                        # Monitor 0 is ALL Monitors Combined, we need to save this to temp file and then to clipboard
+                        mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
+                        
+                        # Converting to Bytes then off to Clipboard
+                        self.all_monitors_bytes_to_clipboard("temp.png")
+
+                    elif monitor_number != 0:
+                        # Instead of making a temp file we get it direct from raw to clipboard
+                        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                        
+                        ClipBoard.copy_image_to_clipboard(img)
+                       # TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", getFrame_base64(img).decode())
+
+                if clipboard == False:
+                    mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
+                    print("Image saved -> "+ filename+ ".png" )
+
+            except IndexError:
+                print("[ERROR] This Monitor does not exist")
+                
+
+
+    def all_monitors_bytes_to_clipboard(self, filepath):
+        """
+        Converting an Image to Bytes to Copy to Clipboard
+        """
+
+        image = Image.open(filepath)
+        output = BytesIO()
+        image.convert("RGB").save(output, "BMP")
+        data = output.getvalue()[14:]
+        output.close()
+
+        if platform=="win32":
+            ### Sending to Clipboard
+            ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
+            ### Deleting Temp File
+            os.remove(filepath)
+
+
+
+
+
+class ClipBoard:
+    
+    def copy_image_to_clipboard(image):
+        if platform == "win32":
+            bio = BytesIO()
+            image.save(bio, 'BMP')
+            data = bio.getvalue()[14:] # removing some headers
+            bio.close()
+            ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
+        
+        
+    def send_to_clipboard(clip_type, data):
+        if platform == "win32":
+            if clip_type == "text":
+                win32clipboard.OpenClipboard()
+                win32clipboard.EmptyClipboard()
+                win32clipboard.SetClipboardText(data)
+                win32clipboard.CloseClipboard()
+            else:
+                win32clipboard.OpenClipboard()
+                win32clipboard.EmptyClipboard()
+                win32clipboard.SetClipboardData(clip_type, data)
+                win32clipboard.CloseClipboard()
+                
+                
