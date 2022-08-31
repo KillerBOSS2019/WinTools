@@ -13,6 +13,7 @@ need to double check this is fact
 Also need to find a module to replace mss.tools import which saves an RGB data to a file
 """
 ### Screenshot Monitor Imports ###
+import mss.tools # may need to find another module for this due to linux/macOS
 from screeninfo import get_monitors
 from PIL import Image
 from io import BytesIO
@@ -22,7 +23,6 @@ import os
 if platform == "win32":
     from ctypes import windll
     import audio2numpy as a2n
-  #  import mss.tools # used for screenshots, need to find another module for this
     import win32clipboard
 
 
@@ -165,9 +165,7 @@ class ScreenShot:
                         
                         image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
                         image.save("temp.png")
-
-
-
+                     #   mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
                         
                         # Converting to Bytes then off to Clipboard
                         self.all_monitors_bytes_to_clipboard("temp.png")
@@ -182,7 +180,7 @@ class ScreenShot:
                 if clipboard == False:
                     image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
                     image.save(filename + ".png")
-
+                   # mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
                     print("Image saved -> "+ filename+ ".png" )
 
             except IndexError:
