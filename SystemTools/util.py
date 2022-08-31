@@ -10,21 +10,21 @@ import pyttsx3
 """
 Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
 need to double check this is fact
+Also need to find a module to replace mss.tools import which saves an RGB data to a file
 """
 ### Screenshot Monitor Imports ###
 from screeninfo import get_monitors
-import mss.tools
 from PIL import Image
 from io import BytesIO
 import os
-
-## Clipboard Imports
-import win32clipboard
 
 
 if platform == "win32":
     from ctypes import windll
     import audio2numpy as a2n
+    import mss.tools # used for screenshots, need to find another module for this
+    import win32clipboard
+
 
 def runWindowsCMD(command):
     systemencoding = windll.kernel32.GetConsoleOutputCP()
@@ -160,7 +160,6 @@ class ScreenShot:
                 sct_img = sct.grab(monitor)     
 
                 if clipboard == True:
-                    
                     if monitor_number == 0:
                         # Monitor 0 is ALL Monitors Combined, we need to save this to temp file and then to clipboard
                         mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
