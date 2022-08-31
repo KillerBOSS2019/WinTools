@@ -22,7 +22,7 @@ import os
 if platform == "win32":
     from ctypes import windll
     import audio2numpy as a2n
-    import mss.tools # used for screenshots, need to find another module for this
+  #  import mss.tools # used for screenshots, need to find another module for this
     import win32clipboard
 
 
@@ -162,7 +162,12 @@ class ScreenShot:
                 if clipboard == True:
                     if monitor_number == 0:
                         # Monitor 0 is ALL Monitors Combined, we need to save this to temp file and then to clipboard
-                        mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
+                        
+                        image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
+                        image.save("temp.png")
+
+
+
                         
                         # Converting to Bytes then off to Clipboard
                         self.all_monitors_bytes_to_clipboard("temp.png")
@@ -175,7 +180,9 @@ class ScreenShot:
                        # TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", getFrame_base64(img).decode())
 
                 if clipboard == False:
-                    mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
+                    image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
+                    image.save(filename + ".png")
+
                     print("Image saved -> "+ filename+ ".png" )
 
             except IndexError:
@@ -229,3 +236,8 @@ class ClipBoard:
                 win32clipboard.CloseClipboard()
                 
                 
+
+
+ok = ScreenShot()
+
+ok.screenshot_monitor(monitor_number="0", filename="test", clipboard=True)
