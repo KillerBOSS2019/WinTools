@@ -386,7 +386,88 @@ TP_PLUGIN_ACTIONS = {
                 ]
             }
         }
-    }
+    },
+    "Keyboard writer": {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".act.keyboardwriter",
+        'name': "Write Text",
+        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Write$[1]with interval$[2]for every character",
+        'data': {
+            'text': {
+                'id': PLUGIN_ID + ".act.keyboardwriter.text",
+                'type': "text",
+                'label': "text to write",
+                'default': ""
+            },
+            'delay': {
+                'id': PLUGIN_ID + ".act.keyboardwriter.delay",
+                'type': "text",
+                'label': "delay",
+                'default': ""
+            }
+        }
+    },
+    "Keyboard presser": {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".act.keyboardpresser",
+        'name': "Key Control",
+        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "$[1]$[2]",
+        'data': {
+            "press options": {
+                "id": PLUGIN_ID + ".act.keyboardpresser.options",
+                "type": "choice",
+                "label": "press options",
+                "default": "Press key",
+                "valueChoices": [
+                    "Hold key",
+                    "Release key",
+                    "Press key"
+                ]
+            },
+            'keys': {
+                'id': PLUGIN_ID + ".act.keyboardpresser.keys",
+                'type': "choice",
+                'label': "key choices",
+                'default': " ",
+                "valueChoices": []
+            }
+        }
+    },
+    "json Parser": {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.jsonparser",
+        'name': "Json Parser",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "With json$[1]to get$[2]and save to$[3]",
+        'data': {
+            "json data": {
+                "id": PLUGIN_ID + ".act.jsonparser.jsondata",
+                "type": "text",
+                "label": "json data",
+                "default": "",
+            },
+            'json path': {
+                'id': PLUGIN_ID + ".act.keyboardpresser.jsonpath",
+                'type': "text",
+                'label': "json path",
+                'default': "",
+            },
+            'save result': {
+                'id': PLUGIN_ID + ".act.keyboardpresser.result",
+                'type': "text",
+                'label': "save result",
+                'default': "",
+            }
+        }
+    },
 }
 
 if platform == "win32": # add windows specific stuff

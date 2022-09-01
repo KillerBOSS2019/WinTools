@@ -3,7 +3,6 @@ import subprocess
 from sys import platform
 from ast import literal_eval
 import sounddevice as sd
-import pyttsx3
 
 
 
@@ -14,7 +13,6 @@ Also need to find a module to replace mss.tools import which saves an RGB data t
 """
 ### Screenshot Monitor Imports ###
 import mss.tools # may need to find another module for this due to linux/macOS
-from screeninfo import get_monitors
 from PIL import Image
 from io import BytesIO
 import os
@@ -24,6 +22,7 @@ if platform == "win32":
     from ctypes import windll
     import audio2numpy as a2n
     import win32clipboard
+    import pyttsx3
 
 
 def runWindowsCMD(command):
@@ -95,6 +94,19 @@ class Powerplan:
             runWindowsCMD(f"powercfg.exe /S {self.powerplans[pplanName]}")
             return True
         return False
+import json
+from functools import reduce
+
+def jsonPathfinder(data, path):
+    pathlist = []
+    print(data)
+    data = json.loads(data)
+    for path in path.split("."):
+        try:
+            pathlist.append(int(path))
+        except ValueError:
+            pathlist.append(path)
+    return reduce(lambda a, b: a[b], pathlist, data)
 
 def getAllVoices():
     engine = pyttsx3.init()
