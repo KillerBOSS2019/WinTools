@@ -1,8 +1,17 @@
 import os
 import subprocess
-from sys import platform
+import platform
 from ast import literal_eval
 import sounddevice as sd
+
+
+""" According to my research this is the most reliable way and better than system.platform """
+PLATFORM_SYSTEM = platform.system()   ### Windows / Darwin / Linux
+PLATFORM_RELEASE = platform.release() ### The release of the System, IE Windows 10, or Linux 2.6.22 etc..
+
+### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
+### Linux Examples   - os.name = 'posix'     /      platform.system = 'Linux'       /    platform.release = '3.19.0-23-generic'
+### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
 
 
 
@@ -18,7 +27,7 @@ from io import BytesIO
 import os
 
 
-if platform == "win32":
+if PLATFORM_SYSTEM == "Windows":
     from ctypes import windll
     import audio2numpy as a2n
     import win32clipboard
@@ -211,7 +220,7 @@ class ScreenShot:
         data = output.getvalue()[14:]
         output.close()
 
-        if platform=="win32":
+        if PLATFORM_SYSTEM=="Windows":
             ### Sending to Clipboard
             ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
             ### Deleting Temp File
@@ -224,7 +233,7 @@ class ScreenShot:
 class ClipBoard:
     
     def copy_image_to_clipboard(image):
-        if platform == "win32":
+        if PLATFORM_SYSTEM == "Windows":
             bio = BytesIO()
             image.save(bio, 'BMP')
             data = bio.getvalue()[14:] # removing some headers
@@ -234,7 +243,7 @@ class ClipBoard:
         
         
         ## these may not work just found some random details online need to test
-        if platform == "linux":
+        if PLATFORM_SYSTEM == "Linux":
             
             ### Option # 1
            # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
@@ -255,7 +264,7 @@ class ClipBoard:
 
 
         ## This needs tested/worked on...
-        if platform == "macOS":
+        if PLATFORM_SYSTEM == "Darwin":
             # Option #1
            # os.system(f"pbcopy < {path + '/image.png'}")
             
@@ -267,7 +276,7 @@ class ClipBoard:
         
         
     def send_to_clipboard(clip_type, data):
-        if platform == "win32":
+        if PLATFORM_SYSTEM == "Windows":
             if clip_type == "text":
                 win32clipboard.OpenClipboard()
                 win32clipboard.EmptyClipboard()
@@ -299,3 +308,5 @@ def Copy_to_Clipboard(self, event=None):
             wx.TheClipboard.SetData(bmp_obj)
             wx.TheClipboard.Close()
             wx.TheClipboard.Flush()
+            
+            
