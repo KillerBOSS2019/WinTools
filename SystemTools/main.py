@@ -5,10 +5,11 @@ from TouchPortalAPI.logger import Logger
 from argparse import ArgumentParser
 from threading import Thread
 import pyperclip
+
 import pyautogui
 
 from TPPEntry import *
-from util import SystemPrograms, Powerplan, TextToSpeech, getAllOutput_TTS2, getAllVoices, jsonPathfinder
+from util import SystemPrograms, Powerplan, TTS, jsonPathfinder
 import Macro
 
 
@@ -34,26 +35,26 @@ except Exception as e:
     sys.exit(f"Could not create TP Client, exiting. Error was:\n{repr(e)}")
 # TPClient: TP.Client = None  # instance of the TouchPortalAPI Client, created in main()
 
-# Crate the (optional) global logger, an instance of `TouchPortalAPI::Logger` helper class.
-# Logging configuration is set up in main().
+
+
 g_log = Logger(name = PLUGIN_ID)
 
-# macro_recordState = False
-# macroRecordThread = None
 
-# macro_playState = False
-# macroPlayThread = None
+
+
 
 def checkAllDataValue(data):
     return all([True if x['value'] else False for x in data])
+
+
 
 if PLATFORM_SYSTEM == "Windows":
     sysProgram = SystemPrograms()
     pplan = Powerplan()
 
 
-## Update states
 
+## Update states
 def updateStates():
     g_log.debug("Running update state")
 
@@ -81,8 +82,8 @@ def updateStates():
 
         if PLATFORM_SYSTEM == "Windows":
             """Getting TTS Output Devices and Updating Choices"""
-            voices = [voice.name for voice in getAllVoices()]
-            tts_outputs = list(getAllOutput_TTS2().keys())
+            voices = [voice.name for voice in TTS.getAllVoices()]
+            tts_outputs = list(TTS.getAllOutput_TTS2().keys())
 
             if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]) != tts_outputs:
                 TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
@@ -128,6 +129,7 @@ def onAction(data):
     if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
     
+    print(data)
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
         
@@ -183,7 +185,7 @@ def onAction(data):
 
 
         if aid == TP_PLUGIN_ACTIONS["TTS"]['id']:
-            Thread(target=TextToSpeech, args=(
+            Thread(target=TTS.TextToSpeech, args=(
                 action_data[0]['value'],
                 action_data[1]['value'],
                 action_data[2]['value'],
