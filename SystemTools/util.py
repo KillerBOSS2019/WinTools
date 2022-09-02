@@ -3,28 +3,35 @@ import subprocess
 import platform
 from ast import literal_eval
 import sounddevice as sd
+import json
+from functools import reduce
+
+### Screenshot Monitor Imports ###
+import mss.tools # may need to find another module for this due to linux/macOS
+from PIL import Image
+from io import BytesIO
 
 
-""" According to my research this is the most reliable way and better than system.platform """
-PLATFORM_SYSTEM = platform.system()   ### Windows / Darwin / Linux
-PLATFORM_RELEASE = platform.release() ### The release of the System, IE Windows 10, or Linux 2.6.22 etc..
+
+
+""" 
+According to my research this is the most reliable way and better than system.platform 
 
 ### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
 ### Linux Examples   - os.name = 'posix'     /      platform.system = 'Linux'       /    platform.release = '3.19.0-23-generic'
 ### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
 
+                                          EXAMPLES                                      """
+PLATFORM_SYSTEM = platform.system()       ### Windows / Darwin / Linux
+PLATFORM_RELEASE = platform.release()     ### Windows 10 / 11 , or Linux 2.6.22 etc..
+PLATFORM_MACHINE = platform.machine()     ### AMD64 / *Intel ??
+PLATFORM_ARCH = platform.architecture()   ### 32bit / 64bit 
+PLATFORM_PLATFORM = platform.platform()   ### Windows-10-10.0.19043-SP0
+PLATFORM_VERSION = platform.version()     ### 10.0.19043 for windows 10
+
+PLATFORM_MAC = platform.mac_ver() ### This may or may not be useful im not sure.. its here for now - it just comes empty tuples if used on windows
 
 
-"""
-Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
-need to double check this is fact
-Also need to find a module to replace mss.tools import which saves an RGB data to a file
-"""
-### Screenshot Monitor Imports ###
-import mss.tools # may need to find another module for this due to linux/macOS
-from PIL import Image
-from io import BytesIO
-import os
 
 
 if PLATFORM_SYSTEM == "Windows":
@@ -34,12 +41,19 @@ if PLATFORM_SYSTEM == "Windows":
     import pyttsx3
 
 
+
+
 def runWindowsCMD(command):
+    """ 
+    Running a windows command using system level encoding
+    """
     systemencoding = windll.kernel32.GetConsoleOutputCP()
-    systemencoding= f"cp{systemencoding}"
     output = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
-    result = str(output.stdout.decode(systemencoding))
+    result = str(output.stdout.decode("cp{}".format(str(systemencoding))))
     return result
+
+
+
 
 class SystemPrograms:
     def __init__(self):
@@ -81,7 +95,6 @@ class Powerplan:
 
     def GetPowerplan(self):
         powerplanResult = runWindowsCMD("powercfg -List")
-        powerplanDict = {}
 
         for powerplan in powerplanResult.split("\n"):
             if ":" in powerplan:
@@ -97,14 +110,14 @@ class Powerplan:
                 else:
                     plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
                     self.powerplans[plan_name]=the_data
-    
+        return self.powerplans
     def changeTo(self, pplanName):
         if self.powerplans.get(pplanName, False):
             runWindowsCMD(f"powercfg.exe /S {self.powerplans[pplanName]}")
             return True
         return False
-import json
-from functools import reduce
+
+
 
 def jsonPathfinder(data, path):
     pathlist = []
@@ -157,7 +170,11 @@ def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
 
 
 
-
+"""
+Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
+need to double check this is fact
+Also need to find a module to replace mss.tools import which saves an RGB data to a file
+"""
 class ScreenShot:
     def screenshot_monitor(self, 
                            monitor_number,
@@ -221,10 +238,9 @@ class ScreenShot:
         output.close()
 
         if PLATFORM_SYSTEM=="Windows":
-            ### Sending to Clipboard
             ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
-            ### Deleting Temp File
-            os.remove(filepath)
+        
+        os.remove(filepath)
 
 
 
