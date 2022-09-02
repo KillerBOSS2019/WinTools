@@ -1,9 +1,9 @@
 import os
-import subprocess
-import platform
-from ast import literal_eval
-import sounddevice as sd
 import json
+import platform
+import subprocess
+import sounddevice as sd
+from ast import literal_eval
 from functools import reduce
 
 ### Screenshot Monitor Imports ###
@@ -11,12 +11,13 @@ import mss.tools # may need to find another module for this due to linux/macOS
 from PIL import Image
 from io import BytesIO
 
-
+### Port Audio Trouble Shooting
+from ctypes.util import find_library
+# print(find_library('portaudio'))
 
 
 """ 
 According to my research this is the most reliable way and better than system.platform 
-
 ### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
 ### Linux Examples   - os.name = 'posix'     /      platform.system = 'Linux'       /    platform.release = '3.19.0-23-generic'
 ### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
@@ -28,18 +29,71 @@ PLATFORM_MACHINE = platform.machine()     ### AMD64 / *Intel ??
 PLATFORM_ARCH = platform.architecture()   ### 32bit / 64bit 
 PLATFORM_PLATFORM = platform.platform()   ### Windows-10-10.0.19043-SP0
 PLATFORM_VERSION = platform.version()     ### 10.0.19043 for windows 10
-
 PLATFORM_MAC = platform.mac_ver() ### This may or may not be useful im not sure.. its here for now - it just comes empty tuples if used on windows
+
+PLATFORM_NODE = platform.node()           ### Computer Network name  - more than likely will never use this
+
+OS_DEETS = {
+    "version": PLATFORM_VERSION,
+    "arch": PLATFORM_ARCH,
+    "machine": PLATFORM_MACHINE,
+    "system": PLATFORM_SYSTEM,
+    "release": PLATFORM_RELEASE,
+    "platform full": PLATFORM_PLATFORM,
+    "platform mac": PLATFORM_MAC
+    }
+
+
+"""
+
+Fedora Example 
+{'arch': ('64bit', 'ELF'),
+ 'machine': 'x86_64',
+ 'platform full': 'Linux-5.19.4-200.fc36.x86_64-x86_64-with-glibc2.35',
+ 'platform mac': ('', ('', '', ''), ''),
+ 'release': '5.19.4-200.fc36.x86_64',
+ 'system': 'Linux',
+ 'version': '#1 SMP PREEMPT_DYNAMIC Thu Aug 25 17:42:04 UTC 2022'}
+ 
+ ----
+ 
+ Windows Example
+ {'arch': ('64bit', 'WindowsPE'),
+ 'machine': 'AMD64',
+ 'platform full': 'Windows-10-10.0.19043-SP0',
+ 'platform mac': ('', ('', '', ''), ''),
+ 'release': '10',
+ 'system': 'Windows',
+ 'version': '10.0.19043'}
+ 
+"""
+
+
 
 
 
 
 if PLATFORM_SYSTEM == "Windows":
+    """ 
+    Utilized for setting Windows Specific Imports and Variables based on OS details
+    """
     from ctypes import windll
     import audio2numpy as a2n
     import win32clipboard
     import pyttsx3
 
+
+if PLATFORM_SYSTEM == "Linux":
+    """ 
+    Utilized for setting Linux Specific Imports and Variables based on OS details
+    """
+    linux_display_server = subprocess.check_output("loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}'", shell=True).decode().split("\n")[0]
+
+    if linux_display_server == "wayland":
+        print("Its wayland bruh")
+
+    if linux_display_server == "x11":
+        print("Its x11 time!")
 
 
 
@@ -159,7 +213,7 @@ def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
     engine.runAndWait()
     engine.stop()
 
-    if output is not "Default":
+    if output != "Default":
         device = getAllOutput_TTS2()  ### can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
         sd.default.samplerate = device[output]
         sd.default.device = output +", MME"
@@ -222,6 +276,7 @@ class ScreenShot:
                     print("Image saved -> "+ filename+ ".png" )
 
             except IndexError:
+                
                 print("[ERROR] This Monitor does not exist")
                 
 
@@ -312,7 +367,7 @@ class ClipBoard:
 # ok.screenshot_monitor(monitor_number="0", filename="test", clipboard=True)
 
 
-import wx  ## apart of pyGUI ??  can this copy to clipboard on linux too ??  https://www.programcreek.com/python/?code=miloharper%2Fneural-network-animation%2Fneural-network-animation-master%2Fmatplotlib%2Fbackends%2Fbackend_wx.py
+# import wx  ## apart of pyGUI ??  can this copy to clipboard on linux too ??  https://www.programcreek.com/python/?code=miloharper%2Fneural-network-animation%2Fneural-network-animation-master%2Fmatplotlib%2Fbackends%2Fbackend_wx.py
 def Copy_to_Clipboard(self, event=None):
     "copy bitmap of canvas to system clipboard"
     bmp_obj = wx.BitmapDataObject()
