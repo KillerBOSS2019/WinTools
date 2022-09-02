@@ -1,40 +1,29 @@
-from sys import platform
+import platform; PLATFORM_SYSTEM = platform.system()
+import os
 
-# Version string of this plugin (in Python style).
 __version__ = "3.1"
 
-# The unique plugin ID string is used in multiple places.
-# It also forms the base for all other ID strings (for states, actions, etc).
 PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 
-## Start Python SDK declarations
-# These will be used to generate the entry.tp file,
-# and of course can also be used within this plugin's code.
-# These could also live in a separate .py file which is then imported
-# into your plugin's code, and be used directly to generate the entry.tp JSON.
-#
-# Some entries have default values (like "type" for a Setting),
-# which are commented below and could technically be excluded from this code.
-#
-# Note that you may add any arbitrary keys/data to these dictionaries
-# w/out breaking the generation routine. Only known TP SDK attributes
-# (targeting the specified SDK version) will be used in the final entry.tp JSON.
-##
+windows_appdata = os.getenv("LOCALAPPDATA")
+linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
 
-if platform == "win32":
+
+
+if PLATFORM_SYSTEM == "Windows":
     plugin_name = "Windows"
-elif platform == "darwin":
+elif PLATFORM_SYSTEM == "Darwin":
     plugin_name = "MacOS"
-else:
+elif PLATFORM_SYSTEM == "Linux":
     plugin_name = "Linux"
 
-# Basic plugin metadata
+
+
 TP_PLUGIN_INFO = {
     'sdk': 6,
-    'version': int(float(__version__) * 100),  # TP only recognizes integer version numbers
+    'version': int(float(__version__) * 100),
     'name': plugin_name + " Tools",
     'id': PLUGIN_ID,
-    # Startup command, with default logging options read from configuration file (see main() for details)
     "plugin_start_cmd": "%TP_PLUGIN_FOLDER%SystemTools\\SystemTools.exe",
     'configuration': {
         'colorDark': "#25274c",
@@ -46,7 +35,10 @@ TP_PLUGIN_INFO = {
     }
 }
 
-# This example only uses one Category for actions/etc., but multiple categories are supported also.
+
+
+
+
 TP_PLUGIN_CATEGORIES = {
     "main": {
         'id': PLUGIN_ID + ".main",
@@ -68,6 +60,8 @@ TP_PLUGIN_CATEGORIES = {
 # Setting(s) for this plugin. These could be either for users to
 # set, or to persist data between plugin runs (as read-only settings).
 TP_PLUGIN_SETTINGS = {}
+
+
 
 TP_PLUGIN_CONNECTORS = {
     # Can't make this work as right now.
@@ -103,6 +97,9 @@ TP_PLUGIN_CONNECTORS = {
     #     }
     # }
 }
+
+
+
 
 # Action(s) which this plugin supports.
 TP_PLUGIN_ACTIONS = {
@@ -143,8 +140,8 @@ TP_PLUGIN_ACTIONS = {
             },
         }
     },
+
     'Mouse click': {
-        # 'category' is optional, if omitted then this action will be added to all, or the only, category(ies)
         'category': "mouse",
         'id': PLUGIN_ID + ".act.mouseclick",
         'name': "Mouse Click",
@@ -152,9 +149,6 @@ TP_PLUGIN_ACTIONS = {
         'type': "communicate",
         'tryInline': True,
         'hasHoldFunctionality': True,
-        # 'format' tokens like $[1] will be replaced in the generated JSON with the corresponding data id wrapped with "{$...$}".
-        # Numeric token values correspond to the order in which the data items are listed here, while text tokens correspond
-        # to the last part of a dotted data ID (the part after the last period; letters, numbers, and underscore allowed).
         'format': "$[1]Click$[2]Times with interval$[3]",
         'data': {
             'mouseButton': {
@@ -186,8 +180,8 @@ TP_PLUGIN_ACTIONS = {
             },
         }
     },
+
     'Mouse scrolling': {
-        # 'category' is optional, if omitted then this action will be added to all, or the only, category(ies)
         'category': "mouse",
         'id': PLUGIN_ID + ".act.mousescroll",
         'name': "Mouse scroll",
@@ -195,9 +189,6 @@ TP_PLUGIN_ACTIONS = {
         'type': "communicate",
         'tryInline': True,
         'hasHoldFunctionality': True,
-        # 'format' tokens like $[1] will be replaced in the generated JSON with the corresponding data id wrapped with "{$...$}".
-        # Numeric token values correspond to the order in which the data items are listed here, while text tokens correspond
-        # to the last part of a dotted data ID (the part after the last period; letters, numbers, and underscore allowed).
         'format': "Scroll Mouse$[1]by$[2]ticks",
         'data': {
             'mouseButton': {
@@ -222,8 +213,8 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
+
     'move Mouse': {
-        # 'category' is optional, if omitted then this action will be added to all, or the only, category(ies)
         'category': "mouse",
         'id': PLUGIN_ID + ".act.mouseMovefunc",
         'name': "Move mouse",
@@ -262,8 +253,8 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
+
     'Drag mouse': {
-        # 'category' is optional, if omitted then this action will be added to all, or the only, category(ies)
         'category': "mouse",
         'id': PLUGIN_ID + ".act.DragmouseMovefunc",
         'name': "Drag Mouse",
@@ -313,6 +304,7 @@ TP_PLUGIN_ACTIONS = {
             },
         }
     },
+
     "Clipboard": {
         'category': "main",
         'id': PLUGIN_ID + ".act.clipboard",
@@ -330,6 +322,7 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
+
     "MacroRecorder": {
         "category": "keyboard",
         "id": PLUGIN_ID + "act.macroRecorder",
@@ -358,6 +351,7 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
+
     "macroPlayer": {
         "category": "keyboard",
         "id": PLUGIN_ID + "act.macroPlayer",
@@ -386,91 +380,13 @@ TP_PLUGIN_ACTIONS = {
                 ]
             }
         }
-    },
-    "Keyboard writer": {
-        'category': "keyboard",
-        'id': PLUGIN_ID + ".act.keyboardwriter",
-        'name': "Write Text",
-        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
-        'type': "communicate",
-        'tryInline': True,
-        'format': "Write$[1]with interval$[2]for every character",
-        'data': {
-            'text': {
-                'id': PLUGIN_ID + ".act.keyboardwriter.text",
-                'type': "text",
-                'label': "text to write",
-                'default': ""
-            },
-            'delay': {
-                'id': PLUGIN_ID + ".act.keyboardwriter.delay",
-                'type': "text",
-                'label': "delay",
-                'default': ""
-            }
-        }
-    },
-    "Keyboard presser": {
-        'category': "keyboard",
-        'id': PLUGIN_ID + ".act.keyboardpresser",
-        'name': "Key Control",
-        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
-        'type': "communicate",
-        'tryInline': True,
-        'format': "$[1]$[2]",
-        'data': {
-            "press options": {
-                "id": PLUGIN_ID + ".act.keyboardpresser.options",
-                "type": "choice",
-                "label": "press options",
-                "default": "Press key",
-                "valueChoices": [
-                    "Hold key",
-                    "Release key",
-                    "Press key"
-                ]
-            },
-            'keys': {
-                'id': PLUGIN_ID + ".act.keyboardpresser.keys",
-                'type': "choice",
-                'label': "key choices",
-                'default': " ",
-                "valueChoices": []
-            }
-        }
-    },
-    "json Parser": {
-        'category': "main",
-        'id': PLUGIN_ID + ".act.jsonparser",
-        'name': "Json Parser",
-        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
-        'type': "communicate",
-        'tryInline': True,
-        'format': "With json$[1]to get$[2]and save to$[3]",
-        'data': {
-            "json data": {
-                "id": PLUGIN_ID + ".act.jsonparser.jsondata",
-                "type": "text",
-                "label": "json data",
-                "default": "",
-            },
-            'json path': {
-                'id': PLUGIN_ID + ".act.keyboardpresser.jsonpath",
-                'type': "text",
-                'label': "json path",
-                'default': "",
-            },
-            'save result': {
-                'id': PLUGIN_ID + ".act.keyboardpresser.result",
-                'type': "text",
-                'label': "save result",
-                'default': "",
-            }
-        }
-    },
+    }
 }
 
-if platform == "win32": # add windows specific stuff
+
+### Adding Windows Specific Actions
+if PLATFORM_SYSTEM == "Windows": 
+
     TP_PLUGIN_ACTIONS["App launcher"] = {
         'category': "main",
         'id': PLUGIN_ID + ".act.advancedLauncher",

@@ -368,16 +368,16 @@ class ClipBoard:
 
 
 # import wx  ## apart of pyGUI ??  can this copy to clipboard on linux too ??  https://www.programcreek.com/python/?code=miloharper%2Fneural-network-animation%2Fneural-network-animation-master%2Fmatplotlib%2Fbackends%2Fbackend_wx.py
-def Copy_to_Clipboard(self, event=None):
-    "copy bitmap of canvas to system clipboard"
-    bmp_obj = wx.BitmapDataObject()
-    bmp_obj.SetBitmap(self.bitmap)
-
-    if not wx.TheClipboard.IsOpened():
-        open_success = wx.TheClipboard.Open()
-        if open_success:
-            wx.TheClipboard.SetData(bmp_obj)
-            wx.TheClipboard.Close()
-            wx.TheClipboard.Flush()
+##  def Copy_to_Clipboard(self, event=None):
+##      "copy bitmap of canvas to system clipboard"
+##      bmp_obj = wx.BitmapDataObject()
+##      bmp_obj.SetBitmap(self.bitmap)
+##  
+##      if not wx.TheClipboard.IsOpened():
+##          open_success = wx.TheClipboard.Open()
+##          if open_success:
+##              wx.TheClipboard.SetData(bmp_obj)
+##              wx.TheClipboard.Close()
+##              wx.TheClipboard.Flush()
             
             
