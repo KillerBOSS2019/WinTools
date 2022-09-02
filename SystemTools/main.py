@@ -8,7 +8,7 @@ import pyperclip
 import pyautogui
 
 from TPPEntry import *
-from util import SystemPrograms, Powerplan, TextToSpeech, getAllOutput_TTS2, getAllVoices
+from util import SystemPrograms, Powerplan, TextToSpeech, getAllOutput_TTS2, getAllVoices, jsonPathfinder
 import Macro
 
 
@@ -130,6 +130,7 @@ def onAction(data):
     
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
+        
     if aid == TP_PLUGIN_ACTIONS['Hold Mouse button']['id'] and checkAllDataValue(action_data):
         try:
             if action_data[0]['value'].lower() == "hold":
@@ -169,6 +170,8 @@ def onAction(data):
             pyautogui.dragTo(x=action_data[1]['value'], y=action_data[2]['value'], duration=action_data[3]['value'], button=action_data[4]['value'].lower())
         elif action_data[0]['value'].lower() == "drag":
             pyautogui.drag(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'], duration=action_data[3]['value'], button=action_data[4]['value'].lower())
+
+
 
     if PLATFORM_SYSTEM == "Windows":
         if aid == TP_PLUGIN_ACTIONS['App launcher']['id'] and checkAllDataValue(action_data):
@@ -286,7 +289,8 @@ def onHold(data):
 # Action data select event
 @TPClient.on(TP.TYPES.onListChange)
 def onListChange(data):
-    if data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
+    if PLATFORM_SYSTEM == "Windows" and data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
+   # if data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
         if data['value'] == "Steam":
             program = sysProgram.steam
         elif data['value'] == "Microsoft":

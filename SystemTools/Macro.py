@@ -11,6 +11,14 @@ from keyboard import KeyboardEvent
 
 import json
 
+class States:
+    macro_recordState = False
+    macroRecordThread = None
+
+    macro_playState = False
+    macroPlayThread = None
+
+
 def record(name, file='record.json'):
     mouse_events = []
     keyboard_events = []
