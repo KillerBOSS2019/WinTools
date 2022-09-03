@@ -9,7 +9,7 @@ import pyperclip
 import pyautogui
 
 from TPPEntry import *
-from util import SystemPrograms, Powerplan, TTS, jsonPathfinder
+from util import SystemPrograms, Powerplan, TTS, jsonPathfinder, ClipBoard, ScreenShot, get_monitors, Get_Windows
 import Macro
 
 
@@ -116,10 +116,17 @@ def onConnect(data):
 
     updateStateThread.start()
 
+    ## These should update every 1 minute or so - how does the update thread work right now?
+    check_number_of_monitors()
+    get_current_windows()
+
+
+
 # Settings handler
 @TPClient.on(TP.TYPES.onSettingUpdate)
 def onSettingUpdate(data):
     g_log.debug(f"Settings: {data}")
+
 
 # Action handler
 @TPClient.on(TP.TYPES.onAction)
@@ -236,6 +243,93 @@ def onAction(data):
 
 
 
+    if aid == TP_PLUGIN_ACTIONS["Screen Capture Display"]["id"]:
+
+        if data['data'][1]['value'] == "Clipboard":
+            try:
+                ScreenShot.screenshot_monitor(monitor_number= data['data'][0]['value'], clipboard= True)
+            except Exception as e:
+                print(e)
+
+        elif data['data'][1]['value'] == "File":
+            try:
+                afile_name = (data['data'][2]['value']) +"/" +(data['data'][3]['value'])    
+                ScreenShot.screenshot_monitor(monitor_number= data['data'][0]['value'], filename= afile_name, clipboard=False)
+            except Exception as e:
+                print(e)
+
+
+    if aid == TP_PLUGIN_ACTIONS["Screen Capture Window"]["id"]:
+        if data['data'][0]['value']:
+            if data['data'][4]['value'] == "Clipboard":
+
+                if PLATFORM_SYSTEM == "Windows":
+                    ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
+
+
+            if data['data'][4]['value'] == "File":
+                afile_name = data['data'][2]['value'] +"/" +data['data'][3]['value']
+
+                if PLATFORM_SYSTEM == "Windows":    
+                    ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+
+
+    if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:
+        print("hmm")
+
+
+
+
+old_results = []
+def get_current_windows():
+    global windows_active, old_results
+
+    if PLATFORM_SYSTEM == "Windows":
+        windows_active = Get_Windows.get_windows_Windows_OS()
+
+       # if len(old_results) != len(windows_active):
+            # windows_active = get_windows()
+        #    old_results = windows_active
+
+    if PLATFORM_SYSTEM == "Linux":
+        windows_active = Get_Windows.get_windows_Linux()
+
+
+    old_results = windows_active
+    TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.window_name", windows_active)
+    TPClient.stateUpdate(PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
+
+    print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+
+
+
+monitor_count_old = ""
+def check_number_of_monitors():
+        global monitor_count_old
+        mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
+        
+        if monitor_count_old != mon_length:
+            if PLATFORM_SYSTEM == "Windows":
+                list_monitor_full = ScreenShot.get_monitors_Windows_OS()
+                list_monitor_full.insert(0, "0: ALL MONITORS")
+                monitor_count_old = mon_length
+
+            elif PLATFORM_SYSTEM =="Linux" or PLATFORM_SYSTEM =="Darwin":
+                monitors = get_monitors()
+                list_monitor_full = []
+
+                count = 1
+                for x in monitors:
+                    list_monitor_full.append(str(count) +": "+ x.name)
+                    count+=1  
+                list_monitor_full.insert(0, "0: ALL MONITORS")
+
+
+            TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.monitors_choice", list_monitor_full)  
+            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.monchoice", list_monitor_full)
+            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor_full)
+
+
 
 
 def mouseScroll(mousescroll, speed, reverse=False):
@@ -315,7 +409,11 @@ def onShutdown(data):
 # Error handler
 @TPClient.on(TP.TYPES.onError)
 def onError(exc):
-    g_log.error(f'Error in TP Client event handler: {repr(exc)}')
+   # g_log.error(f'Error in TP Client event handler: {repr(exc)}')
+
+
+   ### This on error consistantly stops me from finding an error because it gives no reference to where it  came from 
+   pass
 
 
 
