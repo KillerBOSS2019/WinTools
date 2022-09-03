@@ -265,14 +265,14 @@ def onAction(data):
         if data['data'][0]['value']:
             if data['data'][4]['value'] == "Clipboard":
 
-                if PLATFORM_SYSTEM == "Windows":
+                if plugin_name == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
 
 
             if data['data'][4]['value'] == "File":
                 afile_name = data['data'][2]['value'] +"/" +data['data'][3]['value']
 
-                if PLATFORM_SYSTEM == "Windows":    
+                if plugin_name == "Windows":    
                     ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
 
 
@@ -286,14 +286,14 @@ old_results = []
 def get_current_windows():
     global windows_active, old_results
 
-    if PLATFORM_SYSTEM == "Windows":
+    if plugin_name == "Windows":
         windows_active = Get_Windows.get_windows_Windows_OS()
 
        # if len(old_results) != len(windows_active):
             # windows_active = get_windows()
         #    old_results = windows_active
 
-    if PLATFORM_SYSTEM == "Linux":
+    if plugin_name == "Linux":
         windows_active = Get_Windows.get_windows_Linux()
 
 
@@ -311,12 +311,12 @@ def check_number_of_monitors():
         mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
         
         if monitor_count_old != mon_length:
-            if PLATFORM_SYSTEM == "Windows":
+            if plugin_name == "Windows":
                 list_monitor_full = ScreenShot.get_monitors_Windows_OS()
                 list_monitor_full.insert(0, "0: ALL MONITORS")
                 monitor_count_old = mon_length
 
-            elif PLATFORM_SYSTEM =="Linux" or PLATFORM_SYSTEM =="Darwin":
+            elif plugin_name =="Linux" or plugin_name =="Darwin":
                 monitors = get_monitors()
                 list_monitor_full = []
 
