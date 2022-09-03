@@ -1,21 +1,28 @@
-import platform; PLATFORM_SYSTEM = platform.system()
+from platform import system
 import os
 
 __version__ = "3.1"
 
 PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 
-windows_appdata = os.getenv("LOCALAPPDATA")
-linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
+# windows_appdata = os.getenv("LOCALAPPDATA")
+# linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
 
 
 
-if PLATFORM_SYSTEM == "Windows":
+if system() == "Windows":
     plugin_name = "Windows"
-elif PLATFORM_SYSTEM == "Darwin":
+elif system() == "Darwin":
     plugin_name = "MacOS"
-elif PLATFORM_SYSTEM == "Linux":
+elif system() == "Linux":
     plugin_name = "Linux"
+
+if plugin_name == "Windows":
+    appdata = os.getenv("LOCALAPPDATA")
+elif plugin_name == "Linux":
+    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
+elif plugin_name == "MacOS":
+    appdata = r"/Document/TouchPortal/plugins/SystemTools"
 
 
 
@@ -468,8 +475,7 @@ TP_PLUGIN_ACTIONS = {
 
 
 ### Adding Windows Specific Actions
-if PLATFORM_SYSTEM == "Windows": 
-
+if plugin_name == "Windows": 
     TP_PLUGIN_ACTIONS["App launcher"] = {
         'category': "main",
         'id': PLUGIN_ID + ".act.advancedLauncher",
@@ -520,6 +526,7 @@ if PLATFORM_SYSTEM == "Windows":
     TP_PLUGIN_ACTIONS["TTS"] = {
         "category": "main",
         "id": PLUGIN_ID + ".act.TTS",
+        "name": "Text to speech",
         "prefix": TP_PLUGIN_CATEGORIES['main']['name'],
         "type": "communicate",
         "description": "Play Text to Speech thru a specific Audio Output",

@@ -78,6 +78,7 @@ def play(name, file="record.json", speed=1):
     k_thread.start()
     m_thread.start()
     #waiting for both threadings to be completed
+    print(m_thread.is_alive())
     k_thread.join() 
     m_thread.join()
 

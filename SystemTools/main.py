@@ -1,3 +1,4 @@
+#!/.env/bin/python
 import sys
 from time import sleep
 import TouchPortalAPI as TP
@@ -15,7 +16,7 @@ import Macro
 
 
 
-if PLATFORM_SYSTEM == "Windows":
+if plugin_name == "Windows":
     import win32api
     import win32con
 
@@ -48,7 +49,7 @@ def checkAllDataValue(data):
 
 
 
-if PLATFORM_SYSTEM == "Windows":
+if plugin_name == "Windows":
     sysProgram = SystemPrograms()
     pplan = Powerplan()
 
@@ -80,14 +81,14 @@ def updateStates():
 
 
 
-        if PLATFORM_SYSTEM == "Windows":
+        if plugin_name == "Windows":
             """Getting TTS Output Devices and Updating Choices"""
             voices = [voice.name for voice in TTS.getAllVoices()]
             tts_outputs = list(TTS.getAllOutput_TTS2().keys())
 
-            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]) != tts_outputs:
+            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
                 TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
-            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]) != voices:
+            if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
                 TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.voices", voices)
 
         # Update macro profile
@@ -108,11 +109,11 @@ def onConnect(data):
     g_log.info(f"Connected to TP v{data.get('tpVersionString', '?')}, plugin v{data.get('pluginVersion', '?')}.")
     g_log.debug(f"Connection: {data}")
 
-    if PLATFORM_SYSTEM == "Windows":
+    if plugin_name == "Windows":
         TPClient.choiceUpdate(TP_PLUGIN_ACTIONS['Powerplan']['data']['powerplanChoices']['id'], list(pplan.powerplans.keys()))
 
     TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id'], list(Macro.getMacroProfile().keys()))
-    TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["Keyboard presser"]["data"]["keys"]["id"], pyautogui.KEYBOARD_KEYS[4:])
+    TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["Keyboard presser"]["data"]["keys"]["id"], sorted(pyautogui.KEYBOARD_KEYS[4:]))
 
     updateStateThread.start()
 
@@ -126,14 +127,15 @@ def onSettingUpdate(data):
 def onAction(data):
     g_log.debug(f"Action: {data}")
     # check that `data` and `actionId` members exist and save them for later use
-    if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
+    if not (action_data := data.get('data')) \
+    or not (aid := data.get('actionId')) \
+    or not checkAllDataValue(action_data):
         return
     
-    print(data)
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
         
-    if aid == TP_PLUGIN_ACTIONS['Hold Mouse button']['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS['Hold Mouse button']['id']:
         try:
             if action_data[0]['value'].lower() == "hold":
                 pyautogui.mouseDown(button=action_data[1]['value'].lower())
@@ -143,10 +145,10 @@ def onAction(data):
             g_log.error("Hold or Release mouse have invaild mouse button")
 
     # all data send from TP value is in string eg 0 is "0" which is True
-    if aid == TP_PLUGIN_ACTIONS['Mouse click']['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS['Mouse click']['id']:
         pyautogui.click(button=action_data[0]['value'].lower(), clicks=int(action_data[1]['value']), interval=int(action_data[1]['value']))
     
-    if aid == TP_PLUGIN_ACTIONS['move Mouse']['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS['move Mouse']['id']:
         for adata in [1,2]:
             action_data[adata]['value'] = int(action_data[adata]['value'])
 
@@ -160,7 +162,7 @@ def onAction(data):
         elif action_data[0]['value'].lower() == "move":
             pyautogui.move(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'], duration=action_data[3]['value'])
     
-    if aid == TP_PLUGIN_ACTIONS['Drag mouse']['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS['Drag mouse']['id']:
         for adata in [1,2]:
             action_data[adata]['value'] = int(action_data[adata]['value'])
         try:
@@ -175,8 +177,8 @@ def onAction(data):
 
 
 
-    if PLATFORM_SYSTEM == "Windows":
-        if aid == TP_PLUGIN_ACTIONS['App launcher']['id'] and checkAllDataValue(action_data):
+    if plugin_name == "Windows":
+        if aid == TP_PLUGIN_ACTIONS['App launcher']['id']:
             sysProgram.start(action_data[1]['value'], action_data[0]['value'])
 
 
@@ -194,13 +196,13 @@ def onAction(data):
             )).start()
 
 
-    if aid == TP_PLUGIN_ACTIONS["MacroRecorder"]['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS["MacroRecorder"]['id']:
         if not Macro.States.macro_recordState:
             Macro.States.macroRecordThread = Thread(target=Macro.record, args=(action_data[1]['value'],))
             Macro.States.macroRecordThread.start()
 
 
-    if aid == TP_PLUGIN_ACTIONS["macroPlayer"]['id'] and checkAllDataValue(action_data):
+    if aid == TP_PLUGIN_ACTIONS["macroPlayer"]['id']:
         if not Macro.States.macro_playState and action_data[0]['value'] in Macro.getMacroProfile():
             Macro.States.macroPlayThread = Thread(target=Macro.play, args=(action_data[0]['value'],))
             Macro.States.macroPlayThread.start()
@@ -245,11 +247,11 @@ def mouseScroll(mousescroll, speed, reverse=False):
     if reverse: speed = speed * -1
 
     if mousescroll in ["UP", "DOWN"]:
-        mousescroll = win32con.MOUSEEVENTF_WHEEL if PLATFORM_SYSTEM == "Windows" else "scroll"
+        mousescroll = win32con.MOUSEEVENTF_WHEEL if plugin_name == "Windows" else "scroll"
     elif mousescroll in ["LEFT", "RIGHT"]:
-        mousescroll = win32con.MOUSEEVENTF_HWHEEL if PLATFORM_SYSTEM == "Windows" else "hscroll"
+        mousescroll = win32con.MOUSEEVENTF_HWHEEL if plugin_name == "Windows" else "hscroll"
 
-    if PLATFORM_SYSTEM == "Windows":
+    if plugin_name == "Windows":
         win32api.mouse_event(mousescroll, 0, 0, speed)
     else:
         if mousescroll == "hscroll":
@@ -291,7 +293,7 @@ def onHold(data):
 # Action data select event
 @TPClient.on(TP.TYPES.onListChange)
 def onListChange(data):
-    if PLATFORM_SYSTEM == "Windows" and data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
+    if plugin_name == "Windows" and data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
    # if data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
         if data['value'] == "Steam":
             program = sysProgram.steam
@@ -373,7 +375,7 @@ def main():
     TPClient.setLogLevel(logLevel)
 
     # ready to go
-    g_log.info(f"Starting {TP_PLUGIN_INFO['name']} v{TP_PLUGIN_INFO['version']} on {PLATFORM_SYSTEM}.")
+    g_log.info(f"Starting {TP_PLUGIN_INFO['name']} v{TP_PLUGIN_INFO['version']} on {plugin_name}.")
 
     try:
         TPClient.connect()
