@@ -1,4 +1,3 @@
-#!/.env/bin/python
 import sys
 from time import sleep
 import TouchPortalAPI as TP
@@ -139,6 +138,7 @@ def onAction(data):
     or not checkAllDataValue(action_data):
         return
     
+
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
         
@@ -268,12 +268,19 @@ def onAction(data):
                 if plugin_name == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
 
+                if plugin_name == "Linux":
+                    ScreenShot.screenshot_window_linux(window_name=data['data'][0]['value'], clipboard=True)
+
+
 
             if data['data'][4]['value'] == "File":
                 afile_name = data['data'][2]['value'] +"/" +data['data'][3]['value']
 
                 if plugin_name == "Windows":    
                     ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
+
+                if plugin_name == "Linux":
+                    ScreenShot.screenshot_window_linux(window_name=data['data'][0]['value'], file_name=afile_name)
 
 
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:

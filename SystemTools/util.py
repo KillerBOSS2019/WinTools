@@ -79,7 +79,7 @@ if PLATFORM_SYSTEM == "Windows":
     from win32com.client import GetObject  ## Used to Get Display Name / Details
 
 
-if PLATFORM_SYSTEM == "Linux" and False:
+if PLATFORM_SYSTEM == "Linux":
     """ 
     Utilized for setting Linux Specific Imports and Variables based on OS details
     """
@@ -442,14 +442,6 @@ class ClipBoard:
         
         ### This currently works with Fedora 36 and saves image to clipboard
         if PLATFORM_SYSTEM == "Linux":
-            
-            ### Option # 1
-           # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
-           # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
-           
-           ### Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
-           ## might be able to use module called klemboard ??
-
             memory = BytesIO()
             image.save(memory, format="png")
             output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"), 
@@ -457,6 +449,14 @@ class ClipBoard:
             # write image to stdin
             output.stdin.write(memory.getvalue())
             output.stdin.close()
+            
+            ########################### BACKUP OPTIONS
+            ### Option # 1
+           # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
+           # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
+           
+           ### Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
+           ## might be able to use module called klemboard ??
 
 
         ## This needs tested/worked on...

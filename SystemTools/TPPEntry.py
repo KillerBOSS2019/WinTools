@@ -1,28 +1,22 @@
-from platform import system
+import platform
 import os
 
 __version__ = "3.1"
 
 PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 
-# windows_appdata = os.getenv("LOCALAPPDATA")
-# linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
+windows_appdata = os.getenv("LOCALAPPDATA")
+linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
 
 
+PLATFORM_SYSTEM = platform.system()
 
-if system() == "Windows":
+if PLATFORM_SYSTEM == "Windows":
     plugin_name = "Windows"
-elif system() == "Darwin":
+elif PLATFORM_SYSTEM == "Darwin":
     plugin_name = "MacOS"
-elif system() == "Linux":
+elif PLATFORM_SYSTEM == "Linux":
     plugin_name = "Linux"
-
-if plugin_name == "Windows":
-    appdata = os.getenv("LOCALAPPDATA")
-elif plugin_name == "Linux":
-    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
-elif plugin_name == "MacOS":
-    appdata = r"/Document/TouchPortal/plugins/SystemTools"
 
 
 
@@ -657,6 +651,7 @@ TP_PLUGIN_ACTIONS = {
 
 ### Adding Windows Specific Actions
 if plugin_name == "Windows": 
+
     TP_PLUGIN_ACTIONS["App launcher"] = {
         'category': "main",
         'id': PLUGIN_ID + ".act.advancedLauncher",
