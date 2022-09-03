@@ -16,6 +16,11 @@ from ctypes.util import find_library
 # print(find_library('portaudio'))
 
 
+### NEW IMPORTS
+from screeninfo import get_monitors
+
+
+
 """ 
 According to my research this is the most reliable way and better than system.platform 
 ### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
@@ -65,8 +70,13 @@ if PLATFORM_SYSTEM == "Windows":
     from ctypes import windll
     import audio2numpy as a2n
     import win32clipboard
+
+    import win32gui     ## used to capture window
+    import win32process ## used to capture window
+    import win32ui      ## used to capture window
     import pyttsx3
 
+    from win32com.client import GetObject  ## Used to Get Display Name / Details
 
 
 if PLATFORM_SYSTEM == "Linux" and False:
@@ -210,6 +220,49 @@ class TTS:
         
         
 
+class Get_Windows:
+    def get_windows_Windows_OS():
+        results = []
+        def winEnumHandler(hwnd, ctx):
+            if win32gui.IsWindowVisible(hwnd):
+                if win32gui.GetWindowText(hwnd):
+                    
+                    results.append(win32gui.GetWindowText(hwnd))
+                
+        win32gui.EnumWindows(winEnumHandler, None)
+        return results
+
+
+
+    def get_windows_Linux(): 
+        """ 
+        This Includes the Current Active Window 
+        - Docs -> https://lazka.github.io/pgi-docs/Wnck-3.0/classes/Window.html#Wnck.Window.get_class_group_name
+        """
+        import gi
+        gi.require_version("Wnck", "3.0") ## It must be set to require 3.0 bfore we import Wnck
+        from gi.repository import Wnck
+        
+
+        scr = Wnck.Screen.get_default()
+
+        ## Force Update must be done 
+        scr.force_update()
+
+   #     all_windows = scr.get_windows()
+        #all_windows_list = [x for x in scr.get_windows()]
+
+        window_name_list = []
+        for x in scr.get_windows():
+            window_name_list.append(x.get_name())
+
+    
+        """ Current Active Window Details"""
+        ACTIVE_WINDOW_NAME = scr.get_active_window().get_name()
+        ACTIVE_WINDOW_XID = scr.get_active_window().get_xid()
+        ACTIVE_WINDOW_PID = scr.get_active_window().get_pid()
+
+        return window_name_list
 
 
 """
@@ -218,7 +271,7 @@ need to double check this is fact
 Also need to find a module to replace mss.tools import which saves an RGB data to a file
 """
 class ScreenShot:
-    def screenshot_monitor(self, 
+    def screenshot_monitor(
                            monitor_number,
                            filename=None,
                            clipboard = False):
@@ -248,7 +301,7 @@ class ScreenShot:
                      #   mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
                         
                         # Converting to Bytes then off to Clipboard
-                        self.all_monitors_bytes_to_clipboard("temp.png")
+                        ScreenShot.all_monitors_bytes_to_clipboard("temp.png")
 
                     elif monitor_number != 0:
                         # Instead of making a temp file we get it direct from raw to clipboard
@@ -287,6 +340,92 @@ class ScreenShot:
 
 
 
+    def get_monitors_Windows_OS():
+        objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
+        count = 0
+        monitor_list = []
+        for obj in objWMI:
+            count = count + 1
+           # print("######  Monitor " +str(count) + " ########")
+            if obj.Active != None:
+                monitor_is_active = str(obj.Active)
+            if obj.InstanceName != None:
+               pass
+            if obj.ManufacturerName != None:
+                monitor_manufacturer = (bytes(obj.ManufacturerName)).decode()
+                split_manufacturer_name = monitor_manufacturer.split("\x00")
+            if obj.UserFriendlyName != None:
+                monitor_name = (bytes(obj.UserFriendlyName)).decode()
+                split_monitor_name = monitor_name.split("\x00")
+            
+            the_end = (str(count) +": "+ str((split_monitor_name[0]))+"("+str(split_manufacturer_name[0])+")")
+            monitor_list.append(the_end)
+
+        return monitor_list
+
+
+    ###screenshot window without bringing it to foreground 
+    def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
+
+        hwnd = win32gui.FindWindow(None, window_title)
+        try:
+            left, top, right, bot = win32gui.GetClientRect(hwnd)
+            #left, top, right, bot = win32gui.GetWindowRect(hwnd)
+            w = right - left
+            h = bot - top
+
+            hwndDC = win32gui.GetWindowDC(hwnd)
+            mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+            saveDC = mfcDC.CreateCompatibleDC()
+
+            saveBitMap = win32ui.CreateBitmap()
+            saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+            saveDC.SelectObject(saveBitMap)
+
+            # Change the line below depending on whether you want the whole window
+            # or just the client area as shown above. 
+                                  # 1, 2, 3 all give different results   ( 3 seems to work for everything)
+            result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
+            bmpinfo = saveBitMap.GetInfo()
+            bmpstr = saveBitMap.GetBitmapBits(True)
+
+            im = Image.frombuffer(
+                'RGB',
+                (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
+                bmpstr, 'raw', 'BGRX', 0, 1)
+
+            win32gui.DeleteObject(saveBitMap.GetHandle())
+            saveDC.DeleteDC()
+            mfcDC.DeleteDC()
+            win32gui.ReleaseDC(hwnd, hwndDC)
+
+            if result == 1:
+                #PrintWindow Succeeded
+                if clipboard == True:
+                    ClipBoard.copy_image_to_clipboard(im)
+                    print("Copied to Clipboard")
+                elif clipboard == False:
+                    im.save(save_location+".png")
+                    print("Saved to Folder")
+        except Exception as e:
+            print("error screenshot" + e )
+
+        
+
+
+"""    monitor_count_old = ""
+    def check_number_of_monitors():
+        global monitor_count_old
+        mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
+        if monitor_count_old != mon_length:
+            list_monitor_full = ScreenShot.get_monitors_Windows_OS()
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", list_monitor_full)
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", list_monitor_full)
+            list_monitor_full.insert(0, "0: ALL MONITORS")
+            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", list_monitor_full)  #  KillerBOSS.TP.Plugins.screencapture.full.file 
+            monitor_count_old = mon_length"""
+
+
 
 
 class ClipBoard:
@@ -301,20 +440,18 @@ class ClipBoard:
             
         
         
-        ## these may not work just found some random details online need to test
+        ### This currently works with Fedora 36 and saves image to clipboard
         if PLATFORM_SYSTEM == "Linux":
             
             ### Option # 1
            # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
            # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
            
-           
-           
            ### Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
            ## might be able to use module called klemboard ??
+
             memory = BytesIO()
             image.save(memory, format="png")
-
             output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"), 
                                       stdin=subprocess.PIPE)
             # write image to stdin
@@ -328,7 +465,7 @@ class ClipBoard:
            # os.system(f"pbcopy < {path + '/image.png'}")
             
             # Option #2
-            import subprocess
+            
             subprocess.run(["osascript", "-e", 'set the clipboard to (read (POSIX file "image.jpg") as JPEG picture)']) 
         
         

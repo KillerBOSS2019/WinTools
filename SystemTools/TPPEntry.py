@@ -469,8 +469,189 @@ TP_PLUGIN_ACTIONS = {
                 'default': "",
             }
         }
-    }
+    },
+    
+    "Screen Capture Display": {
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapture.full.file",
+        "name": "CAPTURE:  Display to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Display to Clipboard OR File",
+        "format": "Display # $[monitors_choice] to $[file_clipboard_choice] to $[path] and $[name]",
+        "data": [
+          {
+            "id": PLUGIN_ID + ".screencapture.monitors_choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.file_clipboard_choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.file.path",
+            "type": "folder",
+            "label": "folder"
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.file.name",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+      },
 
+    "Screen Capture Window":{
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapture.window.file",
+        "name": "CAPTURE:  Window to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Window to Clipboard OR File",
+        "format": "Window:$[window_name] Save:$[window_active_capture]  Directory->$[filepath] and file name ->$[filename] ",
+        "data": [
+          {
+            "id": PLUGIN_ID + ".screencapture.window_name",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": []
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.window_capture_type",
+            "type": "choice",
+            "label": "choice",
+            "default": "3",
+            "valueChoices": [
+              "0",
+              "1",
+              "2",
+              "3"
+            ]
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.filepath",
+            "type": "folder",
+            "label": "folder",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.filename",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }, 
+          {
+            "id": PLUGIN_ID + ".screencapture.window_active_capture",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
+          }
+        ]
+      },
+    "Screen Capture Window WildCard": {
+            'category': "main",
+            "id": PLUGIN_ID + ".screencapture.window.file.wildcard",
+            "name": "CAPTURE:  Window to File / Clipboard (*)",
+            "prefix": "plugin",
+            "type": "communicate",
+            "tryInline": True,
+            "description": "Capture Window by Name to Clipboard OR File ",
+            "format": "Window Name*:$[window_name] Save:$[clipboard_file_choice]  Directory->$[path] and file name ->$[name] ",
+            "data": [
+            {
+              "id": PLUGIN_ID + ".screencapture.window_name",
+              "type": "text",
+              "label": "text",
+              "default": ""
+            },
+            {
+              "id": PLUGIN_ID + ".screencapture.window_capture_type",
+              "type": "choice",
+              "label": "choice",
+              "default": "3",
+              "valueChoices": [
+                "0",
+                "1",
+                "2",
+                "3"
+              ]
+            },
+            {
+              "id": PLUGIN_ID + ".screencapture.file.path",
+              "type": "folder",
+              "label": "folder",
+              "default": ""
+            },
+            {
+              "id": PLUGIN_ID + ".screencapture.file.name",
+              "type": "text",
+              "label": "text",
+              "default": ""
+                },
+            {
+              "id": PLUGIN_ID + ".screencapture.clipboard_file_choice",
+              "type": "choice",
+              "label": "choice",
+              "default": "Pick One",
+              "valueChoices": [
+                  "Clipboard",
+                  "File"
+              ]
+            }
+              ]
+            },
+
+    "Screenshot Window Current":{
+            'category': "main",
+            "id": PLUGIN_ID + ".window.current",
+            "name": "CAPTURE:  Current Active Window to File / Clipboard",
+            "prefix": "plugin",
+            "type": "communicate",
+            "tryInline": True,
+            "description": "Capture CURRENT Active Window to Clipboard OR File ",
+            "format": "Save to $[clipboard_file_choice]   IF file -> $[filepath] and $[filename].png",
+            "data": [
+          {
+            "id": PLUGIN_ID + ".screencapture.window_current.clipboard_file_choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "Pick One",
+            "valueChoices": [
+                "Clipboard",
+                "File"
+            ]
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.window_current.filepath",
+            "type": "folder",
+            "label": "folder",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".screencapture.window_current.filename",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          }
+        ]
+        }
 }
 
 

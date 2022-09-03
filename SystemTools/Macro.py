@@ -8,8 +8,8 @@ from mouse import MoveEvent
 from mouse import WheelEvent
 
 from keyboard import KeyboardEvent
-
 import json
+
 
 class States:
     macro_recordState = False
@@ -17,6 +17,8 @@ class States:
 
     macro_playState = False
     macroPlayThread = None
+
+
 
 
 def record(name, file='record.json'):
@@ -44,6 +46,8 @@ def record(name, file='record.json'):
             "MouseEvent": str(mouse_events),
         }
         json.dump(currentFile, f, indent=2)
+
+
 
 def play(name, file="record.json", speed=1):
     with open(file, "r") as f:
@@ -82,6 +86,8 @@ def play(name, file="record.json", speed=1):
     k_thread.join() 
     m_thread.join()
 
+
+
 def getMacroProfile(file="record.json"):
     with open(file, "r") as f:
         replayFile = json.load(f)
@@ -93,6 +99,33 @@ def getMacroProfile(file="record.json"):
 
 
 
+import os, re, sys
+from subprocess import PIPE, Popen
+
+def get_active_window_title():
+    """ 
+    For Linux 
+    """
+
+    root = Popen( ['xprop', '-root', '_NET_ACTIVE_WINDOW'], stdout = PIPE )
+    stdout, stderr = root.communicate()
+
+    m = re.search( b'^_NET_ACTIVE_WINDOW.* ([\w]+)$', stdout )
+
+    if m is not None:
+        window_id = m.group( 1 )
+        window = Popen( ['xprop', '-id', window_id, 'WM_NAME'], stdout = PIPE )
+        stdout, stderr = window.communicate()
+
+        match = re.match( b'WM_NAME\(\w+\) = (?P<name>.+)$', stdout )
+        if match is not None:
+            return match.group( 'name' ).decode( 'UTF-8' ).strip( '"' )
+
+    return 'Active window not found'
+
+if __name__ == '__main__':
+    pass
+   # print( get_active_window_title() )
 
 
 
@@ -104,12 +137,33 @@ def getMacroProfile(file="record.json"):
 
 
 
+def screenshot_current_linux():
+  #  import gtk.gdk
+   # import wnck
+    from gi.repository import Gtk, Gdk, GdkPixbuf 
+    from gi.repository.GdkPixbuf import Pixbuf  
+
+    w = Gdk.get_default_root_window()
+    sz = w.get_geometry()
+    #print "The size of the window is %d x %d" % sz
+    pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB,False,8,sz[2],sz[3])
+    pb = pb.get_from_drawable(w,w.get_colormap(),0,0,0,0,sz[2],sz[3])
+    if (pb != None):
+        pb.save("screenshot.png","png")
+        print ("Screenshot saved to screenshot.png.")
+    else:
+        print ("Unable to get the screenshot.")
+
+#screenshot_current_linux()
 
 
 
 
 
 
+# https://www.wikitechy.com/tutorials/linux/how-to-take-a-screenshot-via-a-python-script-linux
+
+# https://askubuntu.com/questions/1011507/screenshot-of-an-active-application-using-python
 
 
 
