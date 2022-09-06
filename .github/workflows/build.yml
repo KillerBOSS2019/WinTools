@@ -43,10 +43,11 @@ jobs:
       - name: Build tpp using tppbuild
         run: |
           python3 SystemTools/build.py
+          ls SystemTools
       - name: uploading tpp for ${{ matrix.os}}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: ./*.tpp
+          file: SystenTools/*.tpp
           overwrite: true
           file_glob: true
