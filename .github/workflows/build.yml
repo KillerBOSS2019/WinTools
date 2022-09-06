@@ -19,15 +19,15 @@ jobs:
           python-version: "3.10"
           
       - name: Install Windows dependenices
-      - if: startsWith(matrix.os, 'windows')
-      - run: |
+        if: startsWith(matrix.os, 'windows')
+        run: |
           python3 -m pip install --upgrade pip
           pip3 install pyinstaller
           pip3 install -r requirements.txt
           
       - name: Install Linux/MacOS dependenices
-      - if: startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'ubuntu')
-      - run: |
+        if: startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'ubuntu')
+        run: |
           python3 -m pip install --upgrade pip
           pip3 install pyinstaller
           pip3 install -r SystemTools/requirements_linux.txt
