@@ -25,13 +25,20 @@ jobs:
           pip3 install pyinstaller
           pip3 install -r requirements.txt
           
-      - name: Install Linux/MacOS dependenices
-        if: startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'ubuntu')
+      - name: Install Ubuntu dependenices
+        if: startsWith(matrix.os, 'ubuntu')
         run: |
           python3 -m pip install --upgrade pip
           pip3 install pyinstaller
           pip3 install -r SystemTools/requirements_linux.txt
           sudo apt-get install python-tk
+          
+      - name: Install MacOS dependenices
+        if: startsWith(matrix.os, 'macOS')
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install pyinstaller
+          pip3 install -r SystemTools/requirements_linux.txt
           
       - name: Build tpp using tppbuild
         run: |
