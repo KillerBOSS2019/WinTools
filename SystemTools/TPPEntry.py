@@ -5,18 +5,18 @@ __version__ = "3.1"
 
 PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 
-windows_appdata = os.getenv("LOCALAPPDATA")
-linux_appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
-
 
 PLATFORM_SYSTEM = platform.system()
 
 if PLATFORM_SYSTEM == "Windows":
     plugin_name = "Windows"
+    appdata = os.getenv("LOCALAPPDATA")
 elif PLATFORM_SYSTEM == "Darwin":
     plugin_name = "MacOS"
+    appdata = "./Document/TouchPortal/plugins/SystemTools"
 elif PLATFORM_SYSTEM == "Linux":
     plugin_name = "Linux"
+    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
 
 
 
