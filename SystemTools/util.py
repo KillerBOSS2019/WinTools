@@ -207,7 +207,7 @@ class TTS:
            engine.say(message)
        else:
            appdata = os.getenv('APPDATA')
-           engine.save_to_file(message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+           engine.save_to_file(message, rf"{appdata}/TouchPortal/Plugins/SystemTools/speech.wav")
        engine.runAndWait()
        engine.stop()
 
@@ -215,7 +215,7 @@ class TTS:
            device = TTS.getAllOutput_TTS2()  ### can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
            sd.default.samplerate = device[output]
            sd.default.device = output +", MME"
-           x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+           x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/SystemTools/speech.wav")
            sd.play(x, sr, blocking=True)
         
         
@@ -341,10 +341,17 @@ class ScreenShot:
 
 
     def get_monitors_Windows_OS():
-        objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
+        
+        try:
+            
+            objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
+    # Code to retrieve monitor information
+        except Exception as e:
+            print(f"An error occurred: {e}")
         count = 0
         monitor_list = []
         for obj in objWMI:
+            
             count = count + 1
            # print("######  Monitor " +str(count) + " ########")
             if obj.Active != None:
@@ -360,7 +367,7 @@ class ScreenShot:
             
             the_end = (str(count) +": "+ str((split_monitor_name[0]))+"("+str(split_manufacturer_name[0])+")")
             monitor_list.append(the_end)
-
+        
         return monitor_list
 
 

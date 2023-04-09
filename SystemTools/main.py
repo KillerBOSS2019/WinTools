@@ -43,10 +43,6 @@ g_log = Logger(name = PLUGIN_ID)
 
 
 
-def checkAllDataValue(data):
-    return all([True if x['value'] else False for x in data])
-
-
 
 if plugin_name == "Windows":
     sysProgram = SystemPrograms()
@@ -57,7 +53,7 @@ if plugin_name == "Windows":
 ## Update states
 def updateStates():
     g_log.debug("Running update state")
-
+    
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
@@ -82,19 +78,21 @@ def updateStates():
 
         if plugin_name == "Windows":
             """Getting TTS Output Devices and Updating Choices"""
+            
             voices = [voice.name for voice in TTS.getAllVoices()]
             tts_outputs = list(TTS.getAllOutput_TTS2().keys())
 
             if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
-                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.output", tts_outputs)
+                TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.output", tts_outputs)
             if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
-                TPClient.choiceUpdate("KillerBOSS.TP.Plugins.TextToSpeech.voices", voices)
+                TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
 
         # Update macro profile
-        newProfileList = list(Macro.getMacroProfile().keys())
-        if macroPlayProfile in TPClient.choiceUpdateList and TPClient.choiceUpdateList[macroPlayProfile] != newProfileList:
-            TPClient.choiceUpdate(macroPlayProfile, newProfileList)
-    
+       # newProfileList = list(Macro.getMacroProfile().keys())
+       # if macroPlayProfile in TPClient.choiceUpdateList and TPClient.choiceUpdateList[macroPlayProfile] != newProfileList:
+       #     TPClient.choiceUpdate(macroPlayProfile, newProfileList)
+       
+        sleep(5)
     g_log.debug("UpdateState func exited")
 
 updateStateThread = Thread(target=updateStates)
@@ -111,13 +109,16 @@ def onConnect(data):
     if plugin_name == "Windows":
         TPClient.choiceUpdate(TP_PLUGIN_ACTIONS['Powerplan']['data']['powerplanChoices']['id'], list(pplan.powerplans.keys()))
 
-    TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id'], list(Macro.getMacroProfile().keys()))
+  #  TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id'], list(Macro.getMacroProfile().keys()))
     TPClient.choiceUpdate(TP_PLUGIN_ACTIONS["Keyboard presser"]["data"]["keys"]["id"], sorted(pyautogui.KEYBOARD_KEYS[4:]))
-
+    
     updateStateThread.start()
 
+
     ## These should update every 1 minute or so - how does the update thread work right now?
+    print("checking monitors")
     check_number_of_monitors()
+    print("mmmk")
     get_current_windows()
 
 
@@ -131,12 +132,12 @@ def onSettingUpdate(data):
 # Action handler
 @TPClient.on(TP.TYPES.onAction)
 def onAction(data):
+    print(data)
     g_log.debug(f"Action: {data}")
     # check that `data` and `actionId` members exist and save them for later use
-    if not (action_data := data.get('data')) \
-    or not (aid := data.get('actionId')) \
-    or not checkAllDataValue(action_data):
+    if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
+
     
 
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
@@ -169,6 +170,10 @@ def onAction(data):
         elif action_data[0]['value'].lower() == "move":
             pyautogui.move(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'], duration=action_data[3]['value'])
     
+    if aid == TP_PLUGIN_ACTIONS['Mouse scrolling']['id']:
+        mouseScroll(action_data[0]['value'], action_data[1]['value'])
+    
+    
     if aid == TP_PLUGIN_ACTIONS['Drag mouse']['id']:
         for adata in [1,2]:
             action_data[adata]['value'] = int(action_data[adata]['value'])
@@ -190,15 +195,16 @@ def onAction(data):
 
 
         if aid == TP_PLUGIN_ACTIONS['Powerplan']['id']:
+            print("it working?")
             pplan.changeTo(action_data[0]['value'])
 
 
         if aid == TP_PLUGIN_ACTIONS["TTS"]['id']:
             Thread(target=TTS.TextToSpeech, args=(
-                action_data[0]['value'],
                 action_data[1]['value'],
                 action_data[2]['value'],
-                action_data[3]['value'],
+                int(action_data[2]['value']),
+                int(action_data[3]['value']),
                 action_data[4]['value']
             )).start()
 
@@ -282,9 +288,12 @@ def onAction(data):
                 if plugin_name == "Linux":
                     ScreenShot.screenshot_window_linux(window_name=data['data'][0]['value'], file_name=afile_name)
 
-
+    
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:
         print("hmm")
+      #  print(data['data'][0]['value'])
+        ScreenShot.screenshot_window(window_title=data['data'][0]['value'], clipboard=True)
+        
 
 
 
@@ -319,7 +328,9 @@ def check_number_of_monitors():
         
         if monitor_count_old != mon_length:
             if plugin_name == "Windows":
+                
                 list_monitor_full = ScreenShot.get_monitors_Windows_OS()
+                
                 list_monitor_full.insert(0, "0: ALL MONITORS")
                 monitor_count_old = mon_length
 
@@ -333,6 +344,7 @@ def check_number_of_monitors():
                     count+=1  
                 list_monitor_full.insert(0, "0: ALL MONITORS")
 
+        
 
             TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.monitors_choice", list_monitor_full)  
             TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.monchoice", list_monitor_full)
@@ -341,11 +353,13 @@ def check_number_of_monitors():
 
 
 
-def mouseScroll(mousescroll, speed, reverse=False):
+def mouseScroll(mousescroll, speed):
+    speed = int(speed)
     if mousescroll in ["DOWN", "LEFT"]: # Set direction
         speed = speed * -1
-
-    if reverse: speed = speed * -1
+        
+   # if reverse:
+   #     speed = speed * -1
 
     if mousescroll in ["UP", "DOWN"]:
         mousescroll = win32con.MOUSEEVENTF_WHEEL if plugin_name == "Windows" else "scroll"
@@ -353,7 +367,7 @@ def mouseScroll(mousescroll, speed, reverse=False):
         mousescroll = win32con.MOUSEEVENTF_HWHEEL if plugin_name == "Windows" else "hscroll"
 
     if plugin_name == "Windows":
-        win32api.mouse_event(mousescroll, 0, 0, speed)
+       win32api.mouse_event(mousescroll, 0, 0, speed)
     else:
         if mousescroll == "hscroll":
             pyautogui.hscroll(speed)

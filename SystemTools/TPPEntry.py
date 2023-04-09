@@ -1,10 +1,10 @@
 import platform
 import os
 
-__version__ = "3.1"
+__version__ = "3.2"
 
-PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
-
+#PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
+PLUGIN_ID = "plugin.SystemTools"
 
 PLATFORM_SYSTEM = platform.system()
 
@@ -18,12 +18,12 @@ elif PLATFORM_SYSTEM == "Linux":
     plugin_name = "Linux"
     appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
 
-
+PLUGIN_NAME = plugin_name + " Tools"
 
 TP_PLUGIN_INFO = {
     'sdk': 6,
     'version': int(float(__version__) * 100),
-    'name': plugin_name + " Tools",
+    'name': PLUGIN_NAME,
     'id': PLUGIN_ID,
     "plugin_start_cmd": "%TP_PLUGIN_FOLDER%SystemTools\\SystemTools.exe",
     'configuration': {
@@ -43,17 +43,17 @@ TP_PLUGIN_INFO = {
 TP_PLUGIN_CATEGORIES = {
     "main": {
         'id': PLUGIN_ID + ".main",
-        'name' : "WinTool Utility",
+        'name' : plugin_name + " Utility",
         'imagepath' : "icon-24.png"
     },
     "mouse": {
         "id": PLUGIN_ID + ".AdvancedMouse",
-        "name": "WinTool Mouse",
+        "name": plugin_name + " Mouse",
         "imagepath": "icon-24.png"
     },
     "keyboard": {
         "id": PLUGIN_ID + ".advancedKeyboard",
-        "name": "WinTool keyboard",
+        "name": plugin_name + " Keyboard",
         "imagepath": "icon-24.png"
     }
 }
@@ -105,7 +105,6 @@ TP_PLUGIN_CONNECTORS = {
 # Action(s) which this plugin supports.
 TP_PLUGIN_ACTIONS = {
     'Hold Mouse button': {
-        # 'category' is optional, if omitted then this action will be added to all, or the only, category(ies)
         'category': "mouse",
         'id': PLUGIN_ID + ".act.holdMouse",
         'name': "Mouse Hold/Release mouse button",
@@ -113,9 +112,6 @@ TP_PLUGIN_ACTIONS = {
         'type': "communicate",
         'tryInline': True,
         'hasHoldFunctionality': True,
-        # 'format' tokens like $[1] will be replaced in the generated JSON with the corresponding data id wrapped with "{$...$}".
-        # Numeric token values correspond to the order in which the data items are listed here, while text tokens correspond
-        # to the last part of a dotted data ID (the part after the last period; letters, numbers, and underscore allowed).
         'format': "$[1]mouse button$[2]",
         'data': {
             'mouseState': {
@@ -707,7 +703,7 @@ if plugin_name == "Windows":
         "type": "communicate",
         "description": "Play Text to Speech thru a specific Audio Output",
         "tryInline": True,
-        "format": "Text[1] Voice[2] Volume[3] Speech Rate[4] Audio Output[5]",
+        "format": "Text$[1] Voice$[2] Volume$[3] Speech Rate$[4] Audio Output$[5]",
         "data": {
             'voices': {
                 "id": PLUGIN_ID + "act.TSS.voices",
