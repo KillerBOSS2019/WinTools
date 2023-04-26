@@ -1,7 +1,7 @@
 import platform
 import os
 
-__version__ = "3.2"
+__version__ = "4"
 
 #PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 PLUGIN_ID = "plugin.SystemTools"
@@ -36,10 +36,6 @@ TP_PLUGIN_INFO = {
     }
 }
 
-
-
-
-
 TP_PLUGIN_CATEGORIES = {
     "main": {
         'id': PLUGIN_ID + ".main",
@@ -54,6 +50,11 @@ TP_PLUGIN_CATEGORIES = {
     "keyboard": {
         "id": PLUGIN_ID + ".advancedKeyboard",
         "name": plugin_name + " Keyboard",
+        "imagepath": "icon-24.png"
+    },
+    "VD": {
+        "id": PLUGIN_ID + ".VD",
+        "name": plugin_name + " Virtual Desktop",
         "imagepath": "icon-24.png"
     }
 }
@@ -556,57 +557,57 @@ TP_PLUGIN_ACTIONS = {
         ]
       },
     "Screen Capture Window WildCard": {
-            'category': "main",
-            "id": PLUGIN_ID + ".screencapture.window.file.wildcard",
-            "name": "CAPTURE:  Window to File / Clipboard (*)",
-            "prefix": "plugin",
-            "type": "communicate",
-            "tryInline": True,
-            "description": "Capture Window by Name to Clipboard OR File ",
-            "format": "Window Name*:$[window_name] Save:$[clipboard_file_choice]  Directory->$[path] and file name ->$[name] ",
-            "data": [
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapture.window.file.wildcard",
+        "name": "CAPTURE:  Window to File / Clipboard (*)",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Window by Name to Clipboard OR File ",
+        "format": "Window Name*:$[window_name] Save:$[clipboard_file_choice]  Directory->$[path] and file name ->$[name] ",
+        "data": [
             {
-              "id": PLUGIN_ID + ".screencapture.window_name",
-              "type": "text",
-              "label": "text",
-              "default": ""
+                "id": PLUGIN_ID + ".screencapture.window_name",
+                "type": "text",
+                "label": "text",
+                "default": ""
             },
             {
-              "id": PLUGIN_ID + ".screencapture.window_capture_type",
-              "type": "choice",
-              "label": "choice",
-              "default": "3",
-              "valueChoices": [
+                "id": PLUGIN_ID + ".screencapture.window_capture_type",
+                "type": "choice",
+                "label": "choice",
+                "default": "3",
+                "valueChoices": [
                 "0",
                 "1",
                 "2",
                 "3"
-              ]
+                ]
             },
             {
-              "id": PLUGIN_ID + ".screencapture.file.path",
-              "type": "folder",
-              "label": "folder",
-              "default": ""
+                "id": PLUGIN_ID + ".screencapture.file.path",
+                "type": "folder",
+                "label": "folder",
+                "default": ""
             },
             {
-              "id": PLUGIN_ID + ".screencapture.file.name",
-              "type": "text",
-              "label": "text",
-              "default": ""
+                "id": PLUGIN_ID + ".screencapture.file.name",
+                "type": "text",
+                "label": "text",
+                "default": ""
                 },
             {
-              "id": PLUGIN_ID + ".screencapture.clipboard_file_choice",
-              "type": "choice",
-              "label": "choice",
-              "default": "Pick One",
-              "valueChoices": [
-                  "Clipboard",
-                  "File"
-              ]
+                "id": PLUGIN_ID + ".screencapture.clipboard_file_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "Pick One",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
             }
-              ]
-            },
+        ]
+    },
 
     "Screenshot Window Current":{
             'category': "main",
@@ -618,36 +619,106 @@ TP_PLUGIN_ACTIONS = {
             "description": "Capture CURRENT Active Window to Clipboard OR File ",
             "format": "Save to $[clipboard_file_choice]   IF file -> $[filepath] and $[filename].png",
             "data": [
-          {
-            "id": PLUGIN_ID + ".screencapture.window_current.clipboard_file_choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "Pick One",
-            "valueChoices": [
-                "Clipboard",
-                "File"
-            ]
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.window_current.filepath",
-            "type": "folder",
-            "label": "folder",
-            "default": ""
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.window_current.filename",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          }
+                {
+                    "id": PLUGIN_ID + ".screencapture.window_current.clipboard_file_choice",
+                    "type": "choice",
+                    "label": "choice",
+                    "default": "Pick One",
+                    "valueChoices": [
+                        "Clipboard",
+                        "File"
+                    ]
+                },
+                {
+                    "id": PLUGIN_ID + ".screencapture.window_current.filepath",
+                    "type": "folder",
+                    "label": "folder",
+                    "default": ""
+                },
+                {
+                    "id": PLUGIN_ID + ".screencapture.window_current.filename",
+                    "type": "text",
+                    "label": "text",
+                    "default": ""
+                }
         ]
-        }
+    }
 }
 
 
 ### Adding Windows Specific Actions
 if plugin_name == "Windows": 
-
+    TP_PLUGIN_ACTIONS["VD switcher"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_switcher",
+        'name': 'Virtual Desktop switcher',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Switch virtual desktop to$[1]",
+        'data': {
+            "VD index": {
+                "id": PLUGIN_ID + ".act.vd_switcher.vd_index",
+                "type": "choice",
+                "label": "VD index",
+                "default": "1",
+                "valueChoices": []
+            }
+        }
+    }
+    TP_PLUGIN_ACTIONS["VD app changer"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_appchanger",
+        'name': 'App to specific virtual desktop ',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Move$[1]to virtual desktop$[2]",
+        'data': {
+            "vd app": {
+                "id": PLUGIN_ID + ".act.vd_appchanger.apps",
+                "type": "text",
+                "label": "apps",
+                "default": "Current"
+            },
+            "VD index": {
+                "id": PLUGIN_ID + ".act.vd_appchanger.vd_index",
+                "type": "choice",
+                "label": "VD index",
+                "default": "1",
+                "valueChoices": []
+            }
+        }
+    }
+    TP_PLUGIN_ACTIONS["VD app pin"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_app_pin",
+        'name': 'Pin app',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "$[1]$[2]to Virtual Desktop",
+        'data': {
+            "options": {
+                "id": PLUGIN_ID + ".act.vd_app_pin.options",
+                "type": "choice",
+                "label": "options",
+                "default": "Toggle",
+                "valueChoices": [
+                    "Pin",
+                    "Unpin",
+                    "Toggle"
+                ]
+            },
+            "vd app": {
+                "id": PLUGIN_ID + ".act.vd_app_pin.apps",
+                "type": "text",
+                "label": "apps",
+                "default": "Current",
+            }
+        }
+    }
+    
     TP_PLUGIN_ACTIONS["App launcher"] = {
         'category': "main",
         'id': PLUGIN_ID + ".act.advancedLauncher",
@@ -765,6 +836,23 @@ TP_PLUGIN_STATES = {
         'default': "NOT PLAYING"
     },
 }
+
+# Windows specific states
+if plugin_name == "Windows":
+    TP_PLUGIN_STATES["num VD"] = {
+        'category': "VD",
+        "id": PLUGIN_ID + ".state.numVD",
+        "type": "text",
+        "desc": "Number of Virtual Desktop",
+        "default": "0"
+    }
+
+    TP_PLUGIN_STATES["CurrentVD"] = {
+        "category": "VD",
+        "id": PLUGIN_ID + ".state.currentVD",
+        "type": "text",
+        "desc": "Current Virtual Desktop Number"
+    }
 
 # Plugin Event(s).
 TP_PLUGIN_EVENTS = {}

@@ -11,13 +11,14 @@ import pyautogui
 from TPPEntry import *
 from util import SystemPrograms, Powerplan, TTS, jsonPathfinder, ClipBoard, ScreenShot, get_monitors, Get_Windows
 import Macro
-
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
 
 
 if plugin_name == "Windows":
     import win32api
     import win32con
+    import win32gui
 
 
 
@@ -39,16 +40,9 @@ except Exception as e:
 
 g_log = Logger(name = PLUGIN_ID)
 
-
-
-
-
-
 if plugin_name == "Windows":
     sysProgram = SystemPrograms()
     pplan = Powerplan()
-
-
 
 ## Update states
 def updateStates():
@@ -74,7 +68,16 @@ def updateStates():
             TPClient.stateUpdate(TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
             Macro.States.macro_playState = False
 
-
+        list_monitor = check_number_of_monitors()
+        if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapture.monitors_choice")):
+            TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.monitors_choice", list_monitor)  
+            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.monchoice", list_monitor)
+            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
+        
+        windows_active = get_current_windows()
+        if (windows_active != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapture.window_name")):
+            TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.window_name", windows_active)
+            TPClient.stateUpdate(PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
 
         if plugin_name == "Windows":
             """Getting TTS Output Devices and Updating Choices"""
@@ -87,15 +90,27 @@ def updateStates():
             if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
                 TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
 
+            number_of_active_desktops = len(get_virtual_desktops())
+            currentVdNum = VirtualDesktop.current().number
+            if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
+                print(PLUGIN_ID + ".act.vd_appchanger.vd_index")
+                TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
+                TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
+                TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
+            TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
+
         # Update macro profile
        # newProfileList = list(Macro.getMacroProfile().keys())
        # if macroPlayProfile in TPClient.choiceUpdateList and TPClient.choiceUpdateList[macroPlayProfile] != newProfileList:
        #     TPClient.choiceUpdate(macroPlayProfile, newProfileList)
-       
-        sleep(5)
     g_log.debug("UpdateState func exited")
 
 updateStateThread = Thread(target=updateStates)
+
+def window_callback(hwnd, app_name):
+    if win32gui.IsWindowVisible(hwnd) and app_name in win32gui.GetWindowText(hwnd):
+        return hwnd
+    return False
 
 
 ## TP Client event handler callbacks
@@ -115,13 +130,6 @@ def onConnect(data):
     updateStateThread.start()
 
 
-    ## These should update every 1 minute or so - how does the update thread work right now?
-    print("checking monitors")
-    check_number_of_monitors()
-    print("mmmk")
-    get_current_windows()
-
-
 
 # Settings handler
 @TPClient.on(TP.TYPES.onSettingUpdate)
@@ -132,8 +140,7 @@ def onSettingUpdate(data):
 # Action handler
 @TPClient.on(TP.TYPES.onAction)
 def onAction(data):
-    print(data)
-    g_log.debug(f"Action: {data}")
+    g_log.info(f"Action: {data}")
     # check that `data` and `actionId` members exist and save them for later use
     if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
@@ -187,6 +194,47 @@ def onAction(data):
         elif action_data[0]['value'].lower() == "drag":
             pyautogui.drag(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'], duration=action_data[3]['value'], button=action_data[4]['value'].lower())
 
+    if aid == TP_PLUGIN_ACTIONS["VD switcher"]["id"]:
+        try:
+            VirtualDesktop(int(action_data[0]['value'])).go()
+        except:
+            pass
+    if aid == TP_PLUGIN_ACTIONS["VD app changer"]:
+        if (action_data[0]["value"].lower() == "current"):
+            try:
+                AppView.current().move(VirtualDesktop(int(action_data[1]["value"])))
+            except:
+                pass
+        else:
+            try:
+                app_hwnd = win32gui.EnumWindows(window_callback, action_data[0]["value"])
+                if (app_hwnd):
+                    AppView(app_hwnd).move(VirtualDesktop(int(action_data[1]["value"])))
+            except:
+                pass
+    if aid == TP_PLUGIN_ACTIONS["VD app pin"]:
+        if action_data[1]["value"].lower() == "current":
+            try:
+                app_to_pin = AppView.current()
+            except:
+                app_to_pin = None
+        else:
+            app_hwnd = win32gui.EnumWindows(window_callback, action_data[1]["value"])
+            if app_hwnd:
+                app_to_pin = AppView(app_hwnd)
+        
+        if app_to_pin:
+            pin_option = action_data[0]["value"]
+
+            if app_to_pin.is_pinned():
+                pin_option = "Unpin"
+            else:
+                pin_option = "pin"
+
+            if pin_option == "Pin":
+                app_to_pin.pin()
+            elif pin_option == "Unpin":
+                app_to_pin.unpin()
 
 
     if plugin_name == "Windows":
@@ -290,17 +338,15 @@ def onAction(data):
 
     
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:
-        print("hmm")
-      #  print(data['data'][0]['value'])
+        print("in here")
         ScreenShot.screenshot_window(window_title=data['data'][0]['value'], clipboard=True)
         
 
 
 
 
-old_results = []
 def get_current_windows():
-    global windows_active, old_results
+    windows_active = []
 
     if plugin_name == "Windows":
         windows_active = Get_Windows.get_windows_Windows_OS()
@@ -312,43 +358,26 @@ def get_current_windows():
     if plugin_name == "Linux":
         windows_active = Get_Windows.get_windows_Linux()
 
-
-    old_results = windows_active
-    TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.window_name", windows_active)
-    TPClient.stateUpdate(PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
-
-    print("Previous Count:", len(old_results), "New Count:", len(windows_active))
+    return windows_active
 
 
 
-monitor_count_old = ""
 def check_number_of_monitors():
-        global monitor_count_old
-        mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
-        
-        if monitor_count_old != mon_length:
-            if plugin_name == "Windows":
-                
-                list_monitor_full = ScreenShot.get_monitors_Windows_OS()
-                
-                list_monitor_full.insert(0, "0: ALL MONITORS")
-                monitor_count_old = mon_length
+    if plugin_name == "Windows":
+        list_monitor_full = ScreenShot.get_monitors_Windows_OS()
+        list_monitor_full.insert(0, "0: ALL MONITORS")
 
-            elif plugin_name =="Linux" or plugin_name =="Darwin":
-                monitors = get_monitors()
-                list_monitor_full = []
+    elif plugin_name =="Linux" or plugin_name =="Darwin":
+        monitors = get_monitors()
+        list_monitor_full = []
 
-                count = 1
-                for x in monitors:
-                    list_monitor_full.append(str(count) +": "+ x.name)
-                    count+=1  
-                list_monitor_full.insert(0, "0: ALL MONITORS")
+        count = 1
+        for x in monitors:
+            list_monitor_full.append(str(count) +": "+ x.name)
+            count+=1  
+        list_monitor_full.insert(0, "0: ALL MONITORS")
 
-        
-
-            TPClient.choiceUpdate(PLUGIN_ID + ".screencapture.monitors_choice", list_monitor_full)  
-            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.monchoice", list_monitor_full)
-            TPClient.choiceUpdate(PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor_full)
+    return list_monitor_full
 
 
 

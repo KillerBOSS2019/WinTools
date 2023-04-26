@@ -183,6 +183,8 @@ def jsonPathfinder(data, path):
 
 class TTS:
     def getAllVoices():
+       import comtypes
+       comtypes.CoInitialize()
        engine = pyttsx3.init()
        return engine.getProperty('voices')
 
@@ -341,39 +343,25 @@ class ScreenShot:
 
 
     def get_monitors_Windows_OS():
-        
         try:
-            
-            objWMI = GetObject('winmgmts:\\\\.\\root\\WMI').InstancesOf('WmiMonitorID')
-    # Code to retrieve monitor information
+            import win32api
+            # Code to retrieve monitor information
+            objWMI = win32api.EnumDisplayMonitors()
         except Exception as e:
             print(f"An error occurred: {e}")
-        count = 0
-        monitor_list = []
-        for obj in objWMI:
-            
-            count = count + 1
-           # print("######  Monitor " +str(count) + " ########")
-            if obj.Active != None:
-                monitor_is_active = str(obj.Active)
-            if obj.InstanceName != None:
-               pass
-            if obj.ManufacturerName != None:
-                monitor_manufacturer = (bytes(obj.ManufacturerName)).decode()
-                split_manufacturer_name = monitor_manufacturer.split("\x00")
-            if obj.UserFriendlyName != None:
-                monitor_name = (bytes(obj.UserFriendlyName)).decode()
-                split_monitor_name = monitor_name.split("\x00")
-            
-            the_end = (str(count) +": "+ str((split_monitor_name[0]))+"("+str(split_manufacturer_name[0])+")")
-            monitor_list.append(the_end)
-        
-        return monitor_list
+            return []
 
+        monitor_list = []
+        for idx, monitor in enumerate(objWMI):
+            monitor_name = win32api.GetMonitorInfo(monitor[0])['Device']
+            # monitor_manufacturer = win32api.GetMonitorInfo(monitor[0])['Manufacturer']
+            monitor_list.append(f"{idx+1}: {monitor_name}")
+
+        return monitor_list
 
     ###screenshot window without bringing it to foreground 
     def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
-
+        print("test")
         hwnd = win32gui.FindWindow(None, window_title)
         try:
             left, top, right, bot = win32gui.GetClientRect(hwnd)
@@ -436,7 +424,6 @@ class ScreenShot:
 
 
 class ClipBoard:
-    
     def copy_image_to_clipboard(image):
         if PLATFORM_SYSTEM == "Windows":
             bio = BytesIO()
