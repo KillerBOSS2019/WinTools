@@ -25,10 +25,10 @@ def record(name, file='record.json'):
     mouse_events = []
     keyboard_events = []
 
+    mouse.hook(mouse_events.append)
     keyboard.start_recording()
     starttime = time.time()
 
-    mouse.hook(mouse_events.append)
     keyboard.wait('esc')
     keyboard_events = keyboard.stop_recording()
     mouse.unhook(mouse_events.append)
@@ -68,10 +68,8 @@ def play(name, file="record.json", speed=1):
     starttime = float(replayFile['startTime'])
 
     keyboard_time_interval = keyboard_Event[0].time - starttime
-    keyboard_time_interval /= speed
 
     mouse_time_interval = mouse_event[0].time - starttime
-    mouse_time_interval /= speed
 
     #Keyboard threadings:
     k_thread = threading.Thread(target = lambda : time.sleep(keyboard_time_interval) == keyboard.play(keyboard_Event, speed_factor=speed) )
@@ -82,13 +80,12 @@ def play(name, file="record.json", speed=1):
     k_thread.start()
     m_thread.start()
     #waiting for both threadings to be completed
-    print(m_thread.is_alive())
     k_thread.join() 
     m_thread.join()
 
 
 
-def getMacroProfile(file="record.json"):
+def getMacroProfile(file="./record.json"):
     with open(file, "r") as f:
         replayFile = json.load(f)
     return replayFile

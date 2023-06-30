@@ -110,7 +110,7 @@ class SystemPrograms:
         self.programs = self.getSystemApp()
         self.steam = self.programs["SteamApps"]
         self.microsoft = self.programs['Microsoft']
-        self.other = self.programs["OtherApps"]
+        self.other = self.programs["Other"]
 
     def getSystemApp(self):
         SteamsApps = {}
@@ -128,11 +128,13 @@ class SystemPrograms:
                     Microsoft[program['Name']] = program['AppID']
                 else:
                     OtherApps[program['Name']] = program['AppID']
-        return {"SteamApps": SteamsApps, "Microsoft": Microsoft, "OtherApps": OtherApps}
+        return {"SteamApps": SteamsApps, "Microsoft": Microsoft, "Other": OtherApps}
 
     def start(self, appName, apptype):
         if self.programs[apptype].get(appName, False):
-            runWindowsCMD("explorer shell:appsfolder\\" + self.programs[apptype][appName])
+            command = "explorer shell:appsfolder\\" + self.programs[apptype][appName]
+            runWindowsCMD(command)
+
 
 
 
@@ -361,7 +363,6 @@ class ScreenShot:
 
     ###screenshot window without bringing it to foreground 
     def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
-        print("test")
         hwnd = win32gui.FindWindow(None, window_title)
         try:
             left, top, right, bot = win32gui.GetClientRect(hwnd)

@@ -5,6 +5,7 @@ from TouchPortalAPI.logger import Logger
 from argparse import ArgumentParser
 from threading import Thread
 import pyperclip
+import pygetwindow as gw
 
 import pyautogui
 
@@ -93,16 +94,16 @@ def updateStates():
             number_of_active_desktops = len(get_virtual_desktops())
             currentVdNum = VirtualDesktop.current().number
             if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
-                print(PLUGIN_ID + ".act.vd_appchanger.vd_index")
                 TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
                 TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
                 TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
             TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
         # Update macro profile
-       # newProfileList = list(Macro.getMacroProfile().keys())
-       # if macroPlayProfile in TPClient.choiceUpdateList and TPClient.choiceUpdateList[macroPlayProfile] != newProfileList:
-       #     TPClient.choiceUpdate(macroPlayProfile, newProfileList)
+        newProfileList = list(Macro.getMacroProfile().keys())
+        # print(newProfileList)
+        if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList: # default true cuz it does not exist in dict so need to update it.
+           TPClient.choiceUpdate(macroPlayProfile, newProfileList)
     g_log.debug("UpdateState func exited")
 
 updateStateThread = Thread(target=updateStates)
@@ -330,11 +331,16 @@ def onAction(data):
             if data['data'][4]['value'] == "File":
                 afile_name = data['data'][2]['value'] +"/" +data['data'][3]['value']
 
-                if plugin_name == "Windows":    
+                if plugin_name == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
 
                 if plugin_name == "Linux":
                     ScreenShot.screenshot_window_linux(window_name=data['data'][0]['value'], file_name=afile_name)
+
+    if aid == TP_PLUGIN_ACTIONS["Screenshot Window Current"]["id"]:
+        current_window_title = gw.getActiveWindowTitle()
+        if current_window_title:
+            ScreenShot.screenshot_window(3, current_window_title, data['data'][0]['value'] == "Clipboard", os.path.join(data['data'][1]['value'], data['data'][2]['value']))
 
     
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:
