@@ -7,18 +7,13 @@ from ast import literal_eval
 from functools import reduce
 
 ### Screenshot Monitor Imports ###
-import mss.tools # may need to find another module for this due to linux/macOS
+import mss.tools  # may need to find another module for this due to linux/macOS
 from PIL import Image
 from io import BytesIO
 
-### Port Audio Trouble Shooting
+# Port Audio Trouble Shooting
 from ctypes.util import find_library
 # print(find_library('portaudio'))
-
-
-### NEW IMPORTS
-from screeninfo import get_monitors
-
 
 
 """ 
@@ -28,15 +23,18 @@ According to my research this is the most reliable way and better than system.pl
 ### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
 
                                           EXAMPLES                                      """
-PLATFORM_SYSTEM = platform.system()       ### Windows / Darwin / Linux
-PLATFORM_RELEASE = platform.release()     ### Windows 10 / 11 , or Linux 2.6.22 etc..
-PLATFORM_MACHINE = platform.machine()     ### AMD64 / *Intel ??
-PLATFORM_ARCH = platform.architecture()   ### 32bit / 64bit 
-PLATFORM_PLATFORM = platform.platform()   ### Windows-10-10.0.19043-SP0
-PLATFORM_VERSION = platform.version()     ### 10.0.19043 for windows 10
-PLATFORM_MAC = platform.mac_ver()         ### This may or may not be useful im not sure.. its here for now - it just comes empty tuples if used on windows
+PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
+# Windows 10 / 11 , or Linux 2.6.22 etc..
+PLATFORM_RELEASE = platform.release()
+PLATFORM_MACHINE = platform.machine()  # AMD64 / *Intel ??
+PLATFORM_ARCH = platform.architecture()  # 32bit / 64bit
+PLATFORM_PLATFORM = platform.platform()  # Windows-10-10.0.19043-SP0
+PLATFORM_VERSION = platform.version()  # 10.0.19043 for windows 10
+# This may or may not be useful im not sure.. its here for now - it just comes empty tuples if used on windows
+PLATFORM_MAC = platform.mac_ver()
 
-PLATFORM_NODE = platform.node()           ### Computer Network name  - more than likely will never use this
+# Computer Network name  - more than likely will never use this
+PLATFORM_NODE = platform.node()
 
 OS_DEETS = {
     "version": PLATFORM_VERSION,
@@ -46,7 +44,7 @@ OS_DEETS = {
     "release": PLATFORM_RELEASE,
     "platform full": PLATFORM_PLATFORM,
     "platform mac": PLATFORM_MAC
-    }
+}
 
 
 """
@@ -61,8 +59,6 @@ Fedora Example
 """
 
 
-
-
 if PLATFORM_SYSTEM == "Windows":
     """ 
     Utilized for setting Windows Specific Imports and Variables based on OS details
@@ -71,26 +67,26 @@ if PLATFORM_SYSTEM == "Windows":
     import audio2numpy as a2n
     import win32clipboard
 
-    import win32gui     ## used to capture window
-    import win32process ## used to capture window
-    import win32ui      ## used to capture window
+    import win32gui  # used to capture window
+    import win32process  # used to capture window
+    import win32ui  # used to capture window
     import pyttsx3
 
-    from win32com.client import GetObject  ## Used to Get Display Name / Details
+    from win32com.client import GetObject  # Used to Get Display Name / Details
 
 
 if PLATFORM_SYSTEM == "Linux":
     """ 
     Utilized for setting Linux Specific Imports and Variables based on OS details
     """
-    linux_display_server = subprocess.check_output("loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}'", shell=True).decode().split("\n")[0]
+    linux_display_server = subprocess.check_output(
+        "loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}'", shell=True).decode().split("\n")[0]
 
     if linux_display_server == "wayland":
         print("Its wayland bruh")
 
     if linux_display_server == "x11":
         print("Its x11 time!")
-
 
 
 def runWindowsCMD(command):
@@ -101,8 +97,6 @@ def runWindowsCMD(command):
     output = subprocess.run(command, stdout=subprocess.PIPE, shell=True)
     result = str(output.stdout.decode("cp{}".format(str(systemencoding))))
     return result
-
-
 
 
 class SystemPrograms:
@@ -117,7 +111,8 @@ class SystemPrograms:
         OtherApps = {}
         Microsoft = {}
 
-        programs = runWindowsCMD(["powershell", "get-StartApps | ConvertTo-Json"])
+        programs = runWindowsCMD(
+            ["powershell", "get-StartApps | ConvertTo-Json"])
         programs = list(literal_eval(programs))
 
         for program in programs:
@@ -132,11 +127,9 @@ class SystemPrograms:
 
     def start(self, appName, apptype):
         if self.programs[apptype].get(appName, False):
-            command = "explorer shell:appsfolder\\" + self.programs[apptype][appName]
+            command = "explorer shell:appsfolder\\" + \
+                self.programs[apptype][appName]
             runWindowsCMD(command)
-
-
-
 
 
 class Powerplan:
@@ -150,25 +143,28 @@ class Powerplan:
 
         for powerplan in powerplanResult.split("\n"):
             if ":" in powerplan:
-                parsedData = powerplan.split(":")[1].split() # from "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *" to ["381b4222-f694-41f0-9685-ff5bb260df2e", "(Balanced) *"]
+                # from "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *" to ["381b4222-f694-41f0-9685-ff5bb260df2e", "(Balanced) *"]
+                parsedData = powerplan.split(":")[1].split()
                 the_data = (parsedData[0])
                 plan_name = (" ".join(parsedData[1:]))
 
                 if "*" in plan_name:
-                    plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
-                    self.powerplans[plan_name]=the_data
+                    plan_name = plan_name[plan_name.find(
+                        "(") + 1: plan_name.find(")")]
+                    self.powerplans[plan_name] = the_data
 
-                    self.currentPPlan[plan_name]=the_data
+                    self.currentPPlan[plan_name] = the_data
                 else:
-                    plan_name = plan_name[plan_name.find("(") + 1: plan_name.find(")")]
-                    self.powerplans[plan_name]=the_data
+                    plan_name = plan_name[plan_name.find(
+                        "(") + 1: plan_name.find(")")]
+                    self.powerplans[plan_name] = the_data
         return self.powerplans
+
     def changeTo(self, pplanName):
         if self.powerplans.get(pplanName, False):
             runWindowsCMD(f"powercfg.exe /S {self.powerplans[pplanName]}")
             return True
         return False
-
 
 
 def jsonPathfinder(data, path):
@@ -185,82 +181,83 @@ def jsonPathfinder(data, path):
 
 class TTS:
     def getAllVoices():
-       import comtypes
-       comtypes.CoInitialize()
-       engine = pyttsx3.init()
-       return engine.getProperty('voices')
+        import comtypes
+        comtypes.CoInitialize()
+        engine = pyttsx3.init()
+        return engine.getProperty('voices')
 
     def getAllOutput_TTS2():
-       audio_dict = {}
-       for outputDevice in sd.query_hostapis(0)['devices']:
-           if sd.query_devices(outputDevice)['max_output_channels'] > 0:
-               audio_dict[sd.query_devices(device=outputDevice)['name']] = sd.query_devices(device=outputDevice)['default_samplerate']
-       return audio_dict
+        audio_dict = {}
+        for outputDevice in sd.query_hostapis(0)['devices']:
+            if sd.query_devices(outputDevice)['max_output_channels'] > 0:
+                audio_dict[sd.query_devices(device=outputDevice)['name']] = sd.query_devices(
+                    device=outputDevice)['default_samplerate']
+        return audio_dict
 
     def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
-       engine = pyttsx3.init()
-       voices = engine.getProperty('voices')
-       engine.setProperty("volume", volume/100)
-       engine.setProperty("rate", rate)
-       for voice in voices:
-           if voice.name == voicesChoics:
-               engine.setProperty('voice', voice.id)
-               print("Using", voice.name, "voices", voice)
+        engine = pyttsx3.init()
+        voices = engine.getProperty('voices')
+        engine.setProperty("volume", volume/100)
+        engine.setProperty("rate", rate)
+        for voice in voices:
+            if voice.name == voicesChoics:
+                engine.setProperty('voice', voice.id)
+                print("Using", voice.name, "voices", voice)
 
-       if output == "Default":
-           engine.say(message)
-       else:
-           appdata = os.getenv('APPDATA')
-           engine.save_to_file(message, rf"{appdata}/TouchPortal/Plugins/SystemTools/speech.wav")
-       engine.runAndWait()
-       engine.stop()
+        if output == "Default":
+            engine.say(message)
+        else:
+            appdata = os.getenv('APPDATA')
+            engine.save_to_file(
+                message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+        engine.runAndWait()
+        engine.stop()
 
-       if output != "Default":
-           device = TTS.getAllOutput_TTS2()  ### can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
-           sd.default.samplerate = device[output]
-           sd.default.device = output +", MME"
-           x,sr=a2n.audio_from_file(rf"{appdata}/TouchPortal/Plugins/SystemTools/speech.wav")
-           sd.play(x, sr, blocking=True)
-        
-        
+        if output != "Default":
+            # can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
+            device = TTS.getAllOutput_TTS2()
+            sd.default.samplerate = device[output]
+            sd.default.device = output + ", MME"
+            x, sr = a2n.audio_from_file(
+                rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+            sd.play(x, sr, blocking=True)
+
 
 class Get_Windows:
     def get_windows_Windows_OS():
         results = []
+
         def winEnumHandler(hwnd, ctx):
             if win32gui.IsWindowVisible(hwnd):
                 if win32gui.GetWindowText(hwnd):
-                    
+
                     results.append(win32gui.GetWindowText(hwnd))
-                
+
         win32gui.EnumWindows(winEnumHandler, None)
         return results
 
-
-
-    def get_windows_Linux(): 
+    def get_windows_Linux():
         """ 
         This Includes the Current Active Window 
         - Docs -> https://lazka.github.io/pgi-docs/Wnck-3.0/classes/Window.html#Wnck.Window.get_class_group_name
         """
         import gi
-        gi.require_version("Wnck", "3.0") ## It must be set to require 3.0 bfore we import Wnck
+        # It must be set to require 3.0 bfore we import Wnck
+        gi.require_version("Wnck", "3.0")
         from gi.repository import Wnck
-        
 
         scr = Wnck.Screen.get_default()
 
-        ## Force Update must be done 
+        # Force Update must be done
         scr.force_update()
 
    #     all_windows = scr.get_windows()
-        #all_windows_list = [x for x in scr.get_windows()]
+        # all_windows_list = [x for x in scr.get_windows()]
 
         window_name_list = []
         for x in scr.get_windows():
             window_name_list.append(x.get_name())
 
-    
         """ Current Active Window Details"""
         ACTIVE_WINDOW_NAME = scr.get_active_window().get_name()
         ACTIVE_WINDOW_XID = scr.get_active_window().get_xid()
@@ -274,17 +271,19 @@ Screenshot is working, doesnt appear to be copying an image to clipbord anylonge
 need to double check this is fact
 Also need to find a module to replace mss.tools import which saves an RGB data to a file
 """
+
+
 class ScreenShot:
     def screenshot_monitor(
-                           monitor_number,
-                           filename=None,
-                           clipboard = False):
-        
-        ### Taking the User input of "Monitor:1 for example" and converting it to the correct monitor number
+            monitor_number,
+            filename=None,
+            clipboard=False):
+
+        # Taking the User input of "Monitor:1 for example" and converting it to the correct monitor number
         monitor_number = int(monitor_number.split(":")[0])
         with mss.mss() as sct:
             try:
-                mon = sct.monitors[monitor_number]  
+                mon = sct.monitors[monitor_number]
                 monitor = {
                     "top": mon["top"],
                     "left": mon["left"],
@@ -292,39 +291,27 @@ class ScreenShot:
                     "height": mon["height"],
                     "mon": monitor_number,
                 }
-                
+
                 # Grab the Image
-                sct_img = sct.grab(monitor)     
+                sct_img = sct.grab(monitor)
 
                 if clipboard == True:
                     if monitor_number == 0:
-                        # Monitor 0 is ALL Monitors Combined, we need to save this to temp file and then to clipboard
-                        
-                        image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
-                        image.save("temp.png")
-                     #   mss.tools.to_png(sct_img.rgb, sct_img.size, output="temp.png")
-                        
-                        # Converting to Bytes then off to Clipboard
-                        ScreenShot.all_monitors_bytes_to_clipboard("temp.png")
-
-                    elif monitor_number != 0:
-                        # Instead of making a temp file we get it direct from raw to clipboard
-                        img = Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                        
-                        ClipBoard.copy_image_to_clipboard(img)
-                       # TPClient.stateUpdate("KillerBOSS.TP.Plugins.winsettings.winsettings.publicIP", getFrame_base64(img).decode())
-
-                if clipboard == False:
-                    image = Image.frombytes('RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
+                        image = Image.frombytes(
+                            'RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
+                    else:
+                        image = Image.frombytes(
+                            "RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
+                    ClipBoard.copy_image_to_clipboard(image)
+                else:
+                    image = Image.frombytes(
+                        'RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
                     image.save(filename + ".png")
-                   # mss.tools.to_png(sct_img.rgb, sct_img.size, output=filename + ".png")
-                    print("Image saved -> "+ filename+ ".png" )
+                    print("Image saved -> " + filename + ".png")
 
             except IndexError:
-                
-                print("[ERROR] This Monitor does not exist")
-                
 
+                print("[ERROR] This Monitor does not exist")
 
     def all_monitors_bytes_to_clipboard(self, filepath):
         """
@@ -337,12 +324,10 @@ class ScreenShot:
         data = output.getvalue()[14:]
         output.close()
 
-        if PLATFORM_SYSTEM=="Windows":
+        if PLATFORM_SYSTEM == "Windows":
             ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
-        
+
         os.remove(filepath)
-
-
 
     def get_monitors_Windows_OS():
         try:
@@ -361,17 +346,16 @@ class ScreenShot:
 
         return monitor_list
 
-    ###screenshot window without bringing it to foreground 
-    def screenshot_window(capture_type, window_title=None, clipboard=False, save_location=None):
+    # screenshot window without bringing it to foreground
+    def screenshot_window(capture_type=3, window_title=None, clipboard=False, save_location=None):
         hwnd = win32gui.FindWindow(None, window_title)
         try:
             left, top, right, bot = win32gui.GetClientRect(hwnd)
-            #left, top, right, bot = win32gui.GetWindowRect(hwnd)
             w = right - left
             h = bot - top
 
             hwndDC = win32gui.GetWindowDC(hwnd)
-            mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
+            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
             saveDC = mfcDC.CreateCompatibleDC()
 
             saveBitMap = win32ui.CreateBitmap()
@@ -379,9 +363,10 @@ class ScreenShot:
             saveDC.SelectObject(saveBitMap)
 
             # Change the line below depending on whether you want the whole window
-            # or just the client area as shown above. 
-                                  # 1, 2, 3 all give different results   ( 3 seems to work for everything)
-            result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), capture_type)
+            # or just the client area as shown above.
+            # 1, 2, 3 all give different results   ( 3 seems to work for everything)
+            result = windll.user32.PrintWindow(
+                hwnd, saveDC.GetSafeHdc(), capture_type)
             bmpinfo = saveBitMap.GetInfo()
             bmpstr = saveBitMap.GetBitmapBits(True)
 
@@ -394,9 +379,9 @@ class ScreenShot:
             saveDC.DeleteDC()
             mfcDC.DeleteDC()
             win32gui.ReleaseDC(hwnd, hwndDC)
-
+            print(result)
             if result == 1:
-                #PrintWindow Succeeded
+                # PrintWindow Succeeded
                 if clipboard == True:
                     ClipBoard.copy_image_to_clipboard(im)
                     print("Copied to Clipboard")
@@ -404,9 +389,7 @@ class ScreenShot:
                     im.save(save_location+".png")
                     print("Saved to Folder")
         except Exception as e:
-            print("error screenshot" + e )
-
-        
+            print("error screenshot" + e)
 
 
 """    monitor_count_old = ""
@@ -422,50 +405,43 @@ class ScreenShot:
             monitor_count_old = mon_length"""
 
 
-
-
 class ClipBoard:
     def copy_image_to_clipboard(image):
         if PLATFORM_SYSTEM == "Windows":
             bio = BytesIO()
             image.save(bio, 'BMP')
-            data = bio.getvalue()[14:] # removing some headers
+            data = bio.getvalue()[14:]  # removing some headers
             bio.close()
             ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
-            
-        
-        
-        ### This currently works with Fedora 36 and saves image to clipboard
+
+        # This currently works with Fedora 36 and saves image to clipboard
         if PLATFORM_SYSTEM == "Linux":
             memory = BytesIO()
             image.save(memory, format="png")
-            output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"), 
+            output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"),
                                       stdin=subprocess.PIPE)
             # write image to stdin
             output.stdin.write(memory.getvalue())
             output.stdin.close()
-            
-            ########################### BACKUP OPTIONS
-            ### Option # 1
-           # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
-           # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
-           
-           ### Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
-           ## might be able to use module called klemboard ??
 
+            # BACKUP OPTIONS
+            # Option # 1
+            # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
+            # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
 
-        ## This needs tested/worked on...
+            # Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
+            # might be able to use module called klemboard ??
+
+        # This needs tested/worked on...
         if PLATFORM_SYSTEM == "Darwin":
             # Option #1
-           # os.system(f"pbcopy < {path + '/image.png'}")
-            
+            # os.system(f"pbcopy < {path + '/image.png'}")
+
             # Option #2
-            
-            subprocess.run(["osascript", "-e", 'set the clipboard to (read (POSIX file "image.jpg") as JPEG picture)']) 
-        
-        
-        
-        
+
+            subprocess.run(
+                ["osascript", "-e", 'set the clipboard to (read (POSIX file "image.jpg") as JPEG picture)'])
+
     def send_to_clipboard(clip_type, data):
         if PLATFORM_SYSTEM == "Windows":
             if clip_type == "text":
@@ -478,15 +454,11 @@ class ClipBoard:
                 win32clipboard.EmptyClipboard()
                 win32clipboard.SetClipboardData(clip_type, data)
                 win32clipboard.CloseClipboard()
-                
-                
 
 
 # ok = ScreenShot()
-# 
+#
 # ok.screenshot_monitor(monitor_number="0", filename="test", clipboard=True)
-
-
 # import wx  ## apart of pyGUI ??  can this copy to clipboard on linux too ??  https://www.programcreek.com/python/?code=miloharper%2Fneural-network-animation%2Fneural-network-animation-master%2Fmatplotlib%2Fbackends%2Fbackend_wx.py
 """
 def Copy_to_Clipboard(self, event=None):
@@ -501,4 +473,3 @@ def Copy_to_Clipboard(self, event=None):
             wx.TheClipboard.Close()
             wx.TheClipboard.Flush()
 """
-            

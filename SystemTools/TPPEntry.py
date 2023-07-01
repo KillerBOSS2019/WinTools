@@ -3,7 +3,7 @@ import os
 
 __version__ = "4"
 
-#PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
+# PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 PLUGIN_ID = "plugin.SystemTools"
 
 PLATFORM_SYSTEM = platform.system()
@@ -13,10 +13,10 @@ if PLATFORM_SYSTEM == "Windows":
     appdata = os.getenv("LOCALAPPDATA")
 elif PLATFORM_SYSTEM == "Darwin":
     plugin_name = "MacOS"
-    appdata = "./Document/TouchPortal/plugins/SystemTools"
+    appdata = "./Document/TouchPortal/plugins/WinTools"
 elif PLATFORM_SYSTEM == "Linux":
     plugin_name = "Linux"
-    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/SystemTools"
+    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/WinTools"
 
 PLUGIN_NAME = plugin_name + " Tools"
 
@@ -25,7 +25,7 @@ TP_PLUGIN_INFO = {
     'version': int(float(__version__) * 100),
     'name': PLUGIN_NAME,
     'id': PLUGIN_ID,
-    "plugin_start_cmd": "%TP_PLUGIN_FOLDER%SystemTools\\SystemTools.exe",
+    "plugin_start_cmd": "%TP_PLUGIN_FOLDER%WinTools\\WinTools.exe",
     'configuration': {
         'colorDark': "#25274c",
         'colorLight': "#707ab5"
@@ -39,8 +39,8 @@ TP_PLUGIN_INFO = {
 TP_PLUGIN_CATEGORIES = {
     "main": {
         'id': PLUGIN_ID + ".main",
-        'name' : plugin_name + " Utility",
-        'imagepath' : "icon-24.png"
+        'name': plugin_name + " Utility",
+        'imagepath': "icon-24.png"
     },
     "mouse": {
         "id": PLUGIN_ID + ".AdvancedMouse",
@@ -62,7 +62,6 @@ TP_PLUGIN_CATEGORIES = {
 # Setting(s) for this plugin. These could be either for users to
 # set, or to persist data between plugin runs (as read-only settings).
 TP_PLUGIN_SETTINGS = {}
-
 
 
 TP_PLUGIN_CONNECTORS = {
@@ -99,8 +98,6 @@ TP_PLUGIN_CONNECTORS = {
     #     }
     # }
 }
-
-
 
 
 # Action(s) which this plugin supports.
@@ -379,7 +376,7 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
-    
+
     "Keyboard writer": {
         'category': "keyboard",
         'id': PLUGIN_ID + ".act.keyboardwriter",
@@ -461,193 +458,169 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
-    
+
     "Screen Capture Display": {
         'category': "main",
-        "id": PLUGIN_ID + ".screencapture.full.file",
+        "id": PLUGIN_ID + ".screencapturedisplay",
         "name": "CAPTURE:  Display to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": True,
         "description": "Capture Display to Clipboard OR File",
-        "format": "Display # $[monitors_choice] to $[file_clipboard_choice] to $[path] and $[name]",
-        "data": [
-          {
-            "id": PLUGIN_ID + ".screencapture.monitors_choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": []
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.file_clipboard_choice",
-            "type": "choice",
-            "label": "choice",
-            "default": "Pick One",
-            "valueChoices": [
-                "Clipboard",
-                "File"
-            ]
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.file.path",
-            "type": "folder",
-            "label": "folder"
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.file.name",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          }
-        ]
-      },
+        "format": "Display # $[1] to $[2] to $[3] and $[4]",
+        "data": {
+            "monitors": {
+                "id": PLUGIN_ID + ".screencapturedisplay.monitors_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            "file_clipboard_choice": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_clipboard_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "Clipboard",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
+            },
+            "path": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_path",
+                "type": "folder",
+                "label": "folder"
+            },
+            "name": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_name",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            }
+        }
+    },
 
-    "Screen Capture Window":{
+    "Screen Capture Window": {
         'category': "main",
-        "id": PLUGIN_ID + ".screencapture.window.file",
+        "id": PLUGIN_ID + ".screencapturewindow",
         "name": "CAPTURE:  Window to File / Clipboard",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": True,
         "description": "Capture Window to Clipboard OR File",
         "format": "Window:$[window_name] Save:$[window_active_capture]  Directory->$[filepath] and file name ->$[filename] ",
-        "data": [
-          {
-            "id": PLUGIN_ID + ".screencapture.window_name",
-            "type": "choice",
-            "label": "choice",
-            "default": "",
-            "valueChoices": []
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.window_capture_type",
-            "type": "choice",
-            "label": "choice",
-            "default": "3",
-            "valueChoices": [
-              "0",
-              "1",
-              "2",
-              "3"
-            ]
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.filepath",
-            "type": "folder",
-            "label": "folder",
-            "default": ""
-          },
-          {
-            "id": PLUGIN_ID + ".screencapture.filename",
-            "type": "text",
-            "label": "text",
-            "default": ""
-          }, 
-          {
-            "id": PLUGIN_ID + ".screencapture.window_active_capture",
-            "type": "choice",
-            "label": "choice",
-            "default": "Pick One",
-            "valueChoices": [
-                "Clipboard",
-                "File"
-            ]
-          }
-        ]
-      },
+        "data": {
+            "window_name": {
+                "id": PLUGIN_ID + ".screencapturewindow.window_name",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            "filepath": {
+                "id": PLUGIN_ID + ".screencapturewindow.filepath",
+                "type": "folder",
+                "label": "folder",
+                "default": ""
+            },
+            "filename": {
+                "id": PLUGIN_ID + ".screencapturewindow.filename",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            },
+            "window_active_capture": {
+                "id": PLUGIN_ID + ".screencapturewindow.window_active_capture",
+                "type": "choice",
+                "label": "choice",
+                "default": "Clipboard",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
+            }
+        }
+    },
     "Screen Capture Window WildCard": {
         'category': "main",
-        "id": PLUGIN_ID + ".screencapture.window.file.wildcard",
+        "id": PLUGIN_ID + ".screencapturewildcard",
         "name": "CAPTURE:  Window to File / Clipboard (*)",
         "prefix": "plugin",
         "type": "communicate",
         "tryInline": True,
         "description": "Capture Window by Name to Clipboard OR File ",
         "format": "Window Name*:$[window_name] Save:$[clipboard_file_choice]  Directory->$[path] and file name ->$[name] ",
-        "data": [
-            {
-                "id": PLUGIN_ID + ".screencapture.window_name",
+        "data": {
+            "window_name": {
+                "id": PLUGIN_ID + ".screencapturewildcard.window_name",
                 "type": "text",
                 "label": "text",
                 "default": ""
             },
-            {
-                "id": PLUGIN_ID + ".screencapture.window_capture_type",
-                "type": "choice",
-                "label": "choice",
-                "default": "3",
-                "valueChoices": [
-                "0",
-                "1",
-                "2",
-                "3"
-                ]
-            },
-            {
-                "id": PLUGIN_ID + ".screencapture.file.path",
+            "path": {
+                "id": PLUGIN_ID + ".screencapturewildcard.file.path",
                 "type": "folder",
                 "label": "folder",
                 "default": ""
             },
-            {
-                "id": PLUGIN_ID + ".screencapture.file.name",
+            "name": {
+                "id": PLUGIN_ID + ".screencapture.wildcard.file.name",
                 "type": "text",
                 "label": "text",
                 "default": ""
-                },
-            {
-                "id": PLUGIN_ID + ".screencapture.clipboard_file_choice",
+            },
+            "clipboard_file_choice": {
+                "id": PLUGIN_ID + ".screencapturewildcard.clipboard_file_choice",
                 "type": "choice",
                 "label": "choice",
-                "default": "Pick One",
+                "default": "Clipboard",
                 "valueChoices": [
                     "Clipboard",
                     "File"
                 ]
             }
-        ]
+        }
     },
 
-    "Screenshot Window Current":{
-            'category': "main",
-            "id": PLUGIN_ID + ".window.current",
-            "name": "CAPTURE:  Current Active Window to File / Clipboard",
-            "prefix": "plugin",
-            "type": "communicate",
-            "tryInline": True,
-            "description": "Capture CURRENT Active Window to Clipboard OR File ",
-            "format": "Save to $[clipboard_file_choice]   IF file -> $[filepath] and $[filename].png",
-            "data": [
-                {
+    "Screenshot Window Current": {
+        'category': "main",
+        "id": PLUGIN_ID + ".window.current",
+        "name": "CAPTURE:  Current Active Window to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture CURRENT Active Window to Clipboard OR File ",
+        "format": "Save to $[clipboard_file_choice]   IF file -> $[filepath] and $[filename].png",
+        "data": {
+                "clipboard_file_choice": {
                     "id": PLUGIN_ID + ".screencapture.window_current.clipboard_file_choice",
                     "type": "choice",
                     "label": "choice",
-                    "default": "Pick One",
+                    "default": "Clipboard",
                     "valueChoices": [
                         "Clipboard",
                         "File"
                     ]
                 },
-                {
+            "filepath": {
                     "id": PLUGIN_ID + ".screencapture.window_current.filepath",
                     "type": "folder",
                     "label": "folder",
                     "default": ""
                 },
-                {
+            "filename": {
                     "id": PLUGIN_ID + ".screencapture.window_current.filename",
                     "type": "text",
                     "label": "text",
                     "default": ""
                 }
-        ]
+        }
     }
 }
 
 
-### Adding Windows Specific Actions
-if plugin_name == "Windows": 
+# Adding Windows Specific Actions
+if plugin_name == "Windows":
     TP_PLUGIN_ACTIONS["VD switcher"] = {
         'category': 'VD',
         'id': PLUGIN_ID + ".act.vd_switcher",
@@ -718,7 +691,7 @@ if plugin_name == "Windows":
             }
         }
     }
-    
+
     TP_PLUGIN_ACTIONS["App launcher"] = {
         'category': "main",
         'id': PLUGIN_ID + ".act.advancedLauncher",
@@ -794,9 +767,9 @@ if plugin_name == "Windows":
                 "type": "number",
                 "label": "tts volume",
                 "allowDecimals": False,
-                "default": "100", 
-                "minValue":0,
-                "maxValue":100
+                "default": "100",
+                "minValue": 0,
+                "maxValue": 100
             },
             'rate': {
                 "id": PLUGIN_ID + "act.TSS.rate",
@@ -804,15 +777,15 @@ if plugin_name == "Windows":
                 "label": "tts rate",
                 "allowDecimals": False,
                 "default": "175",
-                "minValue":25,
-                "maxValue":600
-            },  
+                "minValue": 25,
+                "maxValue": 600
+            },
             'output': {
                 "id": PLUGIN_ID + "act.TSS.output",
                 "type": "choice",
                 "label": "tts output choice",
                 "default": "",
-                "valueChoices":[]
+                "valueChoices": []
             }
         }
     }

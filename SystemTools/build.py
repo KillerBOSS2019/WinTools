@@ -11,7 +11,7 @@ if plugin_name == "Linux":
 
 PLUGIN_MAIN = "main.py"
 
-PLUGIN_EXE_NAME = "SystemTools"
+PLUGIN_EXE_NAME = "WinTools"
 
 PLUGIN_EXE_ICON = ""
 
@@ -19,7 +19,7 @@ PLUGIN_ENTRY = "TPPEntry.py"
 
 PLUGIN_ENTRY_INDENT = -1
 
-PLUGIN_ROOT = "SystemTools"
+PLUGIN_ROOT = "WinTools"
 
 PLUGIN_ICON = ""
 
@@ -27,9 +27,7 @@ OUTPUT_PATH = "./"
 
 PLUGIN_VERSION = str(__version__)
 
-ADDITIONAL_FILES = [
-    "record.json"
-]
+ADDITIONAL_FILES = []
 
 ADDITIONAL_TPPSDK_ARGS = []
 
