@@ -1,12 +1,25 @@
 import platform
 import os
 
-__version__ = "41"
+__version__ = "4"
 
 # PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 PLUGIN_ID = "plugin.SystemTools"
 
 PLATFORM_SYSTEM = platform.system()
+
+## This is not being utilized YET.. but it will be when we use linux for sure
+OS_INFO = {
+    "version": platform.version(),          # 10.0.19043 for windows 10
+    "arch": platform.architecture(),        # 32bit / 64bit
+    "machine": platform.machine(),          # AMD64 / *Intel ??
+    "system": platform.system(),            # Windows / Darwin / Linux
+    "release": platform.release(),          # Windows-10-10.0.19043-SP0
+    "platform full": platform.platform(),
+    "platform mac": platform.mac_ver(),
+    "platform node": platform.node()
+}
+
 
 if PLATFORM_SYSTEM == "Windows":
     plugin_name = "Windows"

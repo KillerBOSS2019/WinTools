@@ -1,26 +1,39 @@
 import TouchPortalAPI as TP
 from TouchPortalAPI.logger import Logger
-# from argparse import ArgumentParser
-# from threading import Thread
-# import sys
-# from time import sleep, time
-# import pyperclip
-# import pygetwindow as gw
-# import pyautogui
-# from pyvda import AppView, VirtualDesktop, get_virtual_desktops
-# from screeninfo import get_monitors
+from argparse import ArgumentParser
+from threading import Thread
+import os
+import sys
+from time import sleep, time
 
+import pyperclip
+import pygetwindow as gw
+import pyautogui
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+from screeninfo import get_monitors
 
 ## Local Imports
-from p_imports import *
 from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME
 from util import SystemPrograms, Get_Windows, PLATFORM_SYSTEM
-from util import win32gui, os
 from powerplan import Powerplan
 from tts import TTS
 from screencapture import ScreenShot
 import Macro
 
+
+if PLATFORM_SYSTEM == "Windows":
+    import win32gui
+    import win32con
+    import win32api
+
+if PLATFORM_SYSTEM == "Linux":
+    pass
+
+if PLATFORM_SYSTEM == "Darwin":
+    pass
+
+
+##                                END OF IMPORTS                                    ##
 
 
 
@@ -28,18 +41,15 @@ import Macro
 # Create the Touch Portal API client.
 try:
     TPClient = TP.Client(
-        pluginId=PLUGIN_ID,  # required ID of this plugin
-        sleepPeriod=0.05,    # allow more time than default for other processes
-        autoClose=True,      # automatically disconnect when TP sends "closePlugin" message
-        checkPluginId=True,  # validate destination of messages sent to this plugin
-        maxWorkers=4,        # run up to 4 event handler threads
-        # do not spam TP with state updates on every page change
-        updateStatesOnBroadcast=False,
+        pluginId=PLUGIN_ID,            # required ID of this plugin
+        sleepPeriod=0.05,              # allow more time than default for other processes
+        autoClose=True,                # automatically disconnect when TP sends "closePlugin" message
+        checkPluginId=True,            # validate destination of messages sent to this plugin
+        maxWorkers=4,                  # run up to 4 event handler threads
+        updateStatesOnBroadcast=False, # do not spam TP with state updates on every page change
     )
 except Exception as e:
     sys.exit(f"Could not create TP Client, exiting. Error was:\n{repr(e)}")
-# TPClient: TP.Client = None  # instance of the TouchPortalAPI Client, created in main()
-
 
 g_log = Logger(name=PLUGIN_ID)
 

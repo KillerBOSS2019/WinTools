@@ -1,6 +1,22 @@
 #screencapture
 
-from util import ClipBoard, PLATFORM_SYSTEM, mss, Image, BytesIO, win32clipboard, os, win32gui, win32api, win32ui, windll
+from util import ClipBoard, PLATFORM_SYSTEM
+
+### Screenshot Monitor Imports ###
+import mss.tools  # may need to find another module for this due to linux/macOS
+from PIL import Image
+from io import BytesIO
+
+
+if PLATFORM_SYSTEM == "Windows":
+    import win32clipboard, os, win32gui, win32api, win32ui
+    from util import windll
+    
+if PLATFORM_SYSTEM == "Linux":
+    pass
+
+if PLATFORM_SYSTEM == "Darwin":
+    pass
 
 """
 Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
@@ -115,7 +131,7 @@ class ScreenShot:
             saveDC.DeleteDC()
             mfcDC.DeleteDC()
             win32gui.ReleaseDC(hwnd, hwndDC)
-            
+
             if result == 1:
                 # PrintWindow Succeeded
                 if clipboard == True:

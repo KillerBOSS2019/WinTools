@@ -1,37 +1,20 @@
-from p_imports import *
-##   moved to screencapture.py  ### Screenshot Monitor Imports ###
-##   moved to screencapture.py  import mss.tools  # may need to find another module for this due to linux/macOS
-##   moved to screencapture.py  from PIL import Image
-##   moved to screencapture.py  from io import BytesIO
-
-# Port Audio Trouble Shooting
-# not needed ?? from ctypes.util import find_library
-# print(find_library('portaudio'))
-
-
-
-""" 
-According to my research this is the most reliable way and better than system.platform 
-### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
-### Linux Examples   - os.name = 'posix'     /      platform.system = 'Linux'       /    platform.release = '3.19.0-23-generic'
-### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
-
-                                          EXAMPLES                                      """
-#PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
 from TPPEntry import PLATFORM_SYSTEM
 
+from ast import literal_eval
+import subprocess
+from io import BytesIO
 
-"""
-Fedora Example 
-{'arch': ('64bit', 'ELF'),
- 'machine': 'x86_64',
- 'platform full': 'Linux-5.19.4-200.fc36.x86_64-x86_64-with-glibc2.35',
- 'platform mac': ('', ('', '', ''), ''),
- 'release': '5.19.4-200.fc36.x86_64',
- 'system': 'Linux',
- 'version': '#1 SMP PREEMPT_DYNAMIC Thu Aug 25 17:42:04 UTC 2022'}
-"""
+if PLATFORM_SYSTEM == "Windows":
+    from ctypes import windll
+    import win32clipboard
+    import win32gui
+    from win32com.client import GetObject  # Used to Get Display Name / Details
 
+if PLATFORM_SYSTEM == "Linux":
+    pass
+
+if PLATFORM_SYSTEM == "Darwin":
+    pass
 
 
 def runWindowsCMD(command):
@@ -192,3 +175,29 @@ def Copy_to_Clipboard(self, event=None):
             wx.TheClipboard.Close()
             wx.TheClipboard.Flush()
 """
+
+
+
+
+
+
+"""
+Fedora Example 
+{'arch': ('64bit', 'ELF'),
+ 'machine': 'x86_64',
+ 'platform full': 'Linux-5.19.4-200.fc36.x86_64-x86_64-with-glibc2.35',
+ 'platform mac': ('', ('', '', ''), ''),
+ 'release': '5.19.4-200.fc36.x86_64',
+ 'system': 'Linux',
+ 'version': '#1 SMP PREEMPT_DYNAMIC Thu Aug 25 17:42:04 UTC 2022'}
+"""
+
+""" 
+According to my research this is the most reliable way and better than system.platform 
+### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
+### Linux Examples   - os.name = 'posix'     /      platform.system = 'Linux'       /    platform.release = '3.19.0-23-generic'
+### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
+
+                                          EXAMPLES                                      """
+#PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
+
