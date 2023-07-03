@@ -25,7 +25,7 @@ match PLATFORM_SYSTEM:
     case "Windows":
         plugin_name = "Windows"
         appdata = os.getenv("LOCALAPPDATA")
-    
+
     case "Darwin":
         plugin_name = "MacOS"
         appdata = "./Document/TouchPortal/plugins/WinTools"
@@ -82,6 +82,24 @@ TP_PLUGIN_SETTINGS = {}
 
 
 TP_PLUGIN_CONNECTORS = {
+
+     "Zoom Control": {
+         "category": "main",
+         "id": PLUGIN_ID + ".conor.ZoomControl",
+         "name": "Magnify Zoom Slider",
+         "format": "Adjust Magnifier: $[1]",
+         "label": "Zoom Control",
+         "data": {
+             "ZoomControl":{
+                "id": PLUGIN_ID + ".conor.Magnifier.ZoomControl",
+                "description": "Manually adjust Lens Size and Zoom",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": ["Zoom", "Lens X", "Lens Y"]
+         }
+     }
+     },
     # Can't make this work as right now.
     # "MouseSliderCon": {
     #     "category": "main",
@@ -446,35 +464,6 @@ TP_PLUGIN_ACTIONS = {
             }
         }
     },
-    "json Parser": {
-        'category': "main",
-        'id': PLUGIN_ID + ".act.jsonparser",
-        'name': "Json Parser",
-        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
-        'type': "communicate",
-        'tryInline': True,
-        'format': "With json$[1]to get$[2]and save to$[3]",
-        'data': {
-            "json data": {
-                "id": PLUGIN_ID + ".act.jsonparser.jsondata",
-                "type": "text",
-                "label": "json data",
-                "default": "",
-            },
-            'json path': {
-                'id': PLUGIN_ID + ".act.keyboardpresser.jsonpath",
-                'type': "text",
-                'label': "json path",
-                'default': "",
-            },
-            'save result': {
-                'id': PLUGIN_ID + ".act.keyboardpresser.result",
-                'type': "text",
-                'label': "save result",
-                'default': "",
-            }
-        }
-    },
 
     "Screen Capture Display": {
         'category': "main",
@@ -638,6 +627,67 @@ TP_PLUGIN_ACTIONS = {
 
 # Adding Windows Specific Actions
 if plugin_name == "Windows":
+
+    TP_PLUGIN_ACTIONS["Magnifier"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.magnifier",
+        "name": "UTILITY:  Magnifier Glass",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "format": "Magnifier Glass: {$KillerBOSS.TP.Plugins.magnifier.actionchoice$} ",
+        "data": [
+          {
+            "id": "KillerBOSS.TP.Plugins.magnifier.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+                "Start",
+                "Exit",
+                "Zoom In",
+                "Zoom Out",
+                "Dock",
+                "Lens",
+                "Full Screen",
+                "Invert Colors"
+            ]
+          }
+        ]
+      }
+
+    TP_PLUGIN_ACTIONS["Rotate Display"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.rotatedisplay",
+        'name': "Rotate Display",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Rotate Display $[1] by $[2] degrees",
+        'data': {
+            'displayNum': {
+                'id': PLUGIN_ID + ".act.rotatedisplay.displaynum",
+                'type': "choice",
+                'label': "display num",
+                'default': "1",
+                'valueChoices': []
+            },
+
+            'rotateDegrees': {
+                'id': PLUGIN_ID + ".act.rotatedisplay.degrees",
+                'type': "choice",
+                'label': "rotate degrees",
+                'default': "90",
+                'valueChoices': [
+                    '0',
+                    '90',
+                    '180',
+                    '270'
+                ]
+            }
+        }
+    }
+
 
     TP_PLUGIN_ACTIONS["VD create"] = {
         'category': 'VD',

@@ -12,13 +12,17 @@ from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 from screencapture import ScreenShot
 from screeninfo import get_monitors
 
-## Local Imports
+# Local Imports
 from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME, PLATFORM_SYSTEM
 from util import SystemPrograms, Get_Windows
 from powerplan import Powerplan
 from tts import TTS
 from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
 import Macro
+
+## maybe make a py file thats just called 'display.py' with virtual desktop and other things?  
+from rotateDisplay import rotate_display
+from magnifier import mag_level, magnifer_dimensions, magnifier_control
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -133,6 +137,10 @@ def updateStates():
             if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
                 TPClient.choiceUpdate(
                     PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
+                
+                TPClient.choiceUpdate(
+                    PLUGIN_ID + ".act.rotatedisplay.displaynum", list_monitor)
+
                 TPClient.choiceUpdate(
                     PLUGIN_ID + ".winsettings.monchoice", list_monitor)
                 TPClient.choiceUpdate(
@@ -185,7 +193,18 @@ def onAction(data):
     g_log.info(f"Action: {data}")
     if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
+    
 
+#  Magnifier Actions
+    if aid == TP_PLUGIN_ACTIONS["Magnifier"]["id"]:
+        magnifier_control(data['data'][0]['value'])
+        
+   #if aid == TP_PLUGIN_ACTIONS["magnifier.onHold"]["id"]:
+   #    if data['data'][0]['value'] == "Zoom":
+   #        mag_level(int(data['data'][1]['value']))
+
+   # print("this is aid", aid)
+   # print(TP_PLUGIN_ACTIONS["Rotate Display"]['id'])
 # NOTE: Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
@@ -200,7 +219,7 @@ def onAction(data):
                 pyautogui.mouseUp(button=action_data[1]['value'].lower())
         except pyautogui.PyAutoGUIException:  # Shouldn't happen but who knows...
             g_log.error("Hold or Release mouse have invaild mouse button")
-
+    
     # all data send from TP value is in string eg 0 is "0" which is True
     if aid == TP_PLUGIN_ACTIONS['Mouse click']['id']:
         pyautogui.click(button=action_data[0]['value'].lower(), clicks=int(
@@ -221,10 +240,10 @@ def onAction(data):
         elif action_data[0]['value'].lower() == "move":
             pyautogui.move(
                 xOffset=action_data[1]['value'], yOffset=action_data[2]['value'], duration=action_data[3]['value'])
-
+    
     if aid == TP_PLUGIN_ACTIONS['Mouse scrolling']['id']:
         mouseScroll(action_data[0]['value'], action_data[1]['value'])
-
+    
     if aid == TP_PLUGIN_ACTIONS['Drag mouse']['id']:
         for adata in [1, 2]:
             action_data[adata]['value'] = int(action_data[adata]['value'])
@@ -430,7 +449,7 @@ def onAction(data):
                 if PLATFORM_SYSTEM == "Linux":
                     ScreenShot.screenshot_window_linux(
                         window_name=data['data'][0]['value'], file_name=afile_name)
-
+    
     if aid == TP_PLUGIN_ACTIONS["Screenshot Window Current"]["id"]:
         current_window_title = pygetwindow.getActiveWindowTitle()
         if current_window_title:
@@ -441,6 +460,10 @@ def onAction(data):
         ScreenShot.screenshot_window(window_title=data['data'][0]['value'], clipboard=data['data'][3]['value'] == "Clipboard",
                                      save_location=os.path.join(data['data'][1]['value'], data['data'][2]['value']))
 
+    
+
+    if aid == TP_PLUGIN_ACTIONS["Rotate Display"]['id']:
+        rotate_display(data['data'][0]['value'], data['data'][1]['value'])
 
 def get_current_windows():
     windows_active = []
@@ -501,12 +524,25 @@ def mouseScroll(mousescroll, speed):
 @TPClient.on(TP.TYPES.onConnectorChange)
 def onConnector(data):
     g_log.debug("onConnector", data)
-    if data['connectorId'] == TP_PLUGIN_CONNECTORS['MouseSliderCon']['id']:
-        if data['value'] != 51:
-            mouseScroll("UP" if data['value'] > 51 else "DOWN" if data['data'][0]['value'] == "Up/Down" else "RIGHT" if data['value'] > 51 else "LEFT",
-                        data['value'] * 10,
-                        False if data['data'][2] == "False" else True)
-            print(data)
+  #  print(data)
+    #if data['connectorId'] == TP_PLUGIN_CONNECTORS['MouseSliderCon']['id']:
+    #    if data['value'] != 51:
+    #        mouseScroll("UP" if data['value'] > 51 else "DOWN" if data['data'][0]['value'] == "Up/Down" else "RIGHT" if data['value'] > 51 else "LEFT",
+    #                    data['value'] * 10,
+    #                    False if data['data'][2] == "False" else True)
+    #        print(data)
+
+    if data['connectorId'] == TP_PLUGIN_CONNECTORS['Zoom Control']['id']:
+       # print("Magnifier.ZoomControl", data)
+        if data['data'][0]['value'] == "Zoom" :
+            mag_level(data['value']*16)
+             
+        if data['data'][0]['value'] == "Lens X" :
+            magnifer_dimensions(x=data['value'])
+        
+        if data['data'][0]['value'] == "Lens Y" :
+            magnifer_dimensions(y=data['value'])
+            
 
 
 # on hold handler
