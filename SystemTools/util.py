@@ -1,7 +1,5 @@
-from TPPEntry import PLATFORM_SYSTEM
-
-from ast import literal_eval
 import subprocess
+from ast import literal_eval
 from io import BytesIO
 
 
@@ -60,8 +58,6 @@ class SystemPrograms:
             runWindowsCMD(command)
 
 
-
-
 class Get_Windows:
     def get_windows_Windows_OS():
         results = []
@@ -103,8 +99,6 @@ class Get_Windows:
         ACTIVE_WINDOW_PID = scr.get_active_window().get_pid()
 
         return window_name_list
-
-
 
 
 class ClipBoard:
@@ -157,6 +151,20 @@ class ClipBoard:
                 win32clipboard.SetClipboardData(clip_type, data)
                 win32clipboard.CloseClipboard()
 
+def screenshot_current_linux():
+    from gi.repository import Gdk, GdkPixbuf
+
+    w = Gdk.get_default_root_window()
+    sz = w.get_geometry()
+    # print "The size of the window is %d x %d" % sz
+    pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, sz[2], sz[3])
+    pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[2], sz[3])
+    if (pb != None):
+        pb.save("screenshot.png", "png")
+        print("Screenshot saved to screenshot.png.")
+    else:
+        print("Unable to get the screenshot.")
+
 
 # ok = ScreenShot()
 #
@@ -177,10 +185,6 @@ def Copy_to_Clipboard(self, event=None):
 """
 
 
-
-
-
-
 """
 Fedora Example 
 {'arch': ('64bit', 'ELF'),
@@ -199,5 +203,4 @@ According to my research this is the most reliable way and better than system.pl
 ### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
 
                                           EXAMPLES                                      """
-#PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
-
+# PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux

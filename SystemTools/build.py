@@ -1,13 +1,14 @@
-from TouchPortalAPI.tppbuild import *
-from TPPEntry import __version__, plugin_name
 import subprocess
 
+from TouchPortalAPI.tppbuild import *
+from TPPEntry import __version__, plugin_name
+
 if plugin_name == "Linux":
-    p = subprocess.Popen("sudo apt-get install python3-tk libportaudio2", stdout=subprocess.PIPE, shell=True)
+    p = subprocess.Popen(
+        "sudo apt-get install python3-tk libportaudio2", stdout=subprocess.PIPE, shell=True)
     p = p.communicate()
     print(p)
 
-    
 
 PLUGIN_MAIN = "main.py"
 
