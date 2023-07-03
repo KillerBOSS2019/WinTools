@@ -1,23 +1,25 @@
 import TouchPortalAPI as TP
 from TouchPortalAPI.logger import Logger
-from argparse import ArgumentParser
-from threading import Thread
-import sys
-from time import sleep, time
-import pyperclip
-import pygetwindow as gw
-import pyautogui
-from pyvda import AppView, VirtualDesktop, get_virtual_desktops
-
+# from argparse import ArgumentParser
+# from threading import Thread
+# import sys
+# from time import sleep, time
+# import pyperclip
+# import pygetwindow as gw
+# import pyautogui
+# from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+# from screeninfo import get_monitors
 
 
 ## Local Imports
+from p_imports import *
 from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME
-from util import SystemPrograms, Powerplan, TTS, ScreenShot, Get_Windows, PLATFORM_SYSTEM
-from util import win32api, win32con, win32gui, os
-from screeninfo import get_monitors
+from util import SystemPrograms, Get_Windows, PLATFORM_SYSTEM
+from util import win32gui, os
+from powerplan import Powerplan
+from tts import TTS
+from screencapture import ScreenShot
 import Macro
-
 
 
 

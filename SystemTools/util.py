@@ -1,18 +1,11 @@
-import os
-import json
-import platform
-import subprocess
-import sounddevice as sd
-from ast import literal_eval
-from functools import reduce
-
-### Screenshot Monitor Imports ###
-import mss.tools  # may need to find another module for this due to linux/macOS
-from PIL import Image
-from io import BytesIO
+from p_imports import *
+##   moved to screencapture.py  ### Screenshot Monitor Imports ###
+##   moved to screencapture.py  import mss.tools  # may need to find another module for this due to linux/macOS
+##   moved to screencapture.py  from PIL import Image
+##   moved to screencapture.py  from io import BytesIO
 
 # Port Audio Trouble Shooting
-from ctypes.util import find_library
+# not needed ?? from ctypes.util import find_library
 # print(find_library('portaudio'))
 
 
@@ -26,27 +19,6 @@ According to my research this is the most reliable way and better than system.pl
                                           EXAMPLES                                      """
 #PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
 from TPPEntry import PLATFORM_SYSTEM
-# Windows 10 / 11 , or Linux 2.6.22 etc..
-PLATFORM_RELEASE = platform.release()
-PLATFORM_MACHINE = platform.machine()  # AMD64 / *Intel ??
-PLATFORM_ARCH = platform.architecture()  # 32bit / 64bit
-PLATFORM_PLATFORM = platform.platform()  # Windows-10-10.0.19043-SP0
-PLATFORM_VERSION = platform.version()  # 10.0.19043 for windows 10
-# This may or may not be useful im not sure.. its here for now - it just comes empty tuples if used on windows
-PLATFORM_MAC = platform.mac_ver()
-
-# Computer Network name  - more than likely will never use this
-PLATFORM_NODE = platform.node()
-
-OS_DEETS = {
-    "version": PLATFORM_VERSION,
-    "arch": PLATFORM_ARCH,
-    "machine": PLATFORM_MACHINE,
-    "system": PLATFORM_SYSTEM,
-    "release": PLATFORM_RELEASE,
-    "platform full": PLATFORM_PLATFORM,
-    "platform mac": PLATFORM_MAC
-}
 
 
 """
@@ -60,39 +32,6 @@ Fedora Example
  'version': '#1 SMP PREEMPT_DYNAMIC Thu Aug 25 17:42:04 UTC 2022'}
 """
 
-
-if PLATFORM_SYSTEM == "Windows":
-    """ 
-    Utilized for setting Windows Specific Imports and Variables based on OS details
-    """
-    from ctypes import windll
-    import audio2numpy as a2n
-    import win32clipboard
-
-    import win32gui  # used to capture window
-    import win32process  # used to capture window
-    import win32ui  # used to capture window
-    import pyttsx3
-
-    from win32com.client import GetObject  # Used to Get Display Name / Details
-    import win32api
-    import comtypes 
-    import win32con
-    
-
-
-if PLATFORM_SYSTEM == "Linux":
-    """ 
-    Utilized for setting Linux Specific Imports and Variables based on OS details
-    """
-    linux_display_server = subprocess.check_output(
-        "loginctl show-session $(awk '/tty/ {print $1}' <(loginctl)) -p Type | awk -F= '{print $2}'", shell=True).decode().split("\n")[0]
-
-    if linux_display_server == "wayland":
-        print("Its wayland bruh")
-
-    if linux_display_server == "x11":
-        print("Its x11 time!")
 
 
 def runWindowsCMD(command):
@@ -138,96 +77,6 @@ class SystemPrograms:
             runWindowsCMD(command)
 
 
-class Powerplan:
-    def __init__(self):
-        self.currentPPlan = {}
-        self.powerplans = {}
-        self.GetPowerplan()
-
-    def GetPowerplan(self):
-        powerplanResult = runWindowsCMD("powercfg -List")
-
-        for powerplan in powerplanResult.split("\n"):
-            if ":" in powerplan:
-                # from "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *" to ["381b4222-f694-41f0-9685-ff5bb260df2e", "(Balanced) *"]
-                parsedData = powerplan.split(":")[1].split()
-                the_data = (parsedData[0])
-                plan_name = (" ".join(parsedData[1:]))
-
-                if "*" in plan_name:
-                    plan_name = plan_name[plan_name.find(
-                        "(") + 1: plan_name.find(")")]
-                    self.powerplans[plan_name] = the_data
-
-                    self.currentPPlan[plan_name] = the_data
-                else:
-                    plan_name = plan_name[plan_name.find(
-                        "(") + 1: plan_name.find(")")]
-                    self.powerplans[plan_name] = the_data
-        return self.powerplans
-
-    def changeTo(self, pplanName):
-        if self.powerplans.get(pplanName, False):
-            runWindowsCMD(f"powercfg.exe /S {self.powerplans[pplanName]}")
-            return True
-        return False
-
-
-## depreceated def jsonPathfinder(data, path):
-## depreceated     pathlist = []
-## depreceated     print(data)
-## depreceated     data = json.loads(data)
-## depreceated     for path in path.split("."):
-## depreceated         try:
-## depreceated             pathlist.append(int(path))
-## depreceated         except ValueError:
-## depreceated             pathlist.append(path)
-## depreceated     return reduce(lambda a, b: a[b], pathlist, data)
-
-
-class TTS:
-    def getAllVoices():
-        comtypes.CoInitialize()
-        engine = pyttsx3.init()
-        voices = engine.getProperty('voices')
-        comtypes.CoUninitialize()
-        return voices
-
-    def getAllOutput_TTS2():
-        audio_dict = {}
-        for outputDevice in sd.query_hostapis(0)['devices']:
-            if sd.query_devices(outputDevice)['max_output_channels'] > 0:
-                audio_dict[sd.query_devices(device=outputDevice)['name']] = sd.query_devices(
-                    device=outputDevice)['default_samplerate']
-        return audio_dict
-
-    def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
-        engine = pyttsx3.init()
-        voices = engine.getProperty('voices')
-        engine.setProperty("volume", volume/100)
-        engine.setProperty("rate", rate)
-        for voice in voices:
-            if voice.name == voicesChoics:
-                engine.setProperty('voice', voice.id)
-                print("Using", voice.name, "voices", voice)
-
-        if output == "Default":
-            engine.say(message)
-        else:
-            appdata = os.getenv('APPDATA')
-            engine.save_to_file(
-                message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
-        engine.runAndWait()
-        engine.stop()
-
-        if output != "Default":
-            # can make this list returned a global + save that will pull it once and thats it?  instead of every time this action is called..which could be troublesome..
-            device = TTS.getAllOutput_TTS2()
-            sd.default.samplerate = device[output]
-            sd.default.device = output + ", MME"
-            x, sr = a2n.audio_from_file(
-                rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
-            sd.play(x, sr, blocking=True)
 
 
 class Get_Windows:
@@ -273,143 +122,6 @@ class Get_Windows:
         return window_name_list
 
 
-"""
-Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  
-need to double check this is fact
-Also need to find a module to replace mss.tools import which saves an RGB data to a file
-"""
-
-
-class ScreenShot:
-    def screenshot_monitor(
-            monitor_number,
-            filename=None,
-            clipboard=False):
-
-        # Taking the User input of "Monitor:1 for example" and converting it to the correct monitor number
-        monitor_number = int(monitor_number.split(":")[0])
-        with mss.mss() as sct:
-            try:
-                mon = sct.monitors[monitor_number]
-                monitor = {
-                    "top": mon["top"],
-                    "left": mon["left"],
-                    "width": mon["width"],
-                    "height": mon["height"],
-                    "mon": monitor_number,
-                }
-
-                # Grab the Image
-                sct_img = sct.grab(monitor)
-
-                if clipboard == True:
-                    if monitor_number == 0:
-                        image = Image.frombytes(
-                            'RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
-                    else:
-                        image = Image.frombytes(
-                            "RGB", sct_img.size, sct_img.bgra, "raw", "BGRX")
-                    ClipBoard.copy_image_to_clipboard(image)
-                else:
-                    image = Image.frombytes(
-                        'RGB', (sct_img.width, sct_img.height), sct_img.rgb, 'raw', 'RGB', 0, 1)
-                    image.save(filename + ".png")
-                    print("Image saved -> " + filename + ".png")
-
-            except IndexError:
-
-                print("[ERROR] This Monitor does not exist")
-
-    def all_monitors_bytes_to_clipboard(self, filepath):
-        """
-        Converting an Image to Bytes to Copy to Clipboard
-        """
-
-        image = Image.open(filepath)
-        output = BytesIO()
-        image.convert("RGB").save(output, "BMP")
-        data = output.getvalue()[14:]
-        output.close()
-
-        if PLATFORM_SYSTEM == "Windows":
-            ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
-
-        os.remove(filepath)
-
-    def get_monitors_Windows_OS():
-        try:
-           # import win32api
-            # Code to retrieve monitor information
-            objWMI = win32api.EnumDisplayMonitors()
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return []
-
-        monitor_list = []
-        for idx, monitor in enumerate(objWMI):
-            monitor_name = win32api.GetMonitorInfo(monitor[0])['Device']
-            # monitor_manufacturer = win32api.GetMonitorInfo(monitor[0])['Manufacturer']
-            monitor_list.append(f"{idx+1}: {monitor_name}")
-
-        return monitor_list
-
-    # screenshot window without bringing it to foreground
-    def screenshot_window(capture_type=3, window_title=None, clipboard=False, save_location=None):
-        hwnd = win32gui.FindWindow(None, window_title)
-        try:
-            left, top, right, bot = win32gui.GetClientRect(hwnd)
-            w = right - left
-            h = bot - top
-
-            hwndDC = win32gui.GetWindowDC(hwnd)
-            mfcDC = win32ui.CreateDCFromHandle(hwndDC)
-            saveDC = mfcDC.CreateCompatibleDC()
-
-            saveBitMap = win32ui.CreateBitmap()
-            saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
-            saveDC.SelectObject(saveBitMap)
-
-            # Change the line below depending on whether you want the whole window
-            # or just the client area as shown above.
-            # 1, 2, 3 all give different results   ( 3 seems to work for everything)
-            result = windll.user32.PrintWindow(
-                hwnd, saveDC.GetSafeHdc(), capture_type)
-            bmpinfo = saveBitMap.GetInfo()
-            bmpstr = saveBitMap.GetBitmapBits(True)
-
-            im = Image.frombuffer(
-                'RGB',
-                (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-                bmpstr, 'raw', 'BGRX', 0, 1)
-
-            win32gui.DeleteObject(saveBitMap.GetHandle())
-            saveDC.DeleteDC()
-            mfcDC.DeleteDC()
-            win32gui.ReleaseDC(hwnd, hwndDC)
-            print(result)
-            if result == 1:
-                # PrintWindow Succeeded
-                if clipboard == True:
-                    ClipBoard.copy_image_to_clipboard(im)
-                    print("Copied to Clipboard")
-                elif clipboard == False:
-                    im.save(save_location+".png")
-                    print("Saved to Folder")
-        except Exception as e:
-            print("error screenshot" + e)
-
-
-"""    monitor_count_old = ""
-    def check_number_of_monitors():
-        global monitor_count_old
-        mon_length = len(get_monitors())   ### Wonder if triggering this each time to get length of monitors is better / less resources than using get_monitors2 ?     this uses screeninfo module
-        if monitor_count_old != mon_length:
-            list_monitor_full = ScreenShot.get_monitors_Windows_OS()
-            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.monchoice", list_monitor_full)
-            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.winsettings.primary_monitor_choice", list_monitor_full)
-            list_monitor_full.insert(0, "0: ALL MONITORS")
-            TPClient.choiceUpdate("KillerBOSS.TP.Plugins.screencapture.monitors", list_monitor_full)  #  KillerBOSS.TP.Plugins.screencapture.full.file 
-            monitor_count_old = mon_length"""
 
 
 class ClipBoard:
