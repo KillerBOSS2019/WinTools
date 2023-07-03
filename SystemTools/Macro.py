@@ -1,22 +1,18 @@
-import sys
-import re
-import os
-from subprocess import PIPE, Popen
-import threading
-import mouse
-import keyboard
-import time
-
-from mouse import ButtonEvent
-from mouse import MoveEvent
-from mouse import WheelEvent
-
-from keyboard import KeyboardEvent
 import json
+import os
+import re
+import sys
+import threading
+import time
+from subprocess import PIPE, Popen
+
+import keyboard
+import mouse
 from TouchPortalAPI.logger import Logger
 from TPPEntry import PLUGIN_ID
 
 g_log = Logger(name=PLUGIN_ID)
+
 
 class States:
     macro_recordState = False
@@ -131,24 +127,6 @@ def get_active_window_title():
 if __name__ == '__main__':
     pass
    # print( get_active_window_title() )
-
-
-def screenshot_current_linux():
-  #  import gtk.gdk
-   # import wnck
-    from gi.repository import Gtk, Gdk, GdkPixbuf
-    from gi.repository.GdkPixbuf import Pixbuf
-
-    w = Gdk.get_default_root_window()
-    sz = w.get_geometry()
-    # print "The size of the window is %d x %d" % sz
-    pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, sz[2], sz[3])
-    pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[2], sz[3])
-    if (pb != None):
-        pb.save("screenshot.png", "png")
-        print("Screenshot saved to screenshot.png.")
-    else:
-        print("Unable to get the screenshot.")
 
 # screenshot_current_linux()
 

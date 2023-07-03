@@ -1,30 +1,29 @@
-import TouchPortalAPI as TP
-from TouchPortalAPI.logger import Logger
-from argparse import ArgumentParser
-from threading import Thread
 import os
 import sys
+from argparse import ArgumentParser
+from threading import Thread
 from time import sleep, time
 
-import pyperclip
-import pygetwindow as gw
-import pyautogui
-from pyvda import AppView, VirtualDesktop, get_virtual_desktops
-from screeninfo import get_monitors
-
-## Local Imports
-from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME
-from util import SystemPrograms, Get_Windows, PLATFORM_SYSTEM
-from powerplan import Powerplan
-from tts import TTS
-from screencapture import ScreenShot
 import Macro
-
+import pyautogui
+import pygetwindow as gw
+import pyperclip
+import TouchPortalAPI as TP
+from powerplan import Powerplan
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
+from screencapture import ScreenShot
+from screeninfo import get_monitors
+from TouchPortalAPI.logger import Logger
+# Local Imports
+from TPPEntry import (PLUGIN_ID, PLUGIN_NAME, TP_PLUGIN_ACTIONS,
+                      TP_PLUGIN_CONNECTORS, TP_PLUGIN_INFO, TP_PLUGIN_STATES)
+from tts import TTS
+from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
 
 if PLATFORM_SYSTEM == "Windows":
-    import win32gui
-    import win32con
     import win32api
+    import win32con
+    import win32gui
 
 if PLATFORM_SYSTEM == "Linux":
     pass
@@ -36,24 +35,22 @@ if PLATFORM_SYSTEM == "Darwin":
 ##                                END OF IMPORTS                                    ##
 
 
-
-
 # Create the Touch Portal API client.
 try:
     TPClient = TP.Client(
         pluginId=PLUGIN_ID,            # required ID of this plugin
         sleepPeriod=0.05,              # allow more time than default for other processes
-        autoClose=True,                # automatically disconnect when TP sends "closePlugin" message
+        # automatically disconnect when TP sends "closePlugin" message
+        autoClose=True,
         checkPluginId=True,            # validate destination of messages sent to this plugin
         maxWorkers=4,                  # run up to 4 event handler threads
-        updateStatesOnBroadcast=False, # do not spam TP with state updates on every page change
+        # do not spam TP with state updates on every page change
+        updateStatesOnBroadcast=False,
     )
 except Exception as e:
     sys.exit(f"Could not create TP Client, exiting. Error was:\n{repr(e)}")
 
 g_log = Logger(name=PLUGIN_ID)
-
-
 
 
 def updateStates():
@@ -65,10 +62,9 @@ def updateStates():
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
 
-
     while TPClient.isConnected():
         sleep(update_time_short)
-        
+
         if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
             TPClient.stateUpdate(macroStateId, "RECORDING")
             Macro.States.macro_recordState = True
@@ -85,7 +81,7 @@ def updateStates():
                 TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
             Macro.States.macro_playState = False
 
-        #NOTE: CHECK ME -  We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
+        # NOTE: CHECK ME -  We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
 
         # Update macro profile
         newProfileList = list(Macro.getMacroProfile().keys())
@@ -93,43 +89,47 @@ def updateStates():
         if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList:
             TPClient.choiceUpdate(macroPlayProfile, newProfileList)
 
-
-        ### Check for Current Active Windows
+        # Check for Current Active Windows
         windows_active = get_current_windows()
 
-        ## Updating only if the list has changed
+        # Updating only if the list has changed
         if (windows_active != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturewindow.window_name")):
             TPClient.choiceUpdate(
                 PLUGIN_ID + ".screencapturewindow.window_name", windows_active)
             TPClient.stateUpdate(
                 PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
-            
 
-        ## Updating only every 60 seconds below
+        # Updating only every 60 seconds below
         if update_time_long < time():
             if PLATFORM_SYSTEM == "Windows":
-                ### Getting TTS Output Devices and Updating Choices
+                # Getting TTS Output Devices and Updating Choices
                 voices = [voice.name for voice in TTS.getAllVoices()]
                 tts_outputs = list(TTS.getAllOutput_TTS2().keys())
                 if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
-                    TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.output", tts_outputs)
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + "act.TSS.output", tts_outputs)
                 if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
                     TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
 
-                ### Getting Virtual Desktop info
+                # Getting Virtual Desktop info
                 number_of_active_desktops = len(get_virtual_desktops())
-                currentVdNum = VirtualDesktop.current().number        
+                currentVdNum = VirtualDesktop.current().number
                 if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
                     vd_list.extend(["next", "previous"])
-                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
-                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
-                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
-                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
-                    TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
+                    TPClient.stateUpdate(
+                        TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
-
-            #### Universal Stuff
+            # Universal Stuff
             # Check for Monitor info & Details
             list_monitor = check_number_of_monitors()
             if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
@@ -140,9 +140,9 @@ def updateStates():
                 TPClient.choiceUpdate(
                     PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
 
-            ### Resetting the next update time    
+            # Resetting the next update time
             update_time_long = time() + 60  # Set the next update time to 60 seconds later
-            
+
     g_log.debug("UpdateState func exited")
 
 
@@ -175,7 +175,6 @@ def onConnect(data):
     updateStateThread.start()
 
 
-
 # Settings handler
 @TPClient.on(TP.TYPES.onSettingUpdate)
 def onSettingUpdate(data):
@@ -189,12 +188,12 @@ def onAction(data):
     if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
 
-## NOTE: Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
+# NOTE: Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
 
 
-## NOTE: Keyboard & Mouse Actions
+# NOTE: Keyboard & Mouse Actions
     if aid == TP_PLUGIN_ACTIONS['Hold Mouse button']['id']:
         try:
             if action_data[0]['value'].lower() == "hold":
@@ -243,7 +242,7 @@ def onAction(data):
             pyautogui.drag(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'],
                            duration=action_data[3]['value'], button=action_data[4]['value'].lower())
 
-## NOTE: Virtual Desktop Actions
+# NOTE: Virtual Desktop Actions
 
     if aid == TP_PLUGIN_ACTIONS["VD create"]["id"]:
         try:
@@ -271,23 +270,28 @@ def onAction(data):
             if action_data[0]["value"].lower() == "next":
                 current_vd = VirtualDesktop.current()
                 VirtualDesktop(int(current_vd.number)+1).go()
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
 
             if action_data[0]["value"].lower() == "previous":
                 current_vd = VirtualDesktop.current()
                 VirtualDesktop(int(current_vd.number)-1).go()
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
             else:
                 VirtualDesktop(int(action_data[0]['value'])).go()
                 current_vd = VirtualDesktop.current()
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
 
         except Exception as e:
             g_log.error("VD switcher failed", e)
-        
 
     if aid == TP_PLUGIN_ACTIONS["VD app changer"]:
         if (action_data[0]["value"].lower() == "current"):
@@ -306,7 +310,7 @@ def onAction(data):
                         int(action_data[1]["value"])))
             except Exception as e:
                 g_log.error("VD app changer failed", e)
-            
+
     if aid == TP_PLUGIN_ACTIONS["VD app pin"]:
         if action_data[1]["value"].lower() == "current":
             try:
@@ -348,10 +352,10 @@ def onAction(data):
                 action_data[4]['value']
             )).start()
 
-## NOTE: Macro Recorder / Player
+# NOTE: Macro Recorder / Player
     if aid == TP_PLUGIN_ACTIONS["MacroRecorder"]['id']:
-        ## We need to make this non blocking to other things, also using ESCAPE to end the macro recording seems wrong..
-        ## We could show a taskbar icon that shows the current state of the maco recorder.. problem is it may not be visible without clicking for it
+        # We need to make this non blocking to other things, also using ESCAPE to end the macro recording seems wrong..
+        # We could show a taskbar icon that shows the current state of the maco recorder.. problem is it may not be visible without clicking for it
         if not Macro.States.macro_recordState:
             Macro.States.macroRecordThread = Thread(
                 target=Macro.record, args=(action_data[1]['value'], action_data[0]['value']))
@@ -363,13 +367,13 @@ def onAction(data):
                 target=Macro.play, args=(action_data[0]['value'],))
             Macro.States.macroPlayThread.start()
 
-                # depreceated if aid == TP_PLUGIN_ACTIONS["json Parser"]["id"]:
-                # depreceated     result = jsonPathfinder(
-                # depreceated         action_data[0]["value"], action_data[1]["value"])
-                # depreceated     TPClient.createState(PLUGIN_ID + ".state.jsonresult." + action_data[2]['value'],
-                # depreceated                          action_data[2]['value'], result, "Json parser result")
+            # depreceated if aid == TP_PLUGIN_ACTIONS["json Parser"]["id"]:
+            # depreceated     result = jsonPathfinder(
+            # depreceated         action_data[0]["value"], action_data[1]["value"])
+            # depreceated     TPClient.createState(PLUGIN_ID + ".state.jsonresult." + action_data[2]['value'],
+            # depreceated                          action_data[2]['value'], result, "Json parser result")
 
-## NOTE: Keyboard Writer
+# NOTE: Keyboard Writer
     if aid == TP_PLUGIN_ACTIONS["Keyboard writer"]["id"]:
         interval = 0
         try:
@@ -387,7 +391,7 @@ def onAction(data):
         elif action_data[0]["value"] == "Hold key":
             pyautogui.keyDown(key)
 
-## NOTE: Screen / Display Capture
+# NOTE: Screen / Display Capture
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Display"]["id"]:
         if data['data'][1]['value'] == "Clipboard":
             try:
@@ -436,8 +440,8 @@ def onAction(data):
                 data['data'][1]['value'], data['data'][2]['value']))
 
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Window WildCard"]["id"]:
-        ScreenShot.screenshot_window(window_title=data['data'][0]['value'], clipboard=data['data'][3]['value']
-                                     == "Clipboard", save_location=os.path.join(data['data'][1]['value'], data['data'][2]['value']))
+        ScreenShot.screenshot_window(window_title=data['data'][0]['value'], clipboard=data['data'][3]['value'] == "Clipboard",
+                                     save_location=os.path.join(data['data'][1]['value'], data['data'][2]['value']))
 
 
 def get_current_windows():

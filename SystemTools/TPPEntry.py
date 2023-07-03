@@ -1,5 +1,5 @@
-import platform
 import os
+import platform
 
 __version__ = "4"
 
@@ -8,7 +8,7 @@ PLUGIN_ID = "plugin.SystemTools"
 
 PLATFORM_SYSTEM = platform.system()
 
-## This is not being utilized YET.. but it will be when we use linux for sure
+# This is not being utilized YET.. but it will be when we use linux for sure
 OS_INFO = {
     "version": platform.version(),          # 10.0.19043 for windows 10
     "arch": platform.architecture(),        # 32bit / 64bit
@@ -620,13 +620,13 @@ TP_PLUGIN_ACTIONS = {
                     "type": "folder",
                     "label": "folder",
                     "default": ""
-                },
+            },
             "filename": {
                     "id": PLUGIN_ID + ".screencapture.window_current.filename",
                     "type": "text",
                     "label": "text",
                     "default": ""
-                }
+            }
         }
     }
 }
@@ -648,7 +648,7 @@ if plugin_name == "Windows":
                 "id": PLUGIN_ID + ".act.vd_create.vd_name",
                 "type": "text",
                 "label": "VD name",
-                "default": "New Virtual Desktop"    
+                "default": "New Virtual Desktop"
             }
         }
     }
@@ -666,7 +666,7 @@ if plugin_name == "Windows":
                 "id": PLUGIN_ID + ".act.vd_remove.vd_name",
                 "type": "choice",
                 "label": "VD name",
-                "default": "",    
+                "default": "",
                 "valueChoices": []
             }
         }
@@ -693,7 +693,7 @@ if plugin_name == "Windows":
                 "type": "text",
                 "label": "VD name",
                 "default": "New Virtual Desktop"
-            }, 
+            },
         }
     }
 
