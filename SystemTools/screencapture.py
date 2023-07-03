@@ -8,15 +8,21 @@ from PIL import Image
 from io import BytesIO
 
 
-if PLATFORM_SYSTEM == "Windows":
-    import win32clipboard, os, win32gui, win32api, win32ui
-    from util import windll
-    
-if PLATFORM_SYSTEM == "Linux":
-    pass
+match PLATFORM_SYSTEM:
+    case "Windows":
+        import os
+        import win32ui
+        import win32gui
+        import win32api
+        import win32clipboard
+        from util import windll
+    case "Linux":
+        pass
+    case "Darwin":
+        pass
 
-if PLATFORM_SYSTEM == "Darwin":
-    pass
+
+
 
 """
 Screenshot is working, doesnt appear to be copying an image to clipbord anylonger?  

@@ -1,37 +1,34 @@
-import TouchPortalAPI as TP
 from TouchPortalAPI.logger import Logger
+import TouchPortalAPI as TP
 from argparse import ArgumentParser
 from threading import Thread
+from time import sleep, time
 import os
 import sys
-from time import sleep, time
-
 import pyperclip
-import pygetwindow as gw
+import pygetwindow
 import pyautogui
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 from screeninfo import get_monitors
 
 ## Local Imports
-from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME
-from util import SystemPrograms, Get_Windows, PLATFORM_SYSTEM
+from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME, PLATFORM_SYSTEM
+from util import SystemPrograms, Get_Windows
 from powerplan import Powerplan
 from tts import TTS
 from screencapture import ScreenShot
 import Macro
 
 
-if PLATFORM_SYSTEM == "Windows":
-    import win32gui
-    import win32con
-    import win32api
-
-if PLATFORM_SYSTEM == "Linux":
-    pass
-
-if PLATFORM_SYSTEM == "Darwin":
-    pass
-
+match PLATFORM_SYSTEM:
+    case "Windows":
+        import win32gui
+        import win32con
+        import win32api
+    case "Linux":
+        pass
+    case "Darwin":
+        pass
 
 ##                                END OF IMPORTS                                    ##
 
@@ -430,7 +427,7 @@ def onAction(data):
                         window_name=data['data'][0]['value'], file_name=afile_name)
 
     if aid == TP_PLUGIN_ACTIONS["Screenshot Window Current"]["id"]:
-        current_window_title = gw.getActiveWindowTitle()
+        current_window_title = pygetwindow.getActiveWindowTitle()
         if current_window_title:
             ScreenShot.screenshot_window(3, current_window_title, data['data'][0]['value'] == "Clipboard", os.path.join(
                 data['data'][1]['value'], data['data'][2]['value']))

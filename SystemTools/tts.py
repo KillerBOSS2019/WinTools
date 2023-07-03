@@ -3,16 +3,17 @@ from util import PLATFORM_SYSTEM
 import os
 import sounddevice as sd
 
-if PLATFORM_SYSTEM == "Windows":
-    import pyttsx3
-    import audio2numpy as a2n
-    import comtypes
-    
-if PLATFORM_SYSTEM == "Linux":
-    pass
 
-if PLATFORM_SYSTEM == "Darwin":
-    pass
+match PLATFORM_SYSTEM:
+    case "Windows":
+        import pyttsx3
+        import audio2numpy as a2n
+        import comtypes
+    case "Linux":
+        pass
+    case "Darwin":
+        pass
+
 
 
 

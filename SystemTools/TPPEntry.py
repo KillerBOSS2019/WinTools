@@ -21,15 +21,19 @@ OS_INFO = {
 }
 
 
-if PLATFORM_SYSTEM == "Windows":
-    plugin_name = "Windows"
-    appdata = os.getenv("LOCALAPPDATA")
-elif PLATFORM_SYSTEM == "Darwin":
-    plugin_name = "MacOS"
-    appdata = "./Document/TouchPortal/plugins/WinTools"
-elif PLATFORM_SYSTEM == "Linux":
-    plugin_name = "Linux"
-    appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/WinTools"
+match PLATFORM_SYSTEM:
+    case "Windows":
+        plugin_name = "Windows"
+        appdata = os.getenv("LOCALAPPDATA")
+    
+    case "Darwin":
+        plugin_name = "MacOS"
+        appdata = "./Document/TouchPortal/plugins/WinTools"
+
+    case "Linux":
+        plugin_name = "Linux"
+        appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/WinTools"
+
 
 PLUGIN_NAME = plugin_name + " Tools"
 

@@ -4,17 +4,17 @@ from ast import literal_eval
 import subprocess
 from io import BytesIO
 
-if PLATFORM_SYSTEM == "Windows":
-    from ctypes import windll
-    import win32clipboard
-    import win32gui
-    from win32com.client import GetObject  # Used to Get Display Name / Details
 
-if PLATFORM_SYSTEM == "Linux":
-    pass
-
-if PLATFORM_SYSTEM == "Darwin":
-    pass
+match PLATFORM_SYSTEM:
+    case "Windows":
+        from win32com.client import GetObject  # Used to Get Display Name / Details
+        from ctypes import windll
+        import win32clipboard
+        import win32gui
+    case "Linux":
+        pass
+    case "Darwin":
+        pass
 
 
 def runWindowsCMD(command):
