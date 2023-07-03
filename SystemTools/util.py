@@ -167,16 +167,16 @@ class Powerplan:
         return False
 
 
-def jsonPathfinder(data, path):
-    pathlist = []
-    print(data)
-    data = json.loads(data)
-    for path in path.split("."):
-        try:
-            pathlist.append(int(path))
-        except ValueError:
-            pathlist.append(path)
-    return reduce(lambda a, b: a[b], pathlist, data)
+## depreceated def jsonPathfinder(data, path):
+## depreceated     pathlist = []
+## depreceated     print(data)
+## depreceated     data = json.loads(data)
+## depreceated     for path in path.split("."):
+## depreceated         try:
+## depreceated             pathlist.append(int(path))
+## depreceated         except ValueError:
+## depreceated             pathlist.append(path)
+## depreceated     return reduce(lambda a, b: a[b], pathlist, data)
 
 
 class TTS:
