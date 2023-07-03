@@ -1,6 +1,7 @@
 import subprocess
 from ast import literal_eval
 from io import BytesIO
+from TPPEntry import PLATFORM_SYSTEM
 
 
 match PLATFORM_SYSTEM:

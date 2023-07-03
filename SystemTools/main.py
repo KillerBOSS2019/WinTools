@@ -18,6 +18,7 @@ from util import SystemPrograms, Get_Windows
 from powerplan import Powerplan
 from tts import TTS
 from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
+import Macro
 
 match PLATFORM_SYSTEM:
     case "Windows":
