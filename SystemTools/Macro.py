@@ -26,7 +26,8 @@ class States:
     macroPlayThread = None
 
 
-def record(name, file='record.json'):
+def record(name, macro_action, file='record.json'):
+  #  print(name, macro_action)
     mouse_events = []
     keyboard_events = []
 
