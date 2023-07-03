@@ -69,14 +69,7 @@ def updateStatesLong(forced = False):
             TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
         TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
-    
 
-    if plugin_name == "Linux":
-        pass
-
-    if plugin_name == "Darwin":
-        pass
-    
 
     #### Universal Stuff
     # Check for Monitor info & Details
@@ -97,16 +90,18 @@ def updateStatesLong(forced = False):
     else:
         sleep(60)
 
-
+import time
 def updateStates():
     g_log.debug("Running update state")
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
 
+    next_update_time_long = time.time() + 60  # Set initial next update time to 1 minute later
+
     while TPClient.isConnected():
         sleep(0.5)
-   
+        
         if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
             TPClient.stateUpdate(macroStateId, "RECORDING")
             Macro.States.macro_recordState = True
@@ -123,15 +118,13 @@ def updateStates():
                 TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
             Macro.States.macro_playState = False
 
-      # ### Check for Monitor info & Details
-      # list_monitor = check_number_of_monitors()
-      # if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
-      #     TPClient.choiceUpdate(
-      #         PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
-      #     TPClient.choiceUpdate(
-      #         PLUGIN_ID + ".winsettings.monchoice", list_monitor)
-      #     TPClient.choiceUpdate(
-      #         PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
+
+        ### We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
+        # Update macro profile
+        newProfileList = list(Macro.getMacroProfile().keys())
+        # default true cuz it does not exist in dict so need to update it.
+        if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList:
+            TPClient.choiceUpdate(macroPlayProfile, newProfileList)
 
 
         ### Check for Current Active Windows
@@ -141,42 +134,47 @@ def updateStates():
                 PLUGIN_ID + ".screencapturewindow.window_name", windows_active)
             TPClient.stateUpdate(
                 PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
+            
 
-       ## TTS and Virtual Desktop info if plugin_name == "Windows":
-       ## TTS and Virtual Desktop info     """Getting TTS Output Devices and Updating Choices"""
+        ## Updating only every 60 seconds below
+        if next_update_time_long < time.time():
+            if plugin_name == "Windows":
+                ### Getting TTS Output Devices and Updating Choices
+                voices = [voice.name for voice in TTS.getAllVoices()]
+                tts_outputs = list(TTS.getAllOutput_TTS2().keys())
+                if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
+                    TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.output", tts_outputs)
+                if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
+                    TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
 
-       ## TTS and Virtual Desktop info     voices = [voice.name for voice in TTS.getAllVoices()]
-       ## TTS and Virtual Desktop info     tts_outputs = list(TTS.getAllOutput_TTS2().keys())
+                ### Getting Virtual Desktop info
+                number_of_active_desktops = len(get_virtual_desktops())
+                currentVdNum = VirtualDesktop.current().number        
+                if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
+                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
+                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
+                    TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
-       ## TTS and Virtual Desktop info     if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
-       ## TTS and Virtual Desktop info         TPClient.choiceUpdate(
-       ## TTS and Virtual Desktop info             PLUGIN_ID + "act.TSS.output", tts_outputs)
-       ## TTS and Virtual Desktop info     if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
-       ## TTS and Virtual Desktop info         TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
 
-       ## TTS and Virtual Desktop info     number_of_active_desktops = len(get_virtual_desktops())
-       ## TTS and Virtual Desktop info     currentVdNum = VirtualDesktop.current().number
-       ## TTS and Virtual Desktop info     if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
-       ## TTS and Virtual Desktop info         TPClient.choiceUpdate(
-       ## TTS and Virtual Desktop info             PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
-       ## TTS and Virtual Desktop info         TPClient.choiceUpdate(
-       ## TTS and Virtual Desktop info             PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
-       ## TTS and Virtual Desktop info         TPClient.stateUpdate(
-       ## TTS and Virtual Desktop info             TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
-       ## TTS and Virtual Desktop info     TPClient.stateUpdate(
-       ## TTS and Virtual Desktop info         TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
+            #### Universal Stuff
+            # Check for Monitor info & Details
+            list_monitor = check_number_of_monitors()
+            if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
+                TPClient.choiceUpdate(
+                    PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
+                TPClient.choiceUpdate(
+                    PLUGIN_ID + ".winsettings.monchoice", list_monitor)
+                TPClient.choiceUpdate(
+                    PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
 
-        # Update macro profile
-        newProfileList = list(Macro.getMacroProfile().keys())
-        # print(newProfileList)
-        # default true cuz it does not exist in dict so need to update it.
-        if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList:
-            TPClient.choiceUpdate(macroPlayProfile, newProfileList)
+            ### Resetting the next update time    
+            next_update_time_long = time.time() + 60  # Set the next update time to 60 seconds later
+            
     g_log.debug("UpdateState func exited")
 
 
 updateStateThread = Thread(target=updateStates)
-updateStateThread_long = Thread(target=updateStatesLong)
 
 
 def window_callback(hwnd, app_name):
@@ -203,7 +201,7 @@ def onConnect(data):
         pyautogui.KEYBOARD_KEYS[4:]))
 
     updateStateThread.start()
-    updateStateThread_long.start()
+
 
 
 # Settings handler
