@@ -16,6 +16,7 @@ from ctypes.util import find_library
 # print(find_library('portaudio'))
 
 
+
 """ 
 According to my research this is the most reliable way and better than system.platform 
 ### MAC Examples     - os.name = 'posix'      /     platform.system = 'Darwin'       /   platform.release = '8.11.0'
@@ -23,7 +24,8 @@ According to my research this is the most reliable way and better than system.pl
 ### Windows Examples - os.name = 'nt'       /       platform.system = 'Windows'    /     platform.release = '10'
 
                                           EXAMPLES                                      """
-PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
+#PLATFORM_SYSTEM = platform.system()  # Windows / Darwin / Linux
+from TPPEntry import PLATFORM_SYSTEM
 # Windows 10 / 11 , or Linux 2.6.22 etc..
 PLATFORM_RELEASE = platform.release()
 PLATFORM_MACHINE = platform.machine()  # AMD64 / *Intel ??
@@ -73,6 +75,10 @@ if PLATFORM_SYSTEM == "Windows":
     import pyttsx3
 
     from win32com.client import GetObject  # Used to Get Display Name / Details
+    import win32api
+    import comtypes 
+    import win32con
+    
 
 
 if PLATFORM_SYSTEM == "Linux":
@@ -181,10 +187,11 @@ class Powerplan:
 
 class TTS:
     def getAllVoices():
-        import comtypes
         comtypes.CoInitialize()
         engine = pyttsx3.init()
-        return engine.getProperty('voices')
+        voices = engine.getProperty('voices')
+        comtypes.CoUninitialize()
+        return voices
 
     def getAllOutput_TTS2():
         audio_dict = {}
@@ -331,7 +338,7 @@ class ScreenShot:
 
     def get_monitors_Windows_OS():
         try:
-            import win32api
+           # import win32api
             # Code to retrieve monitor information
             objWMI = win32api.EnumDisplayMonitors()
         except Exception as e:

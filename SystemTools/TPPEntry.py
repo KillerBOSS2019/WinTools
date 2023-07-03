@@ -1,7 +1,7 @@
 import platform
 import os
 
-__version__ = "4"
+__version__ = "41"
 
 # PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
 PLUGIN_ID = "plugin.SystemTools"

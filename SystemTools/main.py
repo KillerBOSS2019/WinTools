@@ -1,25 +1,25 @@
-import sys
-from time import sleep
 import TouchPortalAPI as TP
 from TouchPortalAPI.logger import Logger
 from argparse import ArgumentParser
 from threading import Thread
+import sys
+from time import sleep, time
 import pyperclip
 import pygetwindow as gw
-
 import pyautogui
-
-from TPPEntry import *
-from util import SystemPrograms, Powerplan, TTS, ScreenShot, Get_Windows
-from screeninfo import get_monitors
-import Macro
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
 
-if plugin_name == "Windows":
-    import win32api
-    import win32con
-    import win32gui
+
+## Local Imports
+from TPPEntry import *
+from util import SystemPrograms, Powerplan, TTS, ScreenShot, Get_Windows, win32api, win32con, win32gui
+from screeninfo import get_monitors
+import Macro
+
+
+
+
 
 
 # Create the Touch Portal API client.
@@ -90,17 +90,19 @@ def updateStatesLong(forced = False):
     else:
         sleep(60)
 
-import time
+
 def updateStates():
     g_log.debug("Running update state")
+
+    update_time_short = 0.5              # Setting short update time to every 0.5 seconds
+    update_time_long = time() + 60  # Setting long update time to every 60 seconds
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
 
-    next_update_time_long = time.time() + 60  # Set initial next update time to 1 minute later
 
     while TPClient.isConnected():
-        sleep(0.5)
+        sleep(update_time_short)
         
         if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
             TPClient.stateUpdate(macroStateId, "RECORDING")
@@ -118,8 +120,8 @@ def updateStates():
                 TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
             Macro.States.macro_playState = False
 
+        #NOTE: CHECK ME -  We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
 
-        ### We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
         # Update macro profile
         newProfileList = list(Macro.getMacroProfile().keys())
         # default true cuz it does not exist in dict so need to update it.
@@ -129,6 +131,8 @@ def updateStates():
 
         ### Check for Current Active Windows
         windows_active = get_current_windows()
+
+        ## Updating only if the list has changed
         if (windows_active != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturewindow.window_name")):
             TPClient.choiceUpdate(
                 PLUGIN_ID + ".screencapturewindow.window_name", windows_active)
@@ -137,7 +141,7 @@ def updateStates():
             
 
         ## Updating only every 60 seconds below
-        if next_update_time_long < time.time():
+        if update_time_long < time():
             if plugin_name == "Windows":
                 ### Getting TTS Output Devices and Updating Choices
                 voices = [voice.name for voice in TTS.getAllVoices()]
@@ -169,7 +173,7 @@ def updateStates():
                     PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
 
             ### Resetting the next update time    
-            next_update_time_long = time.time() + 60  # Set the next update time to 60 seconds later
+            update_time_long = time() + 60  # Set the next update time to 60 seconds later
             
     g_log.debug("UpdateState func exited")
 
@@ -217,12 +221,12 @@ def onAction(data):
     if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
         return
 
-## Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
+## NOTE: Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
 
 
-## Keyboard & Mouse Actions
+## NOTE: Keyboard & Mouse Actions
     if aid == TP_PLUGIN_ACTIONS['Hold Mouse button']['id']:
         try:
             if action_data[0]['value'].lower() == "hold":
@@ -271,7 +275,7 @@ def onAction(data):
             pyautogui.drag(xOffset=action_data[1]['value'], yOffset=action_data[2]['value'],
                            duration=action_data[3]['value'], button=action_data[4]['value'].lower())
 
-## Virtual Desktop Actions
+## NOTE: Virtual Desktop Actions
     if aid == TP_PLUGIN_ACTIONS["VD switcher"]["id"]:
         try:
             VirtualDesktop(int(action_data[0]['value'])).go()
@@ -338,7 +342,7 @@ def onAction(data):
                 action_data[4]['value']
             )).start()
 
-## Macro Recorder / Player
+## NOTE: Macro Recorder / Player
     if aid == TP_PLUGIN_ACTIONS["MacroRecorder"]['id']:
         ## We need to make this non blocking to other things, also using ESCAPE to end the macro recording seems wrong..
         ## We could show a taskbar icon that shows the current state of the maco recorder.. problem is it may not be visible without clicking for it
@@ -359,7 +363,7 @@ def onAction(data):
                 # depreceated     TPClient.createState(PLUGIN_ID + ".state.jsonresult." + action_data[2]['value'],
                 # depreceated                          action_data[2]['value'], result, "Json parser result")
 
-## Keyboard Writer
+## NOTE: Keyboard Writer
     if aid == TP_PLUGIN_ACTIONS["Keyboard writer"]["id"]:
         interval = 0
         try:
@@ -377,7 +381,7 @@ def onAction(data):
         elif action_data[0]["value"] == "Hold key":
             pyautogui.keyDown(key)
 
-## Screen Capture
+## NOTE: Screen / Display Capture
     if aid == TP_PLUGIN_ACTIONS["Screen Capture Display"]["id"]:
         if data['data'][1]['value'] == "Clipboard":
             try:
@@ -436,12 +440,11 @@ def get_current_windows():
     if plugin_name == "Windows":
         windows_active = Get_Windows.get_windows_Windows_OS()
 
-       # if len(old_results) != len(windows_active):
-        # windows_active = get_windows()
-        #    old_results = windows_active
-
     if plugin_name == "Linux":
         windows_active = Get_Windows.get_windows_Linux()
+
+    if plugin_name == "Darwin":
+        pass
 
     return windows_active
 
