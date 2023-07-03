@@ -621,6 +621,69 @@ TP_PLUGIN_ACTIONS = {
 
 # Adding Windows Specific Actions
 if plugin_name == "Windows":
+
+    TP_PLUGIN_ACTIONS["VD create"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_create",
+        'name': 'Create Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Create Virtual Desktop with the name of$[1]",
+        'data': {
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_create.vd_name",
+                "type": "text",
+                "label": "VD name",
+                "default": "New Virtual Desktop"    
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD remove"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_remove",
+        'name': 'Remove Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Remove Virtual Desktop $[1]",
+        'data': {
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_remove.vd_name",
+                "type": "choice",
+                "label": "VD name",
+                "default": "",    
+                "valueChoices": []
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD rename"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_rename",
+        'name': 'Rename Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Rename Virtual Desktop $[1] to $[2]",
+        'data': {
+            "Current VDs": {
+                "id": PLUGIN_ID + ".act.vd_rename.current_vds",
+                "type": "choice",
+                "label": "Current VDs",
+                "default": "",
+                "valueChoices": []
+            },
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_rename.vd_name",
+                "type": "text",
+                "label": "VD name",
+                "default": "New Virtual Desktop"
+            }, 
+        }
+    }
+
     TP_PLUGIN_ACTIONS["VD switcher"] = {
         'category': 'VD',
         'id': PLUGIN_ID + ".act.vd_switcher",
@@ -635,10 +698,11 @@ if plugin_name == "Windows":
                 "type": "choice",
                 "label": "VD index",
                 "default": "1",
-                "valueChoices": []
+                "valueChoices": ["next", "previous"]
             }
         }
     }
+
     TP_PLUGIN_ACTIONS["VD app changer"] = {
         'category': 'VD',
         'id': PLUGIN_ID + ".act.vd_appchanger",
@@ -663,6 +727,7 @@ if plugin_name == "Windows":
             }
         }
     }
+
     TP_PLUGIN_ACTIONS["VD app pin"] = {
         'category': 'VD',
         'id': PLUGIN_ID + ".act.vd_app_pin",
@@ -825,6 +890,13 @@ if plugin_name == "Windows":
         "id": PLUGIN_ID + ".state.currentVD",
         "type": "text",
         "desc": "Current Virtual Desktop Number"
+    }
+
+    TP_PLUGIN_STATES["CurrentVDName"] = {
+        "category": "VD",
+        "id": PLUGIN_ID + ".state.currentVDName",
+        "type": "text",
+        "desc": "Current Virtual Desktop Name"
     }
 
 # Plugin Event(s).

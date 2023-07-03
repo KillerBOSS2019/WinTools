@@ -12,8 +12,9 @@ from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 
 
 ## Local Imports
-from TPPEntry import *
-from util import SystemPrograms, Powerplan, TTS, ScreenShot, Get_Windows, win32api, win32con, win32gui
+from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME
+from util import SystemPrograms, Powerplan, TTS, ScreenShot, Get_Windows, PLATFORM_SYSTEM
+from util import win32api, win32con, win32gui, os
 from screeninfo import get_monitors
 import Macro
 
@@ -40,62 +41,14 @@ except Exception as e:
 
 g_log = Logger(name=PLUGIN_ID)
 
-if plugin_name == "Windows":
-    sysProgram = SystemPrograms()
-    pplan = Powerplan()
 
-
-# Update states
-def updateStatesLong(forced = False):
-    """ 
-    Updating states that do not need updated frequently
-    """ 
-    
-    if plugin_name == "Windows":
-        ### Getting TTS Output Devices and Updating Choices
-        voices = [voice.name for voice in TTS.getAllVoices()]
-        tts_outputs = list(TTS.getAllOutput_TTS2().keys())
-        if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
-            TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.output", tts_outputs)
-        if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
-            TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
-
-        ### Getting Virtual Desktop info
-        number_of_active_desktops = len(get_virtual_desktops())
-        currentVdNum = VirtualDesktop.current().number        
-        if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
-            TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
-            TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
-            TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
-        TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
-
-
-
-    #### Universal Stuff
-    # Check for Monitor info & Details
-    list_monitor = check_number_of_monitors()
-    if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
-        TPClient.choiceUpdate(
-            PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
-        TPClient.choiceUpdate(
-            PLUGIN_ID + ".winsettings.monchoice", list_monitor)
-        TPClient.choiceUpdate(
-            PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
-
-
-
-    # Only sleep if not a forced update
-    if forced:
-        pass
-    else:
-        sleep(60)
 
 
 def updateStates():
     g_log.debug("Running update state")
 
     update_time_short = 0.5              # Setting short update time to every 0.5 seconds
-    update_time_long = time() + 60  # Setting long update time to every 60 seconds
+    update_time_long = time() + 5  # Setting long update time to every 60 seconds
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
@@ -142,7 +95,7 @@ def updateStates():
 
         ## Updating only every 60 seconds below
         if update_time_long < time():
-            if plugin_name == "Windows":
+            if PLATFORM_SYSTEM == "Windows":
                 ### Getting TTS Output Devices and Updating Choices
                 voices = [voice.name for voice in TTS.getAllVoices()]
                 tts_outputs = list(TTS.getAllOutput_TTS2().keys())
@@ -155,8 +108,11 @@ def updateStates():
                 number_of_active_desktops = len(get_virtual_desktops())
                 currentVdNum = VirtualDesktop.current().number        
                 if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
+                    vd_list.extend(["next", "previous"])
                     TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
                     TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
+                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
+                    TPClient.choiceUpdate(PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
                     TPClient.stateUpdate(TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
                 TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
@@ -196,7 +152,7 @@ def onConnect(data):
         f"Connected to TP v{data.get('tpVersionString', '?')}, plugin v{data.get('pluginVersion', '?')}.")
     g_log.debug(f"Connection: {data}")
 
-    if plugin_name == "Windows":
+    if PLATFORM_SYSTEM == "Windows":
         TPClient.choiceUpdate(TP_PLUGIN_ACTIONS['Powerplan']['data']['powerplanChoices']['id'], list(
             pplan.powerplans.keys()))
 
@@ -276,9 +232,47 @@ def onAction(data):
                            duration=action_data[3]['value'], button=action_data[4]['value'].lower())
 
 ## NOTE: Virtual Desktop Actions
+
+    if aid == TP_PLUGIN_ACTIONS["VD create"]["id"]:
+        try:
+            created_vd = VirtualDesktop.create()
+            if action_data[0]["value"] != "":
+                created_vd.rename(action_data[0]["value"])
+        except Exception as e:
+            g_log.error("VD create failed", e)
+
+    if aid == TP_PLUGIN_ACTIONS["VD rename"]["id"]:
+        try:
+            VirtualDesktop(int(action_data[0]["value"])).rename(
+                action_data[1]["value"])
+        except Exception as e:
+            g_log.error("VD rename failed", e)
+
+    if aid == TP_PLUGIN_ACTIONS["VD remove"]["id"]:
+        try:
+            VirtualDesktop(int(action_data[0]["value"])).remove()
+        except Exception as e:
+            g_log.error("VD remove failed", e)
+
     if aid == TP_PLUGIN_ACTIONS["VD switcher"]["id"]:
         try:
-            VirtualDesktop(int(action_data[0]['value'])).go()
+            if action_data[0]["value"].lower() == "next":
+                current_vd = VirtualDesktop.current()
+                VirtualDesktop(int(current_vd.number)+1).go()
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+
+            if action_data[0]["value"].lower() == "previous":
+                current_vd = VirtualDesktop.current()
+                VirtualDesktop(int(current_vd.number)-1).go()
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+            else:
+                VirtualDesktop(int(action_data[0]['value'])).go()
+                current_vd = VirtualDesktop.current()
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+                TPClient.stateUpdate(TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+
         except Exception as e:
             g_log.error("VD switcher failed", e)
         
@@ -326,7 +320,7 @@ def onAction(data):
             elif pin_option == "Unpin":
                 app_to_pin.unpin()
 
-    if plugin_name == "Windows":
+    if PLATFORM_SYSTEM == "Windows":
         if aid == TP_PLUGIN_ACTIONS['App launcher']['id']:
             sysProgram.start(action_data[1]['value'], action_data[0]['value'])
 
@@ -403,11 +397,11 @@ def onAction(data):
         if data['data'][0]['value']:
             if data['data'][4]['value'] == "Clipboard":
 
-                if plugin_name == "Windows":
+                if PLATFORM_SYSTEM == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(
                         data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
 
-                if plugin_name == "Linux":
+                if PLATFORM_SYSTEM == "Linux":
                     ScreenShot.screenshot_window_linux(
                         window_name=data['data'][0]['value'], clipboard=True)
 
@@ -415,11 +409,11 @@ def onAction(data):
                 afile_name = data['data'][2]['value'] + \
                     "/" + data['data'][3]['value']
 
-                if plugin_name == "Windows":
+                if PLATFORM_SYSTEM == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(
                         data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
 
-                if plugin_name == "Linux":
+                if PLATFORM_SYSTEM == "Linux":
                     ScreenShot.screenshot_window_linux(
                         window_name=data['data'][0]['value'], file_name=afile_name)
 
@@ -437,24 +431,24 @@ def onAction(data):
 def get_current_windows():
     windows_active = []
 
-    if plugin_name == "Windows":
+    if PLATFORM_SYSTEM == "Windows":
         windows_active = Get_Windows.get_windows_Windows_OS()
 
-    if plugin_name == "Linux":
+    if PLATFORM_SYSTEM == "Linux":
         windows_active = Get_Windows.get_windows_Linux()
 
-    if plugin_name == "Darwin":
+    if PLATFORM_SYSTEM == "Darwin":
         pass
 
     return windows_active
 
 
 def check_number_of_monitors():
-    if plugin_name == "Windows":
+    if PLATFORM_SYSTEM == "Windows":
         list_monitor_full = ScreenShot.get_monitors_Windows_OS()
         list_monitor_full.insert(0, "0: ALL MONITORS")
 
-    elif plugin_name == "Linux" or plugin_name == "Darwin":
+    elif PLATFORM_SYSTEM == "Linux" or PLATFORM_SYSTEM == "Darwin":
         monitors = get_monitors()
         list_monitor_full = []
 
@@ -476,11 +470,11 @@ def mouseScroll(mousescroll, speed):
    #     speed = speed * -1
 
     if mousescroll in ["UP", "DOWN"]:
-        mousescroll = win32con.MOUSEEVENTF_WHEEL if plugin_name == "Windows" else "scroll"
+        mousescroll = win32con.MOUSEEVENTF_WHEEL if PLATFORM_SYSTEM == "Windows" else "scroll"
     elif mousescroll in ["LEFT", "RIGHT"]:
-        mousescroll = win32con.MOUSEEVENTF_HWHEEL if plugin_name == "Windows" else "hscroll"
+        mousescroll = win32con.MOUSEEVENTF_HWHEEL if PLATFORM_SYSTEM == "Windows" else "hscroll"
 
-    if plugin_name == "Windows":
+    if PLATFORM_SYSTEM == "Windows":
         win32api.mouse_event(mousescroll, 0, 0, speed)
     else:
         if mousescroll == "hscroll":
@@ -520,7 +514,7 @@ def onHold(data):
 # Action data select event
 @TPClient.on(TP.TYPES.onListChange)
 def onListChange(data):
-    if plugin_name == "Windows" and data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
+    if PLATFORM_SYSTEM == "Windows" and data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
        # if data['listId'] == TP_PLUGIN_ACTIONS['App launcher']['data']['appType']['id']:
         if data['value'] == "Steam":
             program = sysProgram.steam
@@ -610,7 +604,7 @@ def main():
 
     # ready to go
     g_log.info(
-        f"Starting {TP_PLUGIN_INFO['name']} v{TP_PLUGIN_INFO['version']} on {plugin_name}.")
+        f"Starting {TP_PLUGIN_INFO['name']} v{TP_PLUGIN_INFO['version']} on {PLUGIN_NAME}.")
 
     try:
         TPClient.connect()
@@ -631,4 +625,8 @@ def main():
 
 
 if __name__ == "__main__":
+    if PLATFORM_SYSTEM == "Windows":
+        sysProgram = SystemPrograms()
+        pplan = Powerplan()
+
     sys.exit(main())
