@@ -461,40 +461,36 @@ def onAction(data):
                                      save_location=os.path.join(data['data'][1]['value'], data['data'][2]['value']))
 
     
-
     if aid == TP_PLUGIN_ACTIONS["Rotate Display"]['id']:
         rotate_display(data['data'][0]['value'], data['data'][1]['value'])
 
 def get_current_windows():
     windows_active = []
-
-    if PLATFORM_SYSTEM == "Windows":
-        windows_active = Get_Windows.get_windows_Windows_OS()
-
-    if PLATFORM_SYSTEM == "Linux":
-        windows_active = Get_Windows.get_windows_Linux()
-
-    if PLATFORM_SYSTEM == "Darwin":
-        pass
-
+    match PLATFORM_SYSTEM:
+        case "Windows":
+            windows_active = Get_Windows.get_windows_Windows_OS()
+        case "Linux":
+            windows_active = Get_Windows.get_windows_Linux()
+        case "Darwin":
+            pass
     return windows_active
 
 
 def check_number_of_monitors():
-    if PLATFORM_SYSTEM == "Windows":
-        list_monitor_full = ScreenShot.get_monitors_Windows_OS()
-        list_monitor_full.insert(0, "0: ALL MONITORS")
+    match PLATFORM_SYSTEM:
+        case "Windows":
+            list_monitor_full = ScreenShot.get_monitors_Windows_OS()
+            list_monitor_full.insert(0, "0: ALL MONITORS")
 
-    elif PLATFORM_SYSTEM == "Linux" or PLATFORM_SYSTEM == "Darwin":
-        monitors = get_monitors()
-        list_monitor_full = []
+        case "Linux", "Darwin":
+            monitors = get_monitors()
+            list_monitor_full = []
 
-        count = 1
-        for x in monitors:
-            list_monitor_full.append(str(count) + ": " + x.name)
-            count += 1
-        list_monitor_full.insert(0, "0: ALL MONITORS")
-
+            count = 1
+            for x in monitors:
+                list_monitor_full.append(str(count) + ": " + x.name)
+                count += 1
+            list_monitor_full.insert(0, "0: ALL MONITORS")
     return list_monitor_full
 
 
@@ -534,15 +530,16 @@ def onConnector(data):
 
     if data['connectorId'] == TP_PLUGIN_CONNECTORS['Zoom Control']['id']:
        # print("Magnifier.ZoomControl", data)
-        if data['data'][0]['value'] == "Zoom" :
-            mag_level(data['value']*16)
-             
-        if data['data'][0]['value'] == "Lens X" :
-            magnifer_dimensions(x=data['value'])
-        
-        if data['data'][0]['value'] == "Lens Y" :
-            magnifer_dimensions(y=data['value'])
-            
+        match data['data'][0]['value']:
+            case "Zoom":
+                mag_level(data['value']*16)
+            case "Lens X":
+                magnifer_dimensions(x=data['value'])
+            case "Lens Y":
+                magnifer_dimensions(y=data['value'])
+            case _:
+                pass
+
 
 
 # on hold handler
@@ -557,8 +554,21 @@ def onHold(data):
             pyautogui.click(button=data['data'][0]['value'],
                             clicks=int(data['data'][1]['value']),
                             interval=float(data['data'][2]['value']))
-        else:
-            break
+            
+        elif TPClient.isActionBeingHeld(TP_PLUGIN_ACTIONS['Zoom Control OnHold']['id']):
+            match data['data'][0]['value']:
+                case "Lens X":
+                    magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
+                    sleep(0.05)
+                case "Lens Y":
+                    magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
+                    sleep(0.05)
+                case "Zoom":
+                    mag_level(int(data['data'][1]['value']), onhold=True)
+                    sleep(0.05)
+                case _:
+                    break
+
 
 
 # Action data select event

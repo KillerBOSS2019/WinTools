@@ -99,7 +99,7 @@ TP_PLUGIN_CONNECTORS = {
                 "valueChoices": ["Zoom", "Lens X", "Lens Y"]
          }
      }
-     },
+    },
     # Can't make this work as right now.
     # "MouseSliderCon": {
     #     "category": "main",
@@ -655,6 +655,42 @@ if plugin_name == "Windows":
           }
         ]
       }
+    
+    TP_PLUGIN_ACTIONS["Zoom Control OnHold"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.magnifier.zoomOnHold",
+        "name": "UTILITY:  Magnifier Glass Adjustment",
+        "prefix": TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "hasHoldFunctionality": True,
+        "description": "IF ON HOLD -> Increment by X \nIF ON PRESS -> Set to X",
+        "format": "Select $[1] and set/adjust by $[2]  ",
+        "data": 
+            {
+            "ZoomControl":{
+            "id": PLUGIN_ID + "magnifier.lens.choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Lens X",
+              "Lens Y",
+              "Zoom"
+            ]
+        },
+        "ZoomControlIncrement":{
+            "id": PLUGIN_ID + ".magnifier.lensIncrement",
+            "type": "text",
+            "label": "text",
+            "allowDecimals": False,
+            "minValue":5,
+            "maxValue":1600,
+            "default": "5"
+          }
+        
+    }
+    }
 
     TP_PLUGIN_ACTIONS["Rotate Display"] = {
         'category': "main",
