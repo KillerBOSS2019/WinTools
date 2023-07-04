@@ -171,6 +171,10 @@ def execute_cmd_command(command):
     """Executes a Command Prompt command."""
     os.system(f"cmd.exe /c {command}")
 
+def execute_powershell_command(command):
+    """Executes a PowerShell command."""
+    os.system(f"powershell.exe -Command {command}")
+
 ## Example usage: Execute a Command Prompt command
 #execute_cmd_command("dir")
 

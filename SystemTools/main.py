@@ -23,7 +23,7 @@ from TPPEntry import (PLATFORM_SYSTEM, PLUGIN_ID, PLUGIN_NAME,
                       TP_PLUGIN_ACTIONS, TP_PLUGIN_CONNECTORS, TP_PLUGIN_INFO,
                       TP_PLUGIN_STATES)
 from tts import TTS
-from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms, win_shutdown
+from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms, SystemState, execute_cmd_command, execute_powershell_command
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -210,7 +210,26 @@ def onAction(data):
 
 # Computer Shutdown & Sleep Actions
     if aid == TP_PLUGIN_ACTIONS["Shutdown"]["id"]:
-        win_shutdown(data['data'][1]['value'])
+        match data['data'][0]['value']:
+            case "Shutdown":
+                sysState.win_shutdown(data['data'][1]['value'])
+            case "Restart":
+                sysState.restart()
+            case "Sleep":
+                sysState.sleep()
+            case "Lock":
+                sysState.lock()
+            case "Logout":
+                sysState.logout()
+
+## Execute CMD Actions 
+    if aid == TP_PLUGIN_ACTIONS["Execute CMD"]["id"]:
+        match data['data'][0]['value']:
+            case "Command Prompt":
+                execute_cmd_command(data['data'][0]['value'])
+            case "Powershell":
+                execute_powershell_command(data['data'][0]['value'])
+
 
    #if aid == TP_PLUGIN_ACTIONS["magnifier.onHold"]["id"]:
    #    if data['data'][0]['value'] == "Zoom":
@@ -708,5 +727,6 @@ if __name__ == "__main__":
     if PLATFORM_SYSTEM == "Windows":
         sysProgram = SystemPrograms()
         pplan = Powerplan()
+        sysState = SystemState()
 
     sys.exit(main())
