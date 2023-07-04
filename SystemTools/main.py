@@ -1,34 +1,35 @@
-from TouchPortalAPI.logger import Logger
-import TouchPortalAPI as TP
+import os
+import sys
 from argparse import ArgumentParser
 from threading import Thread
 from time import sleep, time
-import os
-import sys
-import pyperclip
-import pygetwindow
-import pyautogui
-from pyvda import AppView, VirtualDesktop, get_virtual_desktops
-from screencapture import ScreenShot
-from screeninfo import get_monitors
 
-# Local Imports
-from TPPEntry import PLUGIN_ID, TP_PLUGIN_STATES, TP_PLUGIN_ACTIONS, TP_PLUGIN_INFO, TP_PLUGIN_CONNECTORS, PLUGIN_NAME, PLATFORM_SYSTEM
-from util import SystemPrograms, Get_Windows
-from powerplan import Powerplan
-from tts import TTS
-from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
 import Macro
-
+import pyautogui
+import pygetwindow
+import pyperclip
+import sounddevice as sd
+import TouchPortalAPI as TP
+from magnifier import mag_level, magnifer_dimensions, magnifier_control
+from powerplan import Powerplan
+from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 ## maybe make a py file thats just called 'display.py' with virtual desktop and other things?  
 from rotateDisplay import rotate_display
-from magnifier import mag_level, magnifer_dimensions, magnifier_control
+from screencapture import ScreenShot
+from screeninfo import get_monitors
+from TouchPortalAPI.logger import Logger
+# Local Imports
+from TPPEntry import (PLATFORM_SYSTEM, PLUGIN_ID, PLUGIN_NAME,
+                      TP_PLUGIN_ACTIONS, TP_PLUGIN_CONNECTORS, TP_PLUGIN_INFO,
+                      TP_PLUGIN_STATES)
+from tts import TTS
+from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
 
 match PLATFORM_SYSTEM:
     case "Windows":
-        import win32gui
-        import win32con
         import win32api
+        import win32con
+        import win32gui
     case "Linux":
         pass
     case "Darwin":
@@ -191,9 +192,9 @@ def onSettingUpdate(data):
 @TPClient.on(TP.TYPES.onAction)
 def onAction(data):
     g_log.info(f"Action: {data}")
-    if not (action_data := data.get('data')) or not (aid := data.get('actionId')):
+    if not (aid := data.get('actionId')):
         return
-    
+    action_data = data.get('data', [])
 
 #  Magnifier Actions
     if aid == TP_PLUGIN_ACTIONS["Magnifier"]["id"]:
@@ -361,13 +362,15 @@ def onAction(data):
             pplan.changeTo(action_data[0]['value'])
 
         if aid == TP_PLUGIN_ACTIONS["TTS"]['id']:
-            Thread(target=TTS.TextToSpeech, args=(
-                action_data[1]['value'],
+            TTS.TextToSpeech(action_data[1]['value'],
                 action_data[2]['value'],
                 int(action_data[2]['value']),
                 int(action_data[3]['value']),
-                action_data[4]['value']
-            )).start()
+                action_data[4]['value'])
+        
+        if aid == TP_PLUGIN_ACTIONS["stop_TTS"]["id"]:
+            # print("stopping")
+            sd.stop()
 
 # NOTE: Macro Recorder / Player
     if aid == TP_PLUGIN_ACTIONS["MacroRecorder"]['id']:

@@ -907,6 +907,15 @@ if plugin_name == "Windows":
             }
         }
     }
+    TP_PLUGIN_ACTIONS["stop_TTS"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.stop_TTS",
+        "prefix": TP_PLUGIN_CATEGORIES["main"]['name'],
+        "type": "communicate",
+        "description": "Stop Text to Speech",
+        "tryInline": True,
+        "format": "Stop Text To Speech"
+    }
     TP_PLUGIN_ACTIONS["TTS"] = {
         "category": "main",
         "id": PLUGIN_ID + ".act.TTS",

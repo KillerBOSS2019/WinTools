@@ -34,6 +34,8 @@ class TTS:
         return audio_dict
 
     def TextToSpeech(message, voicesChoics, volume=100, rate=100, output="Default"):
+        sd.stop()
+        sd.default.reset()
         engine = pyttsx3.init()
         voices = engine.getProperty('voices')
         engine.setProperty("volume", volume/100)
@@ -43,12 +45,10 @@ class TTS:
                 engine.setProperty('voice', voice.id)
                 print("Using", voice.name, "voices", voice)
 
-        if output == "Default":
-            engine.say(message)
-        else:
-            appdata = os.getenv('APPDATA')
-            engine.save_to_file(
-                message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+
+        appdata = os.getenv('APPDATA')
+        engine.save_to_file(
+            message, rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
         engine.runAndWait()
         engine.stop()
 
@@ -57,6 +57,7 @@ class TTS:
             device = TTS.getAllOutput_TTS2()
             sd.default.samplerate = device[output]
             sd.default.device = output + ", MME"
-            x, sr = a2n.audio_from_file(
-                rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
-            sd.play(x, sr, blocking=True)
+
+        x, sr = a2n.audio_from_file(
+            rf"{appdata}/TouchPortal/Plugins/WinTools/speech.wav")
+        sd.play(x, sr, blocking=False)
