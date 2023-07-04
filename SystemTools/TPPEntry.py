@@ -723,6 +723,90 @@ if plugin_name == "Windows":
             }
         }
     }
+    ## make a TP_PLUGIN_ACTIOn for Change Primary Display
+    TP_PLUGIN_ACTIONS["Change Primary Display"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.changeprimarydisplay",
+        'name': "Change Primary Display",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Change Primary Display to $[1]",
+        'data': {
+            'displayNum': {
+                'id': PLUGIN_ID + ".act.changeprimarydisplay.displaynum",
+                'type': "choice",
+                'label': "display num",
+                'default': "1",
+                'valueChoices': []
+            }   
+        }
+    }
+
+
+    ## make one for shutdown
+    TP_PLUGIN_ACTIONS["Shutdown"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.shutdown",
+        'name': "Shutdown",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "$[1] computer in $[2] seconds",
+        'data': {
+            'shutdownChoice': {
+                'id': PLUGIN_ID + ".act.shutdown.shutdownchoice",
+                'type': "choice",
+                'label': "shutdown choice",
+                'default': "Shutdown",
+                'valueChoices': [
+                    'Shutdown',
+                    'Restart',
+                    'Logoff',
+                    'Sleep',
+                  #  'Hibernate',
+                    'Lock'
+                ]
+            },
+            'shutdownDelay': {
+                'id': PLUGIN_ID + ".act.shutdown.delay",
+                'type': "number",
+                'label': "shutdown delay",
+                'allowDecimals': False,
+                'default': 0,
+                'minValue': 0
+            }
+        }
+    }
+ 
+    TP_PLUGIN_ACTIONS["Execute CMD"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.executecmd",
+        'name': "Execute CMD",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Execute command using $[1] with the script of $[2]",
+        'data': {
+            'command or powershell': {
+                'id': PLUGIN_ID + ".act.executecmd.command",
+                'type': "choice",
+                'label': "command or powershell",
+                'default': "command",
+                'valueChoices': [
+                    'Command Prompt',
+                    'Powershell'
+                ]
+            },
+
+            'cmd': {
+                'id': PLUGIN_ID + ".act.executecmd.cmd",
+                'type': "text",
+                'label': "cmd",
+                'default': ""
+            }
+        }
+    }
 
 
     TP_PLUGIN_ACTIONS["VD create"] = {

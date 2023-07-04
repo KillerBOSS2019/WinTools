@@ -2,7 +2,8 @@ import subprocess
 from ast import literal_eval
 from io import BytesIO
 from TPPEntry import PLATFORM_SYSTEM
-
+import pyautogui
+import os
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -166,6 +167,91 @@ def screenshot_current_linux():
     else:
         print("Unable to get the screenshot.")
 
+def execute_cmd_command(command):
+    """Executes a Command Prompt command."""
+    os.system(f"cmd.exe /c {command}")
+
+## Example usage: Execute a Command Prompt command
+#execute_cmd_command("dir")
+
+
+import os
+
+
+class SystemState:
+
+
+    def sleep(self):
+        """Puts the system into sleep mode."""
+        if PLATFORM_SYSTEM == "Windows":
+            os.system("rundll32.exe powrprof.dll,SetSuspendState 0,1,0")
+        elif PLATFORM_SYSTEM == "Linux":
+            os.system("systemctl suspend")
+
+    def logout(self):
+        """Logs out the current user."""
+        if PLATFORM_SYSTEM == "Windows":
+            os.system("shutdown -l")
+        elif PLATFORM_SYSTEM == "Linux":
+            os.system("gnome-session-quit --logout")
+
+    def restart(self):
+        """Restarts the system."""
+        if PLATFORM_SYSTEM == "Windows":
+            os.system("shutdown -r")
+        elif PLATFORM_SYSTEM == "Linux":
+            os.system("systemctl reboot")
+
+    def shutdown(self, delay=None, cancel=False):
+        """Shuts down the system."""
+        if PLATFORM_SYSTEM == "Windows":
+            self.win_shutdown(delay, cancel=False)
+
+        elif PLATFORM_SYSTEM == "Linux":
+            if delay is not None:
+                os.system(f"shutdown -P {delay}")
+            else:
+                os.system("shutdown -P now")
+
+    def lock(self):
+        """Locks the user session."""
+        if PLATFORM_SYSTEM == "Windows":
+            os.system("rundll32.exe user32.dll,LockWorkStation")
+        elif PLATFORM_SYSTEM == "Linux":
+            os.system("gnome-screensaver-command -l")
+
+    def win_shutdown(self, time, cancel=False):
+        ## should we create a shutdown timer/countdown ??  we can warn the user 5 minutes before shutting down so they can cancel
+
+        ## IF Blank then we show the GUI
+        if time == "":
+            time_set= pyautogui.prompt(text='💻 How many MINUTES do you want to wait before shutting down?', title='Shutdown PC?', default='')
+            if time_set == "0":
+                os.system(f"shutdown -a")
+                pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
+                time="DONE"
+            if type(time) == int:
+                if int(time_set) > 0:
+                    print(f"Shutdown in {time_set} minutes")
+                    time_set = int(time_set) * 60
+                    os.system(f"shutdown -s -t {time}")
+                    time="DONE"
+
+        if time == "NOW":
+            os.system(f"shutdown -s -t 0")
+
+        if type(time) == int:
+        
+            if int(time) >0:
+                try:
+                    print("Shutdown soon?")
+                    time = int(time) * 60 
+                    os.system(f"shutdown -s -t {time}")
+                except:
+                    pass
+            elif int(time) == None or 0:
+                os.system(f"shutdown -a")
+                pyautogui.alert("❗ ABORTED SYSTEM SHUTDOWN ❗")
 
 # ok = ScreenShot()
 #

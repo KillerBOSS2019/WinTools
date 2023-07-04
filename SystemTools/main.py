@@ -14,7 +14,7 @@ from magnifier import mag_level, magnifer_dimensions, magnifier_control
 from powerplan import Powerplan
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 ## maybe make a py file thats just called 'display.py' with virtual desktop and other things?  
-from rotateDisplay import rotate_display
+from display import Display
 from screencapture import ScreenShot
 from screeninfo import get_monitors
 from TouchPortalAPI.logger import Logger
@@ -23,7 +23,7 @@ from TPPEntry import (PLATFORM_SYSTEM, PLUGIN_ID, PLUGIN_NAME,
                       TP_PLUGIN_ACTIONS, TP_PLUGIN_CONNECTORS, TP_PLUGIN_INFO,
                       TP_PLUGIN_STATES)
 from tts import TTS
-from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms
+from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms, win_shutdown
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -118,6 +118,11 @@ def updateStates():
                 number_of_active_desktops = len(get_virtual_desktops())
                 currentVdNum = VirtualDesktop.current().number
                 if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
+                    
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.changeprimarydisplay.displaynum", vd_list)
+                    
+                    ## adding next and previous options to our vd list for vd switcher
                     vd_list.extend(["next", "previous"])
                     TPClient.choiceUpdate(
                         PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
@@ -127,8 +132,11 @@ def updateStates():
                         PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
                     TPClient.choiceUpdate(
                         PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
+                    
                     TPClient.stateUpdate(
                         TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
+
+                ## Always checking to see what VD we are on regardless if there is a new one or not    
                 TPClient.stateUpdate(
                     TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
 
@@ -199,13 +207,19 @@ def onAction(data):
 #  Magnifier Actions
     if aid == TP_PLUGIN_ACTIONS["Magnifier"]["id"]:
         magnifier_control(data['data'][0]['value'])
-        
+
+# Computer Shutdown & Sleep Actions
+    if aid == TP_PLUGIN_ACTIONS["Shutdown"]["id"]:
+        win_shutdown(data['data'][1]['value'])
+
    #if aid == TP_PLUGIN_ACTIONS["magnifier.onHold"]["id"]:
    #    if data['data'][0]['value'] == "Zoom":
    #        mag_level(int(data['data'][1]['value']))
 
    # print("this is aid", aid)
    # print(TP_PLUGIN_ACTIONS["Rotate Display"]['id'])
+
+
 # NOTE: Clipboard Actions - may not be needed as TP has a built in clipboard in the new version
     if aid == TP_PLUGIN_ACTIONS['Clipboard']['id']:
         pyperclip.copy(action_data[0]['value'])
@@ -465,7 +479,10 @@ def onAction(data):
 
     
     if aid == TP_PLUGIN_ACTIONS["Rotate Display"]['id']:
-        rotate_display(data['data'][0]['value'], data['data'][1]['value'])
+        Display.rotate_display(data['data'][0]['value'], data['data'][1]['value'])
+
+    if aid == TP_PLUGIN_ACTIONS["Change Primary Display"]["id"]:
+        Display.change_primary(data['data'][0]['value'])
 
 def get_current_windows():
     windows_active = []
