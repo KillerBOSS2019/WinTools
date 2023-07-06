@@ -167,6 +167,10 @@ def screenshot_current_linux():
     else:
         print("Unable to get the screenshot.")
 
+
+
+
+
 def execute_cmd_command(command):
     """Executes a Command Prompt command."""
     os.system(f"cmd.exe /c {command}")
@@ -179,12 +183,9 @@ def execute_powershell_command(command):
 #execute_cmd_command("dir")
 
 
-import os
 
 
 class SystemState:
-
-
     def sleep(self):
         """Puts the system into sleep mode."""
         if PLATFORM_SYSTEM == "Windows":

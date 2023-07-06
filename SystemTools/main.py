@@ -10,7 +10,7 @@ import pygetwindow
 import pyperclip
 import sounddevice as sd
 import TouchPortalAPI as TP
-from magnifier import mag_level, magnifer_dimensions, magnifier_control
+from magnifier import MagnifierControl
 from powerplan import Powerplan
 from pyvda import AppView, VirtualDesktop, get_virtual_desktops
 ## maybe make a py file thats just called 'display.py' with virtual desktop and other things?  
@@ -206,7 +206,7 @@ def onAction(data):
 
 #  Magnifier Actions
     if aid == TP_PLUGIN_ACTIONS["Magnifier"]["id"]:
-        magnifier_control(data['data'][0]['value'])
+        magControl.magnifier_control(data['data'][0]['value'])
 
 # Computer Shutdown & Sleep Actions
     if aid == TP_PLUGIN_ACTIONS["Shutdown"]["id"]:
@@ -571,11 +571,11 @@ def onConnector(data):
        # print("Magnifier.ZoomControl", data)
         match data['data'][0]['value']:
             case "Zoom":
-                mag_level(data['value']*16)
+                magControl.mag_level(data['value']*16)
             case "Lens X":
-                magnifer_dimensions(x=data['value'])
+                magControl.magnifer_dimensions(x=data['value'])
             case "Lens Y":
-                magnifer_dimensions(y=data['value'])
+                magControl.magnifer_dimensions(y=data['value'])
             case _:
                 pass
 
@@ -597,13 +597,13 @@ def onHold(data):
         elif TPClient.isActionBeingHeld(TP_PLUGIN_ACTIONS['Zoom Control OnHold']['id']):
             match data['data'][0]['value']:
                 case "Lens X":
-                    magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
+                    magControl.magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
                     sleep(0.05)
                 case "Lens Y":
-                    magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
+                    magControl.magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
                     sleep(0.05)
                 case "Zoom":
-                    mag_level(int(data['data'][1]['value']), onhold=True)
+                    magControl.mag_level(int(data['data'][1]['value']), onhold=True)
                     sleep(0.05)
                 case _:
                     break
@@ -728,5 +728,7 @@ if __name__ == "__main__":
         sysProgram = SystemPrograms()
         pplan = Powerplan()
         sysState = SystemState()
+        magControl = MagnifierControl()
+        g_log.info("Windows OS detected")
 
     sys.exit(main())
