@@ -23,7 +23,7 @@ from TPPEntry import (PLATFORM_SYSTEM, PLUGIN_ID, PLUGIN_NAME,
                       TP_PLUGIN_ACTIONS, TP_PLUGIN_CONNECTORS, TP_PLUGIN_INFO,
                       TP_PLUGIN_STATES)
 from tts import TTS
-from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms, SystemState, execute_cmd_command, execute_powershell_command
+from util import PLATFORM_SYSTEM, Get_Windows, SystemPrograms, SystemState, execute_cmd_command, execute_powershell_command, time_it
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -60,12 +60,14 @@ def updateStates():
     g_log.debug("Running update state")
 
     update_time_short = 0.5              # Setting short update time to every 0.5 seconds
-    update_time_long = time() + 5  # Setting long update time to every 60 seconds
+    update_time_long = 60  # Setting long update time to every 60 seconds
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
 
+    time_counter = 0;
     while TPClient.isConnected():
+        startTime = time()
         sleep(update_time_short)
 
         if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
@@ -103,7 +105,10 @@ def updateStates():
                 PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
 
         # Updating only every 60 seconds below
-        if update_time_long < time():
+        if time_counter >= update_time_long:
+            g_log.info("updating long")
+            time_counter = 0
+
             if PLATFORM_SYSTEM == "Windows":
                 # Getting TTS Output Devices and Updating Choices
                 voices = [voice.name for voice in TTS.getAllVoices()]
@@ -155,9 +160,10 @@ def updateStates():
                 TPClient.choiceUpdate(
                     PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
 
-            # Resetting the next update time
-            update_time_long = time() + 60  # Set the next update time to 60 seconds later
-
+        loopTime = time() - startTime
+        time_counter += loopTime
+        g_log.info(f"loop time: {loopTime-update_time_short}")
+    
     g_log.debug("UpdateState func exited")
 
 
@@ -469,8 +475,7 @@ def onAction(data):
                 if PLATFORM_SYSTEM == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(
                         data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=True)
-
-                if PLATFORM_SYSTEM == "Linux":
+                elif PLATFORM_SYSTEM == "Linux":
                     ScreenShot.screenshot_window_linux(
                         window_name=data['data'][0]['value'], clipboard=True)
 
@@ -481,8 +486,7 @@ def onAction(data):
                 if PLATFORM_SYSTEM == "Windows":
                     ScreenShot.screenshot_window(capture_type=int(
                         data['data'][1]['value']), window_title=data['data'][0]['value'], clipboard=False, save_location=afile_name)
-
-                if PLATFORM_SYSTEM == "Linux":
+                elif PLATFORM_SYSTEM == "Linux":
                     ScreenShot.screenshot_window_linux(
                         window_name=data['data'][0]['value'], file_name=afile_name)
     
@@ -525,10 +529,9 @@ def check_number_of_monitors():
             monitors = get_monitors()
             list_monitor_full = []
 
-            count = 1
-            for x in monitors:
-                list_monitor_full.append(str(count) + ": " + x.name)
-                count += 1
+            for monitor in range(len(monitors)):
+                list_monitor_full.append(str(monitor+1) + ": " + monitors[monitor].name)
+
             list_monitor_full.insert(0, "0: ALL MONITORS")
     return list_monitor_full
 
@@ -585,7 +588,7 @@ def onConnector(data):
 @TPClient.on(TP.TYPES.onHold_down)
 def onHold(data):
     while True:
-        sleep(0.01)
+        sleep(0.05)
         if TPClient.isActionBeingHeld(TP_PLUGIN_ACTIONS['Mouse scrolling']['id']):
             scrollSpeed = abs(int(data['data'][1]['value']) * 1)
             mouseScroll(data['data'][0]['value'], scrollSpeed)
@@ -598,13 +601,10 @@ def onHold(data):
             match data['data'][0]['value']:
                 case "Lens X":
                     magControl.magnifer_dimensions(x=True, y=None, onhold=int(data['data'][1]['value']))
-                    sleep(0.05)
                 case "Lens Y":
                     magControl.magnifer_dimensions(x=False, y=True, onhold=int(data['data'][1]['value']))
-                    sleep(0.05)
                 case "Zoom":
                     magControl.mag_level(int(data['data'][1]['value']), onhold=True)
-                    sleep(0.05)
                 case _:
                     break
 
@@ -622,8 +622,11 @@ def onListChange(data):
         else:
             program = sysProgram.other
 
-        TPClient.choiceUpdate(
-            TP_PLUGIN_ACTIONS['App launcher']['data']['appChoices']['id'], list(program.keys()))
+        TPClient.choiceUpdateSpecific(
+            TP_PLUGIN_ACTIONS['App launcher']['data']['appChoices']['id'],
+            list(program.keys()),
+            data['instanceId']
+        )
 
 
 # Shutdown handler
@@ -721,7 +724,6 @@ def main():
 
     g_log.info(f"{TP_PLUGIN_INFO['name']} stopped.")
     return ret
-
 
 if __name__ == "__main__":
     if PLATFORM_SYSTEM == "Windows":

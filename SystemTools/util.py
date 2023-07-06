@@ -4,6 +4,11 @@ from io import BytesIO
 from TPPEntry import PLATFORM_SYSTEM
 import pyautogui
 import os
+from time import time
+from TouchPortalAPI.logger import Logger
+from TPPEntry import PLUGIN_ID
+
+g_log = Logger(name=PLUGIN_ID)
 
 match PLATFORM_SYSTEM:
     case "Windows":
@@ -16,6 +21,14 @@ match PLATFORM_SYSTEM:
     case "Darwin":
         pass
 
+def time_it(func):
+    def wrapper():
+        start_time = time()
+        func()
+        end_time = time() - start_time
+        g_log.info(f"{time_it.__name__} took {end_time}s")
+    
+    return wrapper
 
 def runWindowsCMD(command):
     """ 
