@@ -103,71 +103,6 @@ class Get_Windows:
         return window_name_list
 
 
-class ClipBoard:
-    def copy_image_to_clipboard(image):
-        if PLATFORM_SYSTEM == "Windows":
-            bio = BytesIO()
-            image.save(bio, 'BMP')
-            data = bio.getvalue()[14:]  # removing some headers
-            bio.close()
-            ClipBoard.send_to_clipboard(win32clipboard.CF_DIB, data)
-
-        # This currently works with Fedora 36 and saves image to clipboard
-        if PLATFORM_SYSTEM == "Linux":
-            memory = BytesIO()
-            image.save(memory, format="png")
-            output = subprocess.Popen(("xclip", "-selection", "clipboard", "-t", "image/png", "-i"),
-                                      stdin=subprocess.PIPE)
-            # write image to stdin
-            output.stdin.write(memory.getvalue())
-            output.stdin.close()
-
-            # BACKUP OPTIONS
-            # Option # 1
-            # os.system(f"xclip -selection clipboard -t image/png -i {path + '/image.png'}")
-            # os.system("xclip -selection clipboard -t image/png -i temp_file.png")
-
-            # Option #2  - https://stackoverflow.com/questions/56618983/how-do-i-copy-a-pil-picture-to-clipboard
-            # might be able to use module called klemboard ??
-
-        # This needs tested/worked on...
-        if PLATFORM_SYSTEM == "Darwin":
-            # Option #1
-            # os.system(f"pbcopy < {path + '/image.png'}")
-
-            # Option #2
-
-            subprocess.run(
-                ["osascript", "-e", 'set the clipboard to (read (POSIX file "image.jpg") as JPEG picture)'])
-
-    def send_to_clipboard(clip_type, data):
-        if PLATFORM_SYSTEM == "Windows":
-            if clip_type == "text":
-                win32clipboard.OpenClipboard()
-                win32clipboard.EmptyClipboard()
-                win32clipboard.SetClipboardText(data)
-                win32clipboard.CloseClipboard()
-            else:
-                win32clipboard.OpenClipboard()
-                win32clipboard.EmptyClipboard()
-                win32clipboard.SetClipboardData(clip_type, data)
-                win32clipboard.CloseClipboard()
-
-def screenshot_current_linux():
-    from gi.repository import Gdk, GdkPixbuf
-
-    w = Gdk.get_default_root_window()
-    sz = w.get_geometry()
-    # print "The size of the window is %d x %d" % sz
-    pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, sz[2], sz[3])
-    pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[2], sz[3])
-    if (pb != None):
-        pb.save("screenshot.png", "png")
-        print("Screenshot saved to screenshot.png.")
-    else:
-        print("Unable to get the screenshot.")
-
-
 
 
 
@@ -225,8 +160,14 @@ class SystemState:
         elif PLATFORM_SYSTEM == "Linux":
             os.system("gnome-screensaver-command -l")
 
+
+
     def win_shutdown(self, time, cancel=False):
-        ## should we create a shutdown timer/countdown ??  we can warn the user 5 minutes before shutting down so they can cancel
+        """ Windows Shutdown Procedure
+        - If time is blank then it will show the GUI
+        - If time is a number then it will shutdown in that many minutes
+        - If time is "NOW" then it will shutdown now
+        """
 
         ## IF Blank then we show the GUI
         if time == "":
@@ -237,10 +178,11 @@ class SystemState:
                 time="DONE"
             if type(time) == int:
                 if int(time_set) > 0:
-                    print(f"Shutdown in {time_set} minutes")
+                   # print(f"Shutdown in {time_set} minutes")
                     time_set = int(time_set) * 60
                     os.system(f"shutdown -s -t {time}")
                     time="DONE"
+                    return "Shutdown in " + str(time_set) + " minutes"
 
         if time == "NOW":
             os.system(f"shutdown -s -t 0")

@@ -148,3 +148,20 @@ class ScreenShot:
                     print("Saved to Folder")
         except Exception as e:
             print("error screenshot" + e)
+
+
+
+    def screenshot_current_linux():
+        from gi.repository import Gdk, GdkPixbuf
+    
+        w = Gdk.get_default_root_window()
+        sz = w.get_geometry()
+        # print "The size of the window is %d x %d" % sz
+        pb = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, False, 8, sz[2], sz[3])
+        pb = pb.get_from_drawable(w, w.get_colormap(), 0, 0, 0, 0, sz[2], sz[3])
+        if (pb != None):
+            pb.save("screenshot.png", "png")
+            print("Screenshot saved to screenshot.png.")
+        else:
+            print("Unable to get the screenshot.")
+
