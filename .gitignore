@@ -1,2 +1,5 @@
-
 *.pyc
+.env
+venv
+SystemTools-venv
+*.tp

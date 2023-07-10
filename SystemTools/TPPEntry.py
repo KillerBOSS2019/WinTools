@@ -1,0 +1,1186 @@
+import os
+import platform
+
+__version__ = "4"
+
+# PLUGIN_ID = "com.github.KillerBOSS2019.TouchPortal.plugin.WinTool"
+PLUGIN_ID = "plugin.SystemTools"
+
+PLATFORM_SYSTEM = platform.system()
+
+# This is not being utilized YET.. but it will be when we use linux for sure
+OS_INFO = {
+    "version": platform.version(),          # 10.0.19043 for windows 10
+    "arch": platform.architecture(),        # 32bit / 64bit
+    "machine": platform.machine(),          # AMD64 / *Intel ??
+    "system": platform.system(),            # Windows / Darwin / Linux
+    "release": platform.release(),          # Windows-10-10.0.19043-SP0
+    "platform full": platform.platform(),
+    "platform mac": platform.mac_ver(),
+    "platform node": platform.node()
+}
+
+
+match PLATFORM_SYSTEM:
+    case "Windows":
+        plugin_name = "Windows"
+        appdata = os.getenv("LOCALAPPDATA")
+
+    case "Darwin":
+        plugin_name = "MacOS"
+        appdata = "./Document/TouchPortal/plugins/WinTools"
+
+    case "Linux":
+        plugin_name = "Linux"
+        appdata = os.getenv("HOME") + "/.config/TouchPortal/plugins/WinTools"
+
+
+PLUGIN_NAME = plugin_name + " Tools"
+
+TP_PLUGIN_INFO = {
+    'sdk': 6,
+    'version': int(float(__version__) * 100),
+    'name': PLUGIN_NAME,
+    'id': PLUGIN_ID,
+    "plugin_start_cmd": "%TP_PLUGIN_FOLDER%WinTools\\WinTools.exe",
+    'configuration': {
+        'colorDark': "#25274c",
+        'colorLight': "#707ab5"
+    },
+    "doc": {
+        "repository": "KillerBOSS2019:WinTools",
+        "Install": "1. Download latest version of plugin for your system.\n2. Import downloaded tpp by click the gear button next to email/notification icon.\n3. If this is first plugin, you will need to restart TouchPortal for it to work."
+    }
+}
+
+TP_PLUGIN_CATEGORIES = {
+    "main": {
+        'id': PLUGIN_ID + ".main",
+        'name': plugin_name + " Utility",
+        'imagepath': "icon-24.png"
+    },
+    "mouse": {
+        "id": PLUGIN_ID + ".AdvancedMouse",
+        "name": plugin_name + " Mouse",
+        "imagepath": "icon-24.png"
+    },
+    "keyboard": {
+        "id": PLUGIN_ID + ".advancedKeyboard",
+        "name": plugin_name + " Keyboard",
+        "imagepath": "icon-24.png"
+    },
+    "VD": {
+        "id": PLUGIN_ID + ".VD",
+        "name": plugin_name + " Virtual Desktop",
+        "imagepath": "icon-24.png"
+    }
+}
+
+# Setting(s) for this plugin. These could be either for users to
+# set, or to persist data between plugin runs (as read-only settings).
+TP_PLUGIN_SETTINGS = {}
+
+
+TP_PLUGIN_CONNECTORS = {
+
+     "Zoom Control": {
+         "category": "main",
+         "id": PLUGIN_ID + ".conor.ZoomControl",
+         "name": "Magnify Zoom Slider",
+         "format": "Adjust Magnifier: $[1]",
+         "label": "Zoom Control",
+         "data": {
+             "ZoomControl":{
+                "id": PLUGIN_ID + ".conor.Magnifier.ZoomControl",
+                "description": "Manually adjust Lens Size and Zoom",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": ["Zoom", "Lens X", "Lens Y"]
+         }
+     }
+    },
+    # Can't make this work as right now.
+    # "MouseSliderCon": {
+    #     "category": "main",
+    #     "id": PLUGIN_ID + ".conor.Mouseslider",
+    #     "name": "Slider Mouse scroll (HScroll/Scroll)",
+    #     "format": "$[1]Scroll mouse at scroll speed $[2]x and Reverse$[3]",
+    #     "label": "Mouse slider connector",
+    #     "data": {
+    #         "scrollChoice": {
+    #             "id": PLUGIN_ID + ".conor.Mouseslider.scrollChoice",
+    #             "type": "choice",
+    #             "label": "scroll choice",
+    #             "default": "Forward/Backward",
+    #             "valueChoices": ["Forward/Backward", "Up/Down"]
+    #         },
+    #         'scrollSpeed': {
+    #             'id': PLUGIN_ID + ".conor.Mouseslider.scrollChoice.speed",
+    #             'type': "number",
+    #             'label': "scroll speed",
+    #             'default': 20,
+    #             "minValue": 1,
+    #             "maxValue": 120
+    #         },
+    #         "scrollReverse": {
+    #             "id": PLUGIN_ID + ".conor.Mouseslider.reverse",
+    #             "type": "choice",
+    #             "label": "reverse",
+    #             "default": "False",
+    #             "valueChoices": ["True", "False"]
+    #         },
+    #     }
+    # }
+}
+
+
+# Action(s) which this plugin supports.
+TP_PLUGIN_ACTIONS = {
+    'Hold Mouse button': {
+        'category': "mouse",
+        'id': PLUGIN_ID + ".act.holdMouse",
+        'name': "Mouse Hold/Release mouse button",
+        'prefix': TP_PLUGIN_CATEGORIES['mouse']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'hasHoldFunctionality': True,
+        'format': "$[1]mouse button$[2]",
+        'data': {
+            'mouseState': {
+                'id': PLUGIN_ID + ".act.holdMouse.state",
+                'type': "choice",
+                'label': "mouse state",
+                'default': "Hold",
+                'valueChoices': [
+                    'Hold',
+                    'Release'
+                ]
+            },
+            'Buttonchoices': {
+                'id': PLUGIN_ID + ".act.holdMouse.buttonChoices",
+                'type': "choice",
+                'label': "button choices",
+                'default': "Left",
+                'valueChoices': [
+                    'Left',
+                    'Middle',
+                    'Right'
+                ]
+            },
+        }
+    },
+
+    'Mouse click': {
+        'category': "mouse",
+        'id': PLUGIN_ID + ".act.mouseclick",
+        'name': "Mouse Click",
+        'prefix': TP_PLUGIN_CATEGORIES['mouse']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'hasHoldFunctionality': True,
+        'format': "$[1]Click$[2]Times with interval$[3]",
+        'data': {
+            'mouseButton': {
+                'id': PLUGIN_ID + ".act.mouseclick.buttonoptions",
+                'type': "choice",
+                'label': "mouse state",
+                'default': "Left",
+                'valueChoices': [
+                    'Right',
+                    'Middle',
+                    'Left',
+                ]
+            },
+            'clickTimes': {
+                'id': PLUGIN_ID + ".act.mouseclick.clickTimes",
+                'type': "number",
+                'label': "click times",
+                'allowDecimals': False,
+                'default': 3,
+                'minValue': 1
+            },
+            'clickInterval': {
+                'id': PLUGIN_ID + ".act.mouseclick.clickInterval",
+                'type': "number",
+                'label': "click interval",
+                'allowDecimals': True,
+                'default': 1,
+                'minValue': 0
+            },
+        }
+    },
+
+    'Mouse scrolling': {
+        'category': "mouse",
+        'id': PLUGIN_ID + ".act.mousescroll",
+        'name': "Mouse scroll",
+        'prefix': TP_PLUGIN_CATEGORIES['mouse']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'hasHoldFunctionality': True,
+        'format': "Scroll Mouse$[1]by$[2]ticks",
+        'data': {
+            'mouseButton': {
+                'id': PLUGIN_ID + ".act.mousescroll.scrolloptions",
+                'type': "choice",
+                'label': "mouse state",
+                'default': "UP",
+                'valueChoices': [
+                    'UP',
+                    'DOWN',
+                    'LEFT',
+                    'RIGHT',
+                ]
+            },
+            'scroll ticks': {
+                'id': PLUGIN_ID + ".act.mousescroll.ticks",
+                'type': "number",
+                'label': "scroll ticks",
+                'allowDecimals': False,
+                'default': 120,
+                'minValue': 1
+            }
+        }
+    },
+
+    'move Mouse': {
+        'category': "mouse",
+        'id': PLUGIN_ID + ".act.mouseMovefunc",
+        'name': "Move mouse",
+        'prefix': TP_PLUGIN_CATEGORIES['mouse']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Mouse $[1]X$[2]Y$[3]in duration$[4]",
+        'data': {
+            'mouseState': {
+                'id': PLUGIN_ID + ".act.mouseMovefunc.state",
+                'type': "choice",
+                'label': "mouse state",
+                'default': "MoveTo",
+                'valueChoices': [
+                    'MoveTo',
+                    'Move'
+                ]
+            },
+            'moveXpos': {
+                'id': PLUGIN_ID + ".act.mouseMovefunc.moveXPos",
+                'type': "text",
+                'label': "mouse move x pos",
+                'default': "10",
+            },
+            'moveYpos': {
+                'id': PLUGIN_ID + ".act.mouseMovefunc.moveYPos",
+                'type': "text",
+                'label': "mouse move Y pos",
+                'default': "10"
+            },
+            'move duration': {
+                'id': PLUGIN_ID + ".act.mouseMovefunc.duration",
+                'type': "text",
+                'label': "move duration",
+                'default': "0.1",
+            }
+        }
+    },
+
+    'Drag mouse': {
+        'category': "mouse",
+        'id': PLUGIN_ID + ".act.DragmouseMovefunc",
+        'name': "Drag Mouse",
+        'prefix': TP_PLUGIN_CATEGORIES['mouse']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "$[1]X$[2]Y$[3]in duration$[4]with button $[5]",
+        'data': {
+            'mouseState': {
+                'id': PLUGIN_ID + ".act.DragmouseMovefunc.state",
+                'type': "choice",
+                'label': "mouse state",
+                'default': "DragTo",
+                'valueChoices': [
+                    'DragTo',
+                    'Drag'
+                ]
+            },
+            'moveXpos': {
+                'id': PLUGIN_ID + ".act.DragmouseMovefunc.moveXPos",
+                'type': "text",
+                'label': "mouse move x pos",
+                'default': "10",
+            },
+            'moveYpos': {
+                'id': PLUGIN_ID + ".act.DragmouseMovefunc.moveYPos",
+                'type': "text",
+                'label': "mouse move Y pos",
+                'default': "10"
+            },
+            'move duration': {
+                'id': PLUGIN_ID + ".act.DragmouseMovefunc.duration",
+                'type': "number",
+                'label': "move duration",
+                'default': "0.1",
+            },
+            'mouseButton': {
+                'id': PLUGIN_ID + ".act.DragmouseMovefunc.button",
+                'type': "choice",
+                'label': "mouse button",
+                'default': "Left",
+                'valueChoices': [
+                    'Left',
+                    'Middle',
+                    'Right'
+                ]
+            },
+        }
+    },
+
+    "Clipboard": {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.clipboard",
+        'name': "Save Text to clipboard",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Save$[1]to clipboard",
+        'data': {
+            'clipboardtext': {
+                'id': PLUGIN_ID + ".act.clipboard.text",
+                'type': "text",
+                'label': "save clipboard text",
+                'default': ""
+            }
+        }
+    },
+
+    "MacroRecorder": {
+        "category": "keyboard",
+        "id": PLUGIN_ID + "act.macroRecorder",
+        "name": "Macro recorder",
+        "prefix": TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "format": "$[1] Macro Recording and save to $[2]",
+        "data": {
+            "microState": {
+                "id": PLUGIN_ID + ".act.macroRecorder.state",
+                "type": "choice",
+                "label": "macro state",
+                "default": "Toggle",
+                "valueChoices": [
+                    "Start",
+                    "Stop",
+                    "Toggle"
+                ]
+            },
+            "microProfile": {
+                "id": PLUGIN_ID + ".act.macroProfile",
+                "type": "text",
+                "label": "macro Profile",
+                "default": "Main",
+            }
+        }
+    },
+
+    "macroPlayer": {
+        "category": "keyboard",
+        "id": PLUGIN_ID + "act.macroPlayer",
+        "name": "Micro Player",
+        "prefix": TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "format": "Using macro profile$[1] and play$[2]",
+        "data": {
+            "macro profile": {
+                "id": PLUGIN_ID + ".act.macroPlayer.profile",
+                "type": "choice",
+                "label": "macro profile",
+                "default": "",
+                "valueChoices": []
+            },
+            "macroPlayOpt": {
+                "id": PLUGIN_ID + ".act.macroPlayer.playopt",
+                "type": "choice",
+                "label": "play opt",
+                "default": "All",
+                "valueChoices": [
+                    "Keyboard",
+                    "Mouse",
+                    "All"
+                ]
+            }
+        }
+    },
+
+    "Keyboard writer": {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".act.keyboardwriter",
+        'name': "Write Text",
+        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Write$[1]with interval$[2]for every character",
+        'data': {
+            'text': {
+                'id': PLUGIN_ID + ".act.keyboardwriter.text",
+                'type': "text",
+                'label': "text to write",
+                'default': ""
+            },
+            'delay': {
+                'id': PLUGIN_ID + ".act.keyboardwriter.delay",
+                'type': "text",
+                'label': "delay",
+                'default': ""
+            }
+        }
+    },
+    "Keyboard presser": {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".act.keyboardpresser",
+        'name': "Key Control",
+        'prefix': TP_PLUGIN_CATEGORIES['keyboard']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "$[1]$[2]",
+        'data': {
+            "press options": {
+                "id": PLUGIN_ID + ".act.keyboardpresser.options",
+                "type": "choice",
+                "label": "press options",
+                "default": "Press key",
+                "valueChoices": [
+                    "Hold key",
+                    "Release key",
+                    "Press key"
+                ]
+            },
+            'keys': {
+                'id': PLUGIN_ID + ".act.keyboardpresser.keys",
+                'type': "choice",
+                'label': "key choices",
+                'default': " ",
+                "valueChoices": []
+            }
+        }
+    },
+
+    "Screen Capture Display": {
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapturedisplay",
+        "name": "CAPTURE:  Display to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Display to Clipboard OR File",
+        "format": "Display # $[1] to $[2] to $[3] and $[4]",
+        "data": {
+            "monitors": {
+                "id": PLUGIN_ID + ".screencapturedisplay.monitors_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            "file_clipboard_choice": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_clipboard_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "Clipboard",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
+            },
+            "path": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_path",
+                "type": "folder",
+                "label": "folder"
+            },
+            "name": {
+                "id": PLUGIN_ID + ".screencapturedisplay.file_name",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            }
+        }
+    },
+
+    "Screen Capture Window": {
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapturewindow",
+        "name": "CAPTURE:  Window to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Window to Clipboard OR File",
+        "format": "Window:$[window_name] Save:$[window_active_capture]  Directory->$[filepath] and file name ->$[filename] ",
+        "data": {
+            "window_name": {
+                "id": PLUGIN_ID + ".screencapturewindow.window_name",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            "filepath": {
+                "id": PLUGIN_ID + ".screencapturewindow.filepath",
+                "type": "folder",
+                "label": "folder",
+                "default": ""
+            },
+            "filename": {
+                "id": PLUGIN_ID + ".screencapturewindow.filename",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            },
+            "window_active_capture": {
+                "id": PLUGIN_ID + ".screencapturewindow.window_active_capture",
+                "type": "choice",
+                "label": "choice",
+                "default": "Clipboard",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
+            }
+        }
+    },
+    "Screen Capture Window WildCard": {
+        'category': "main",
+        "id": PLUGIN_ID + ".screencapturewildcard",
+        "name": "CAPTURE:  Window to File / Clipboard (*)",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture Window by Name to Clipboard OR File ",
+        "format": "Window Name*:$[window_name] Save:$[clipboard_file_choice]  Directory->$[path] and file name ->$[name] ",
+        "data": {
+            "window_name": {
+                "id": PLUGIN_ID + ".screencapturewildcard.window_name",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            },
+            "path": {
+                "id": PLUGIN_ID + ".screencapturewildcard.file.path",
+                "type": "folder",
+                "label": "folder",
+                "default": ""
+            },
+            "name": {
+                "id": PLUGIN_ID + ".screencapture.wildcard.file.name",
+                "type": "text",
+                "label": "text",
+                "default": ""
+            },
+            "clipboard_file_choice": {
+                "id": PLUGIN_ID + ".screencapturewildcard.clipboard_file_choice",
+                "type": "choice",
+                "label": "choice",
+                "default": "Clipboard",
+                "valueChoices": [
+                    "Clipboard",
+                    "File"
+                ]
+            }
+        }
+    },
+
+    "Screenshot Window Current": {
+        'category': "main",
+        "id": PLUGIN_ID + ".window.current",
+        "name": "CAPTURE:  Current Active Window to File / Clipboard",
+        "prefix": "plugin",
+        "type": "communicate",
+        "tryInline": True,
+        "description": "Capture CURRENT Active Window to Clipboard OR File ",
+        "format": "Save to $[clipboard_file_choice]   IF file -> $[filepath] and $[filename].png",
+        "data": {
+                "clipboard_file_choice": {
+                    "id": PLUGIN_ID + ".screencapture.window_current.clipboard_file_choice",
+                    "type": "choice",
+                    "label": "choice",
+                    "default": "Clipboard",
+                    "valueChoices": [
+                        "Clipboard",
+                        "File"
+                    ]
+                },
+            "filepath": {
+                    "id": PLUGIN_ID + ".screencapture.window_current.filepath",
+                    "type": "folder",
+                    "label": "folder",
+                    "default": ""
+            },
+            "filename": {
+                    "id": PLUGIN_ID + ".screencapture.window_current.filename",
+                    "type": "text",
+                    "label": "text",
+                    "default": ""
+            }
+        }
+    }
+}
+
+
+# Adding Windows Specific Actions
+if plugin_name == "Windows":
+
+    ## if plugin_action is Win Notify
+
+    TP_PLUGIN_ACTIONS["Win Notify"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.toastCreate",
+        'name': "Win Notify",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        "format": "Title:$[1]   Message:$[2]   Duration:$[3]  Icon(optional) $[6]  Sound:$[7]  Button-Text(optional):$[4]   Button-Link(When Clicked):$[5]",
+        "data": [
+          {
+            "id": PLUGIN_ID + ".toast.title",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.message",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.duration",
+            "type": "choice",
+            "label": "choice",
+            "default": "Short",
+            "valueChoices": [
+              "Short",
+              "Long"
+            ]
+          },
+          {
+            "id": PLUGIN_ID + ".toast.buttontext",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.buttonlink",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.iconpath",
+            "type": "file",
+            "label": "file",
+            "extensions": ["*.jpg","*.png", "*.ico"],
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.audio",
+            "type": "choice",
+            "label": "choice",
+            "default": "Default",
+            "valueChoices": [
+              "Default",
+              "IM",
+              "Mail",
+              "Reminder",
+              "SMS",
+              "LoopingAlarm1",
+              "LoopingAlarm2",
+              "LoopingAlarm3",
+              "LoopingAlarm4",
+              "LoopingAlarm5",
+              "LoopingAlarm6",
+              "LoopingAlarm7",
+              "LoopingAlarm8",
+              "LoopingCall1",
+              "LoopingCall2",
+              "LoopingCall3",
+              "LoopingCall4",
+              "LoopingCall5",
+              "LoopingCall6",
+              "LoopingCall7",
+              "LoopingCall8",
+              "LoopingCall9",
+              "LoopingCall10",
+              "Silent"
+            ]
+          }
+        ]
+      }
+
+    TP_PLUGIN_ACTIONS["Magnifier"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.magnifier",
+        "name": "UTILITY:  Magnifier Glass",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "format": "Magnifier Glass: $[1] ",
+        "data": [
+          {
+            "id": PLUGIN_ID + "magnifier.actionchoice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+                "Start",
+                "Exit",
+                "Zoom In",
+                "Zoom Out",
+                "Dock",
+                "Lens",
+                "Full Screen",
+                "Invert Colors"
+            ]
+          }
+        ]
+      }
+    
+    TP_PLUGIN_ACTIONS["Zoom Control OnHold"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.magnifier.zoomOnHold",
+        "name": "UTILITY:  Magnifier Glass Adjustment",
+        "prefix": TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "tryInline": True,
+        "hasHoldFunctionality": True,
+        "description": "IF ON HOLD -> Increment by X \nIF ON PRESS -> Set to X",
+        "format": "Select $[1] and set/adjust by $[2]  ",
+        "data": 
+            {
+            "ZoomControl":{
+            "id": PLUGIN_ID + "magnifier.lens.choice",
+            "type": "choice",
+            "label": "choice",
+            "default": "",
+            "valueChoices": [
+              "Lens X",
+              "Lens Y",
+              "Zoom"
+            ]
+        },
+        "ZoomControlIncrement":{
+            "id": PLUGIN_ID + ".magnifier.lensIncrement",
+            "type": "text",
+            "label": "text",
+            "allowDecimals": False,
+            "minValue":5,
+            "maxValue":1600,
+            "default": "5"
+          }
+        
+    }
+    }
+
+    TP_PLUGIN_ACTIONS["Rotate Display"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.rotateDisplay",
+        'name': "Rotate Display",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Rotate Display $[1] by $[2] degrees",
+        'data': {
+            'displayNum': {
+                'id': PLUGIN_ID + ".act.rotateDisplay.displaynum",
+                'type': "choice",
+                'label': "display num",
+                'default': "1",
+                'valueChoices': []
+            },
+
+            'rotateDegrees': {
+                'id': PLUGIN_ID + ".act.rotateDisplay.degrees",
+                'type': "choice",
+                'label': "rotate degrees",
+                'default': "90",
+                'valueChoices': [
+                    '0',
+                    '90',
+                    '180',
+                    '270'
+                ]
+            }
+        }
+    }
+    ## make a TP_PLUGIN_ACTIOn for Change Primary Display
+    TP_PLUGIN_ACTIONS["Change Primary Display"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.changeprimarydisplay",
+        'name': "Change Primary Display",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Change Primary Display to $[1]",
+        'data': {
+            'displayNum': {
+                'id': PLUGIN_ID + ".act.changeprimarydisplay.displaynum",
+                'type': "choice",
+                'label': "display num",
+                'default': "1",
+                'valueChoices': []
+            }   
+        }
+    }
+
+
+    ## make one for shutdown
+    TP_PLUGIN_ACTIONS["Shutdown"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.shutdown",
+        'name': "Shutdown",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "$[1] computer in $[2] seconds",
+        'data': {
+            'shutdownChoice': {
+                'id': PLUGIN_ID + ".act.shutdown.shutdownchoice",
+                'type': "choice",
+                'label': "shutdown choice",
+                'default': "Shutdown",
+                'valueChoices': [
+                    'Shutdown',
+                    'Restart',
+                    'Logoff',
+                    'Sleep',
+                  #  'Hibernate',
+                    'Lock'
+                ]
+            },
+            'shutdownDelay': {
+                'id': PLUGIN_ID + ".act.shutdown.delay",
+                'type': "number",
+                'label': "shutdown delay",
+                'allowDecimals': False,
+                'default': 0,
+                'minValue': 0
+            }
+        }
+    }
+ 
+    TP_PLUGIN_ACTIONS["Execute CMD"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.executecmd",
+        'name': "Execute CMD",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Execute command using $[1] with the script of $[2]",
+        'data': {
+            'command or powershell': {
+                'id': PLUGIN_ID + ".act.executecmd.command",
+                'type': "choice",
+                'label': "command or powershell",
+                'default': "command",
+                'valueChoices': [
+                    'Command Prompt',
+                    'Powershell'
+                ]
+            },
+
+            'cmd': {
+                'id': PLUGIN_ID + ".act.executecmd.cmd",
+                'type': "text",
+                'label': "cmd",
+                'default': ""
+            }
+        }
+    }
+
+
+    TP_PLUGIN_ACTIONS["VD create"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_create",
+        'name': 'Create Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Create Virtual Desktop with the name of$[1]",
+        'data': {
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_create.vd_name",
+                "type": "text",
+                "label": "VD name",
+                "default": "New Virtual Desktop"
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD remove"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_remove",
+        'name': 'Remove Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Remove Virtual Desktop $[1]",
+        'data': {
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_remove.vd_name",
+                "type": "choice",
+                "label": "VD name",
+                "default": "",
+                "valueChoices": []
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD rename"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_rename",
+        'name': 'Rename Virtual Desktop',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Rename Virtual Desktop $[1] to $[2]",
+        'data': {
+            "Current VDs": {
+                "id": PLUGIN_ID + ".act.vd_rename.current_vds",
+                "type": "choice",
+                "label": "Current VDs",
+                "default": "",
+                "valueChoices": []
+            },
+            "VD name": {
+                "id": PLUGIN_ID + ".act.vd_rename.vd_name",
+                "type": "text",
+                "label": "VD name",
+                "default": "New Virtual Desktop"
+            },
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD switcher"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_switcher",
+        'name': 'Virtual Desktop switcher',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Switch virtual desktop to$[1]",
+        'data': {
+            "VD index": {
+                "id": PLUGIN_ID + ".act.vd_switcher.vd_index",
+                "type": "choice",
+                "label": "VD index",
+                "default": "1",
+                "valueChoices": ["next", "previous"]
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD app changer"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_appchanger",
+        'name': 'App to specific virtual desktop ',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "Move$[1]to virtual desktop$[2]",
+        'data': {
+            "vd app": {
+                "id": PLUGIN_ID + ".act.vd_appchanger.apps",
+                "type": "text",
+                "label": "apps",
+                "default": "Current"
+            },
+            "VD index": {
+                "id": PLUGIN_ID + ".act.vd_appchanger.vd_index",
+                "type": "choice",
+                "label": "VD index",
+                "default": "1",
+                "valueChoices": []
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["VD app pin"] = {
+        'category': 'VD',
+        'id': PLUGIN_ID + ".act.vd_app_pin",
+        'name': 'Pin app',
+        'prefix': TP_PLUGIN_CATEGORIES["VD"]["name"],
+        'type': 'communicate',
+        'tryInline': True,
+        'format': "$[1]$[2]to Virtual Desktop",
+        'data': {
+            "options": {
+                "id": PLUGIN_ID + ".act.vd_app_pin.options",
+                "type": "choice",
+                "label": "options",
+                "default": "Toggle",
+                "valueChoices": [
+                    "Pin",
+                    "Unpin",
+                    "Toggle"
+                ]
+            },
+            "vd app": {
+                "id": PLUGIN_ID + ".act.vd_app_pin.apps",
+                "type": "text",
+                "label": "apps",
+                "default": "Current",
+            }
+        }
+    }
+
+    TP_PLUGIN_ACTIONS["App launcher"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.advancedLauncher",
+        'name': "Advanced Program launcher",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Launch$[1]$[2]",
+        'data': {
+            'appType': {
+                'id': PLUGIN_ID + ".act.advancedLauncher.AppType",
+                'type': "choice",
+                'label': "App Type",
+                'default': "Pick One",
+                'valueChoices': [
+                    'Steam',
+                    'Microsoft',
+                    'Other'
+                ]
+            },
+            'appChoices': {
+                'id': PLUGIN_ID + ".act.advancedLauncher.appChoices",
+                'type': "choice",
+                'label': "AppChoices",
+                'default': "",
+                'valueChoices': []
+            }
+        }
+    }
+    TP_PLUGIN_ACTIONS["Powerplan"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.Powerplan",
+        'name': "Change Powerplan",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        'format': "Change current powerplan to$[1]",
+        'data': {
+            'powerplanChoices': {
+                'id': PLUGIN_ID + ".act.Powerplan.choices",
+                'type': "choice",
+                'label': "pplan choices",
+                'default': "Balanced",
+                'valueChoices': []
+            }
+        }
+    }
+    TP_PLUGIN_ACTIONS["stop_TTS"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.stop_TTS",
+        "prefix": TP_PLUGIN_CATEGORIES["main"]['name'],
+        "type": "communicate",
+        "description": "Stop Text to Speech",
+        "tryInline": True,
+        "format": "Stop Text To Speech"
+    }
+    TP_PLUGIN_ACTIONS["TTS"] = {
+        "category": "main",
+        "id": PLUGIN_ID + ".act.TTS",
+        "name": "Text to speech",
+        "prefix": TP_PLUGIN_CATEGORIES['main']['name'],
+        "type": "communicate",
+        "description": "Play Text to Speech thru a specific Audio Output",
+        "tryInline": True,
+        "format": "Text$[1] Voice$[2] Volume$[3] Speech Rate$[4] Audio Output$[5]",
+        "data": {
+            'voices': {
+                "id": PLUGIN_ID + "act.TSS.voices",
+                "type": "choice",
+                "label": "choice",
+                "default": "",
+                "valueChoices": []
+            },
+            'text': {
+                "id": PLUGIN_ID + "act.TSS.text",
+                "type": "text",
+                "label": "text",
+                "default": "Hello!"
+            },
+            'volume': {
+                "id": PLUGIN_ID + "act.TSS.volume",
+                "type": "number",
+                "label": "tts volume",
+                "allowDecimals": False,
+                "default": "100",
+                "minValue": 0,
+                "maxValue": 100
+            },
+            'rate': {
+                "id": PLUGIN_ID + "act.TSS.rate",
+                "type": "number",
+                "label": "tts rate",
+                "allowDecimals": False,
+                "default": "175",
+                "minValue": 25,
+                "maxValue": 600
+            },
+            'output': {
+                "id": PLUGIN_ID + "act.TSS.output",
+                "type": "choice",
+                "label": "tts output choice",
+                "default": "",
+                "valueChoices": []
+            }
+        }
+    }
+
+
+# Plugin static state(s). These are listed in the entry.tp file,
+# vs. dynamic states which would be created/removed at runtime.
+TP_PLUGIN_STATES = {
+    'macro state': {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".state.macroState",
+        'type': "text",
+        'desc': "WinTool Keyboard show current macro state",
+        'default': "NOT RECORDING"
+    },
+    'macro play state': {
+        'category': "keyboard",
+        'id': PLUGIN_ID + ".state.macroPlaystate",
+        'type': "text",
+        'desc': "WinTool Keyboard show macro play state",
+        'default': "NOT PLAYING"
+    },
+}
+
+# Windows specific states
+if plugin_name == "Windows":
+    TP_PLUGIN_STATES["num VD"] = {
+        'category': "VD",
+        "id": PLUGIN_ID + ".state.numVD",
+        "type": "text",
+        "desc": "Number of Virtual Desktop",
+        "default": "0"
+    }
+
+    TP_PLUGIN_STATES["CurrentVD"] = {
+        "category": "VD",
+        "id": PLUGIN_ID + ".state.currentVD",
+        "type": "text",
+        "desc": "Current Virtual Desktop Number"
+    }
+
+    TP_PLUGIN_STATES["CurrentVDName"] = {
+        "category": "VD",
+        "id": PLUGIN_ID + ".state.currentVDName",
+        "type": "text",
+        "desc": "Current Virtual Desktop Name"
+    }
+
+# Plugin Event(s).
+TP_PLUGIN_EVENTS = {}
