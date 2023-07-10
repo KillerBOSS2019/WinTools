@@ -30,6 +30,8 @@ match PLATFORM_SYSTEM:
         import win32api
         import win32con
         import win32gui
+
+        from win_notify import WinToast
     case "Linux":
         pass
     case "Darwin":
@@ -60,110 +62,106 @@ def updateStates():
     g_log.debug("Running update state")
 
     update_time_short = 0.5              # Setting short update time to every 0.5 seconds
-    update_time_long = 60  # Setting long update time to every 60 seconds
+    update_time_long = time() + 5  # Setting long update time to every 60 seconds
 
     macroStateId = TP_PLUGIN_STATES["macro state"]['id']
     macroPlayProfile = TP_PLUGIN_ACTIONS["macroPlayer"]['data']["macro profile"]['id']
 
     time_counter = 0;
     while TPClient.isConnected():
-        startTime = time()
-        sleep(update_time_short)
+            sleep(update_time_short)
 
-        if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
-            TPClient.stateUpdate(macroStateId, "RECORDING")
-            Macro.States.macro_recordState = True
-        else:
-            TPClient.stateUpdate(macroStateId, "NOT RECORDING")
-            Macro.States.macro_recordState = False
 
-        if Macro.States.macroPlayThread != None and Macro.States.macroPlayThread.is_alive():
-            TPClient.stateUpdate(
-                TP_PLUGIN_STATES["macro play state"]['id'], "PLAYING")
-            Macro.States.macro_playState = True
-        else:
-            TPClient.stateUpdate(
-                TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
-            Macro.States.macro_playState = False
+            if Macro.States.macroRecordThread != None and Macro.States.macroRecordThread.is_alive():
+                TPClient.stateUpdate(macroStateId, "RECORDING")
+                Macro.States.macro_recordState = True
+            else:
+                TPClient.stateUpdate(macroStateId, "NOT RECORDING")
+                Macro.States.macro_recordState = False
 
-        # NOTE: CHECK ME -  We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
-
-        # Update macro profile
-        newProfileList = list(Macro.getMacroProfile().keys())
-        # default true cuz it does not exist in dict so need to update it.
-        if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList:
-            TPClient.choiceUpdate(macroPlayProfile, newProfileList)
-
-        # Check for Current Active Windows
-        windows_active = get_current_windows()
-
-        # Updating only if the list has changed
-        if (windows_active != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturewindow.window_name")):
-            TPClient.choiceUpdate(
-                PLUGIN_ID + ".screencapturewindow.window_name", windows_active)
-            TPClient.stateUpdate(
-                PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
-
-        # Updating only every 60 seconds below
-        if time_counter >= update_time_long:
-            g_log.info("updating long")
-            time_counter = 0
-
-            if PLATFORM_SYSTEM == "Windows":
-                # Getting TTS Output Devices and Updating Choices
-                voices = [voice.name for voice in TTS.getAllVoices()]
-                tts_outputs = list(TTS.getAllOutput_TTS2().keys())
-                if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + "act.TSS.output", tts_outputs)
-                if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
-                    TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
-
-                # Getting Virtual Desktop info
-                number_of_active_desktops = len(get_virtual_desktops())
-                currentVdNum = VirtualDesktop.current().number
-                if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
-                    
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + ".act.changeprimarydisplay.displaynum", vd_list)
-                    
-                    ## adding next and previous options to our vd list for vd switcher
-                    vd_list.extend(["next", "previous"])
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
-                    TPClient.choiceUpdate(
-                        PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
-                    
-                    TPClient.stateUpdate(
-                        TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
-
-                ## Always checking to see what VD we are on regardless if there is a new one or not    
+            if Macro.States.macroPlayThread != None and Macro.States.macroPlayThread.is_alive():
                 TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
+                    TP_PLUGIN_STATES["macro play state"]['id'], "PLAYING")
+                Macro.States.macro_playState = True
+            else:
+                TPClient.stateUpdate(
+                    TP_PLUGIN_STATES["macro play state"]['id'], "NOT PLAYING")
+                Macro.States.macro_playState = False
 
-            # Universal Stuff
-            # Check for Monitor info & Details
-            list_monitor = check_number_of_monitors()
-            if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
-                TPClient.choiceUpdate(
-                    PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
-                
-                TPClient.choiceUpdate(
-                    PLUGIN_ID + ".act.rotatedisplay.displaynum", list_monitor)
+            # NOTE: CHECK ME -  We should not be checking/opening a json file every 0.5 seconds, we should only do this when the macro profile changes or on startup?
 
-                TPClient.choiceUpdate(
-                    PLUGIN_ID + ".winsettings.monchoice", list_monitor)
-                TPClient.choiceUpdate(
-                    PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
+            # Update macro profile
+            newProfileList = list(Macro.getMacroProfile().keys())
+            # default true cuz it does not exist in dict so need to update it.
+            if TPClient.choiceUpdateList.get(macroPlayProfile, True) != newProfileList:
+                TPClient.choiceUpdate(macroPlayProfile, newProfileList)
 
-        loopTime = time() - startTime
-        time_counter += loopTime
-        g_log.info(f"loop time: {loopTime-update_time_short}")
-    
+            # Check for Current Active Windows
+            windows_active = get_current_windows()
+
+            # Updating only if the list has changed
+            if (windows_active != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturewindow.window_name")):
+                TPClient.choiceUpdate(
+                    PLUGIN_ID + ".screencapturewindow.window_name", windows_active)
+                TPClient.stateUpdate(
+                    PLUGIN_ID + ".Windows.activeCOUNT", str(len(windows_active)))
+
+            # Updating only every 60 seconds below
+            if update_time_long < time():
+                if PLATFORM_SYSTEM == "Windows":
+                    # Getting TTS Output Devices and Updating Choices
+                    voices = [voice.name for voice in TTS.getAllVoices()]
+                    tts_outputs = list(TTS.getAllOutput_TTS2().keys())
+                    if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["output"]['id']) != tts_outputs:
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + "act.TSS.output", tts_outputs)
+                    if TPClient.choiceUpdateList.get(TP_PLUGIN_ACTIONS["TTS"]["data"]["voices"]['id']) != voices:
+                        TPClient.choiceUpdate(PLUGIN_ID + "act.TSS.voices", voices)
+
+                    # Getting Virtual Desktop info
+                    number_of_active_desktops = len(get_virtual_desktops())
+                    currentVdNum = VirtualDesktop.current().number
+                    if (vd_list := [str(x + 1) for x in range(number_of_active_desktops)]) and TPClient.choiceUpdateList.get(PLUGIN_ID + ".act.vd_appchanger.vd_index") != vd_list:
+
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + ".act.changeprimarydisplay.displaynum", vd_list)
+
+                        ## adding next and previous options to our vd list for vd switcher
+                        vd_list.extend(["next", "previous"])
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + ".act.vd_appchanger.vd_index", vd_list)
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + ".act.vd_switcher.vd_index", vd_list)
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + ".act.vd_rename.current_vds", vd_list)
+                        TPClient.choiceUpdate(
+                            PLUGIN_ID + ".act.vd_remove.vd_name", vd_list)
+
+                        TPClient.stateUpdate(
+                            TP_PLUGIN_STATES["num VD"]["id"], str(number_of_active_desktops))
+
+                    ## Always checking to see what VD we are on regardless if there is a new one or not    
+                    TPClient.stateUpdate(
+                        TP_PLUGIN_STATES["CurrentVD"]["id"], str(currentVdNum))
+
+                # Universal Stuff
+                # Check for Monitor info & Details
+                list_monitor = check_number_of_monitors()
+                if (list_monitor != TPClient.choiceUpdateList.get(PLUGIN_ID + ".screencapturedisplay.monitors_choice")):
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".screencapturedisplay.monitors_choice", list_monitor)
+
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".act.rotatedisplay.displaynum", list_monitor)
+
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".winsettings.monchoice", list_monitor)
+                    TPClient.choiceUpdate(
+                        PLUGIN_ID + ".winsettings.primary_monitor_choice", list_monitor)
+
+                # Resetting the next update time
+                update_time_long = time() + 60  # Set the next update time to 60 seconds later
+
     g_log.debug("UpdateState func exited")
 
 
@@ -324,31 +322,23 @@ def onAction(data):
 
     if aid == TP_PLUGIN_ACTIONS["VD switcher"]["id"]:
         try:
-            if action_data[0]["value"].lower() == "next":
-                current_vd = VirtualDesktop.current()
-                VirtualDesktop(int(current_vd.number)+1).go()
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+            current_vd = VirtualDesktop.current()
+            match action_data[0]["value"].lower():
+                case "next":
+                    VirtualDesktop(int(current_vd.number) + 1).go()
+                case "previous":
+                    VirtualDesktop(int(current_vd.number) - 1).go()
+                case _:
+                    VirtualDesktop(int(current_vd.number)).go()
 
-            if action_data[0]["value"].lower() == "previous":
-                current_vd = VirtualDesktop.current()
-                VirtualDesktop(int(current_vd.number)-1).go()
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
-            else:
-                VirtualDesktop(int(action_data[0]['value'])).go()
-                current_vd = VirtualDesktop.current()
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
-                TPClient.stateUpdate(
-                    TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
+            TPClient.stateUpdate(
+                TP_PLUGIN_STATES["CurrentVD"]["id"], str(current_vd.number))
+            TPClient.stateUpdate(
+                TP_PLUGIN_STATES["CurrentVDName"]["id"], str(current_vd.name))
 
         except Exception as e:
             g_log.error("VD switcher failed", e)
+
 
     if aid == TP_PLUGIN_ACTIONS["VD app changer"]:
         if (action_data[0]["value"].lower() == "current"):
@@ -368,6 +358,7 @@ def onAction(data):
             except Exception as e:
                 g_log.error("VD app changer failed", e)
 
+
     if aid == TP_PLUGIN_ACTIONS["VD app pin"]:
         if action_data[1]["value"].lower() == "current":
             try:
@@ -375,23 +366,15 @@ def onAction(data):
             except:
                 app_to_pin = None
         else:
-            app_hwnd = win32gui.EnumWindows(
-                window_callback, action_data[1]["value"])
-            if app_hwnd:
-                app_to_pin = AppView(app_hwnd)
+            app_hwnd = win32gui.EnumWindows(window_callback, action_data[1]["value"].lower())
+            app_to_pin = AppView(app_hwnd) if app_hwnd else None
 
         if app_to_pin:
-            pin_option = action_data[0]["value"]
-
             if app_to_pin.is_pinned():
-                pin_option = "Unpin"
-            else:
-                pin_option = "pin"
-
-            if pin_option == "Pin":
-                app_to_pin.pin()
-            elif pin_option == "Unpin":
                 app_to_pin.unpin()
+            else:
+                app_to_pin.pin()
+
 
     if PLATFORM_SYSTEM == "Windows":
         if aid == TP_PLUGIN_ACTIONS['App launcher']['id']:
@@ -506,6 +489,17 @@ def onAction(data):
 
     if aid == TP_PLUGIN_ACTIONS["Change Primary Display"]["id"]:
         Display.change_primary(data['data'][0]['value'])
+
+    if aid == TP_PLUGIN_ACTIONS["Win Notify"]["id"]:
+        win_notify.show_notification(
+                title= data['data'][0]['value'],
+                msg= data['data'][1]['value'],
+                duration= data['data'][2]['value'],
+                icon= data['data'][5]['value'],
+                buttonText= data['data'][3]['value'],
+                buttonlink= data['data'][4]['value'],
+                sound= data['data'][6]['value'])
+
 
 def get_current_windows():
     windows_active = []
@@ -731,6 +725,7 @@ if __name__ == "__main__":
         pplan = Powerplan()
         sysState = SystemState()
         magControl = MagnifierControl()
+        win_notify = WinToast()
         g_log.info("Windows OS detected")
 
     sys.exit(main())

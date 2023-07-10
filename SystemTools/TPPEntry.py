@@ -628,6 +628,93 @@ TP_PLUGIN_ACTIONS = {
 # Adding Windows Specific Actions
 if plugin_name == "Windows":
 
+    ## if plugin_action is Win Notify
+
+    TP_PLUGIN_ACTIONS["Win Notify"] = {
+        'category': "main",
+        'id': PLUGIN_ID + ".act.toastCreate",
+        'name': "Win Notify",
+        'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
+        'type': "communicate",
+        'tryInline': True,
+        "format": "Title:$[1]   Message:$[2]   Duration:$[3]  Icon(optional) $[6]  Sound:$[7]  Button-Text(optional):$[4]   Button-Link(When Clicked):$[5]",
+        "data": [
+          {
+            "id": PLUGIN_ID + ".toast.title",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.message",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.duration",
+            "type": "choice",
+            "label": "choice",
+            "default": "Short",
+            "valueChoices": [
+              "Short",
+              "Long"
+            ]
+          },
+          {
+            "id": PLUGIN_ID + ".toast.buttontext",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.buttonlink",
+            "type": "text",
+            "label": "text",
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.iconpath",
+            "type": "file",
+            "label": "file",
+            "extensions": ["*.jpg","*.png", "*.ico"],
+            "default": ""
+          },
+          {
+            "id": PLUGIN_ID + ".toast.audio",
+            "type": "choice",
+            "label": "choice",
+            "default": "Default",
+            "valueChoices": [
+              "Default",
+              "IM",
+              "Mail",
+              "Reminder",
+              "SMS",
+              "LoopingAlarm1",
+              "LoopingAlarm2",
+              "LoopingAlarm3",
+              "LoopingAlarm4",
+              "LoopingAlarm5",
+              "LoopingAlarm6",
+              "LoopingAlarm7",
+              "LoopingAlarm8",
+              "LoopingCall1",
+              "LoopingCall2",
+              "LoopingCall3",
+              "LoopingCall4",
+              "LoopingCall5",
+              "LoopingCall6",
+              "LoopingCall7",
+              "LoopingCall8",
+              "LoopingCall9",
+              "LoopingCall10",
+              "Silent"
+            ]
+          }
+        ]
+      }
+
     TP_PLUGIN_ACTIONS["Magnifier"] = {
         "category": "main",
         "id": PLUGIN_ID + ".act.magnifier",
@@ -635,10 +722,10 @@ if plugin_name == "Windows":
         'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
         "type": "communicate",
         "tryInline": True,
-        "format": "Magnifier Glass: {$KillerBOSS.TP.Plugins.magnifier.actionchoice$} ",
+        "format": "Magnifier Glass: $[1] ",
         "data": [
           {
-            "id": "KillerBOSS.TP.Plugins.magnifier.actionchoice",
+            "id": PLUGIN_ID + "magnifier.actionchoice",
             "type": "choice",
             "label": "choice",
             "default": "",
@@ -694,7 +781,7 @@ if plugin_name == "Windows":
 
     TP_PLUGIN_ACTIONS["Rotate Display"] = {
         'category': "main",
-        'id': PLUGIN_ID + ".act.rotatedisplay",
+        'id': PLUGIN_ID + ".act.rotateDisplay",
         'name': "Rotate Display",
         'prefix': TP_PLUGIN_CATEGORIES['main']['name'],
         'type': "communicate",
@@ -702,7 +789,7 @@ if plugin_name == "Windows":
         'format': "Rotate Display $[1] by $[2] degrees",
         'data': {
             'displayNum': {
-                'id': PLUGIN_ID + ".act.rotatedisplay.displaynum",
+                'id': PLUGIN_ID + ".act.rotateDisplay.displaynum",
                 'type': "choice",
                 'label': "display num",
                 'default': "1",
@@ -710,7 +797,7 @@ if plugin_name == "Windows":
             },
 
             'rotateDegrees': {
-                'id': PLUGIN_ID + ".act.rotatedisplay.degrees",
+                'id': PLUGIN_ID + ".act.rotateDisplay.degrees",
                 'type': "choice",
                 'label': "rotate degrees",
                 'default': "90",

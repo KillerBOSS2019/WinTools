@@ -1,11 +1,12 @@
 #screencapture
 
-from util import ClipBoard, PLATFORM_SYSTEM
+from util import PLATFORM_SYSTEM
 
 ### Screenshot Monitor Imports ###
 import mss.tools  # may need to find another module for this due to linux/macOS
 from PIL import Image
 from io import BytesIO
+from clipboard import ClipBoard
 
 
 match PLATFORM_SYSTEM:
